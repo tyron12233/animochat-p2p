@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/src/components/chat/swipeable-message.css"],"sourcesContent":[".animate-gradient-x {\n    position: absolute;\n    inset: 0;\n    /* background: linear-gradient(to right, #4ade80, #3b82f6, #9333ea); */\n    background-size: 200% 100%;\n    animation: gradientFlow 3s ease infinite;\n}\n\n/* smooth gradient transition x and y */\n@keyframes gradientFlow {\n    0%, 100% {\n        background-position: 0% 25%;\n    }\n    50% {\n        background-position: 100% 25%;\n    }\n}\n\n.selected {\n    scale: 1.7;\n    transition: scale 0.24s;\n}\n"],"names":[],"mappings":"AAAA;;;;;;;AASA;;;;;;;;;;AASA"}}]
+}

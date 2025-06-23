@@ -1,0 +1,116 @@
+import type { DataConnection as PeerJSDataConnection } from 'peerjs';
+
+// Re-exporting the type for easier use across the app
+export type DataConnection = PeerJSDataConnection;
+
+export type Screen = 'intro' | 'matchmaking' | 'chat';
+
+export interface ChatMessage {
+    text: string;
+    sender: 'You' | 'Stranger' | 'System';
+}
+
+export interface PopularInterest {
+    interest: string;
+    count: number;
+}
+
+export interface User {
+    id: string;
+}
+
+export type MatchmakingData =
+    | { state: 'WAITING' }
+    | { state: 'MATCHED'; matchedUserId: string; interest: string; }
+    | { state: 'ERROR'; message: string; };
+
+export interface Reaction {
+  user_id: string;
+  emoji: string;
+}
+
+export interface Message {
+  id: string;
+  sender: string;
+  content: string;
+  session_id: string | undefined;
+  created_at?: string;
+  replyingTo?: any;
+  reactions?: Reaction[];
+  edited?: boolean;
+  visible_to?: string[];
+  type?: string;
+}
+
+export interface ChatTheme {
+  /** A unique identifier for the theme */
+  id: string;
+  /** The display name of the theme */
+  name: string;
+
+  /**
+   * The main accent color used throughout the chat interface.
+   * This color will be used for the header background and send button background
+   * unless overridden by their respective properties.
+   * Example: "#4F46E5"
+   */
+  accentColor: string;
+
+  /**
+   * The background gradient for the current user’s chat bubble.
+   * Example: "linear-gradient(90deg, #34D399, #10B981)"
+   */
+  userBubbleGradient: string;
+  /**
+   * The text color for the current user’s chat bubble.
+   * Example: "#ffffff"
+   */
+  userTextColor: string;
+
+  /**
+   * Whether the current user’s chat bubble should be animated.
+   * Example: true
+   */
+  userAnimated: boolean;
+
+  /**
+   * The background gradient for other users’ chat bubbles.
+   * Example: "linear-gradient(90deg, #F3F4F6, #E5E7EB)"
+   */
+  otherBubbleGradient: string;
+  /**
+   * The text color for other users’ chat bubbles.
+   * Example: "#1F2937"
+   */
+  otherTextColor: string;
+
+  /**
+   * Whether the other user’s chat bubble should be animated.
+   * Example: true
+   */
+  otherAnimated: boolean;
+
+  /**
+   * The background gradient for the chat area.
+   * (Typically applied on a higher-level container.)
+   * Example: "linear-gradient(180deg, #ffffff, #f0f0f0)"
+   */
+  chatBackground: string;
+}
+
+
+
+export const DEFAULT_THEME: ChatTheme = {
+  id: "default",
+  name: "Default Chat Theme",
+
+  // bg-green-600
+  accentColor: "#16a34a",
+  userBubbleGradient: "linear-gradient(90deg, #16a34a, #16a34a)",
+  userTextColor: "#ffffff",
+  otherBubbleGradient: "linear-gradient(90deg, #f3f4f6, #f3f4f6)",
+  otherTextColor: "#1F2937",
+  otherAnimated: false,
+  userAnimated: false,
+  chatBackground: "linear-gradient(180deg, #ffffff, #ffffff)",
+};

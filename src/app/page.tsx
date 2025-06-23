@@ -1,103 +1,149 @@
-import Image from "next/image";
+// App.tsx
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+"use client";
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+import BackgroundElements from "../components/ui/background-elements";
+import { useState } from "react";
+import InterestSelector from "../components/interests-selector";
+import Chat from "../components/chat"; 
+import { useAnimoChat } from "../hooks/useAnimochat";
+import { Button } from "@/components/ui/button";
+
+export default function App() {
+  const {
+    screen,
+    peerId,
+    status,
+    isConnecting,
+    messages,
+    handleGetStarted,
+    startMatchmaking,
+    endChat,
+    sendMessage,
+    onReact,
+    isPeerOutdated, // Import the flag for the UI
+  } = useAnimoChat();
+
+  const [interests, setInterests] = useState<Set<string>>(new Set());
+
+  const handleFindMatch = (interestsToMatch: Set<string>) => {
+    if (interestsToMatch.size === 0) return;
+    startMatchmaking(Array.from(interestsToMatch));
+  };
+
+  const renderScreen = () => {
+    switch (screen) {
+      case "chat":
+        return (
+           <div className="h-full w-full flex items-center justify-center sm:p-4">
+              <Chat
+                onReact={onReact}
+                messages={messages}
+                sendMessage={sendMessage}
+                endChat={endChat}
+                peerId={peerId}
+                status={status}
+              />
+          </div>
+        );
+
+      case "matchmaking":
+        return (
+          <>
+            <div className="max-w-3xl mx-auto relative w-full">
+              <div className="text-center mb-12">
+                <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                  Choose Your Interests
+                </h2>
+                <p className="text-gray-600 text-lg my-8">
+                  Find someone to chat with based on what you like.
+                </p>
+              </div>
+            </div>
+            <InterestSelector
+              interests={interests}
+              onInterestsChange={setInterests}
+              onFindMatch={handleFindMatch}
+              isConnecting={isConnecting}
+              status={status}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          </>
+        );
+
+      case "intro":
+      default:
+        return (
+          <>
+            <div className="max-w-3xl mx-auto relative w-full">
+              <div className="text-center mb-12">
+                <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                  Real-time
+                  <br />
+                  Anonymous Chat
+                </h2>
+                <p className="text-gray-600 text-lg my-8">
+                  Connect with students anonymously and securely.
+                </p>
+              </div>
+            </div>
+            
+            {/* --- NEW: P2P and Test Information --- */}
+            <div className="max-w-md mx-auto text-sm space-y-6 text-center">
+                <details className="text-gray-500 bg-gray-50/80 p-3 rounded-2xl border border-gray-200">
+                    <summary className="cursor-pointer font-medium hover:text-green-600">What is Peer-to-Peer (P2P) Chat?</summary>
+                    <p className="mt-2 text-left">
+                        Peer-to-Peer chat means your messages go directly to the other user without passing through a central server. This provides better privacy and can be faster. Our server only helps to "introduce" two users to each other.
+                    </p>
+                </details>
+
+                <div className="text-red-700 bg-red-50 p-4 rounded-2xl border border-red-200 font-medium">
+                    <p>This is a test version of AnimoChat. Not all features are implemented, and you may encounter bugs.</p>
+                </div>
+            </div>
+
+            <div className="text-center mt-12">
+              <Button
+                onClick={handleGetStarted}
+                disabled={isConnecting}
+                size="lg"
+                className="rounded-full py-7 px-8 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
+              >
+                {isConnecting ? "Initializing..." : "Get Started"}
+              </Button>
+            </div>
+          </>
+        );
+    }
+  };
+
+  return (
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+        {/* The main container now adapts its padding based on the screen */}
+        <main className={`container h-full mx-auto flex flex-col ${screen === 'chat' ? 'p-0' : 'px-4 py-8 md:py-16'}`}>
+            {/* Background is only shown on intro/matchmaking screens */}
+            {screen !== 'chat' && <BackgroundElements />}
+
+            <div className="flex-grow flex flex-col justify-center items-center">
+                {renderScreen()}
+            </div>
+
+            {/* Footer is only shown on intro/matchmaking screens */}
+            {screen !== 'chat' && (
+                <footer className="text-xs text-gray-500 text-center py-4 shrink-0">
+                    <h3 className="py-4">
+                        Created by developers from{" "}
+                        <span className="text-green-700 font-semibold">
+                        De La Salle Lipa
+                        </span>
+                    </h3>
+                    {peerId && (
+                        <p className="font-mono text-gray-400 text-[10px] mt-2">
+                        Your Peer ID: {peerId}
+                        </p>
+                    )}
+                </footer>
+            )}
+        </main>
     </div>
   );
 }
