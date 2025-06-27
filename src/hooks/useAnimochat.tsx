@@ -13,6 +13,7 @@ import type {
 import { v4 as uuidv4 } from "uuid";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
+import { defaultTheme } from "../lib/default-chat-themes";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
@@ -96,6 +97,9 @@ export const useAnimochatV2 = () => {
         console.log(`Connecting to WebSocket server: ${wsUrl}`);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
+
+        setTheme(defaultTheme);
+        setMode("light");
 
         setupWebsocketListeners(ws, data.chatId, [], true);
         setScreen("chat");
@@ -188,6 +192,17 @@ export const useAnimochatV2 = () => {
   }, []);
 
   // --- User Actions ---
+
+  const onCancelMatchmaking = () => {
+    console.log("Cancelling matchmaking...");
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    setStatus("ready");
+    setScreen("matchmaking");
+    setChatId("");
+  }
 
   const onChangeTheme = (mode: "light" | "dark", theme: ChatThemeV2) => {
     console.log("THEME CHANGE REQUESTED");
@@ -613,6 +628,7 @@ export const useAnimochatV2 = () => {
     isStrangerTyping,
     handleGetStarted: () => setScreen("matchmaking"),
     startMatchmaking,
+    onCancelMatchmaking,
     sendMessage,
     disconnect,
     onReact,

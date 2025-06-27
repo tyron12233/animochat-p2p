@@ -28,6 +28,7 @@ interface ChatProps {
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
   onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
+  cancelMatchmaking?: () => void;
   isStrangerTyping: boolean;
   onStartTyping: () => void;
   goBack: () => void;
@@ -77,6 +78,7 @@ export default function Chat({
   goBack,
   sendMessage,
   onStartTyping,
+  cancelMatchmaking = () => {},
   onEditMessage,
   isStrangerTyping,
   onChangeTheme,
@@ -406,7 +408,7 @@ export default function Chat({
           >
             <Palette />
           </Button>
-          {/* These buttons can be further customized via theme props if the Button component supports it */}
+
           {status === "connected" && (
             <Button
               onClick={() =>
@@ -467,7 +469,19 @@ export default function Chat({
           </div>
         )}
 
+        <AnimatePresence>
+            {(status === "waiting_for_match" ||
+              status === "finding_match" ||
+              status === "connecting") && <FindingMatchAnimation onCancel={cancelMatchmaking}
+                key="finding-match-animation"
+                theme={theme}
+                mode={mode}
+              />}
+          </AnimatePresence>
+
         <div className="max-h-full h-full relative">
+          
+
           <VList
             ref={scrollerRef}
             style={{ overflowX: "hidden" }}
@@ -497,11 +511,6 @@ export default function Chat({
             </AnimateChangeInHeight>
           </VList>
 
-          <AnimatePresence>
-            {(status === "waiting_for_match" ||
-              status === "finding_match" ||
-              status === "connecting") && <FindingMatchAnimation />}
-          </AnimatePresence>
           <AnimatePresence>
             {showNewMessagesButton && (
               <motion.div

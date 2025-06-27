@@ -22,6 +22,7 @@ export default function Home() {
     editMessage,
     sendMessage,
     onReact,
+    onCancelMatchmaking,
     onStartTyping,
     handleGetStarted,
     isStrangerTyping,
@@ -63,6 +64,7 @@ export default function Home() {
                 }}
                 onEditMessage={editMessage}
                 onStartTyping={onStartTyping}
+                cancelMatchmaking={onCancelMatchmaking}
                 isStrangerTyping={isStrangerTyping}
                 onReact={onReact}
                 onChangeTheme={onChangeTheme}
