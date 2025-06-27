@@ -35,10 +35,13 @@ type EditMessagePacket = Packet<
   "edit_message"
 >;
 type DisconnectPacket = Packet<null, "disconnect">;
-type ChangeThemePacket = Packet<{
-  mode: "light" | "dark";
-  theme: ChatThemeV2
-}, "change_theme">;
+type ChangeThemePacket = Packet<
+  {
+    mode: "light" | "dark";
+    theme: ChatThemeV2;
+  },
+  "change_theme"
+>;
 
 // This packet is used when the user is offline or not connected.
 // the content is a string (the user id of the user who when offline).
@@ -202,34 +205,53 @@ export const useAnimochatV2 = () => {
     setStatus("ready");
     setScreen("matchmaking");
     setChatId("");
-  }
+  };
 
   const onChangeTheme = (mode: "light" | "dark", theme: ChatThemeV2) => {
     console.log("THEME CHANGE REQUESTED");
-      if (!userId || !chatId) return;
+    if (!userId || !chatId) return;
 
-      const packet: ChangeThemePacket = {
-        type: "change_theme",
-        content: { mode, theme },
-        sender: userId,
-      };
-      sendPacket(packet);
+    const packet: ChangeThemePacket = {
+      type: "change_theme",
+      content: { mode, theme },
+      sender: userId,
+    };
+    sendPacket(packet);
 
-      setMode(mode);
-      setTheme(theme);
+    setMode(mode);
+    setTheme(theme);
 
-      const themeMessage: SystemMessage = {
-        id: `system_${Date.now()}`,
-        session_id: chatId,
-        created_at: new Date().toISOString(),
-        type: "system",
-        content: `Theme changed to ${theme.name} in ${mode} mode.`,
-        sender: "system",
-      };
-      setMessages((prev) => [...prev, themeMessage]);
-    }
+    const themeMessage: SystemMessage = {
+      id: `system_${Date.now()}`,
+      session_id: chatId,
+      created_at: new Date().toISOString(),
+      type: "system",
+      content: `Theme changed to ${theme.name} in ${mode} mode.`,
+      sender: "system",
+    };
+    setMessages((prev) => [...prev, themeMessage]);
+  };
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const onStartTyping = useCallback(() => {
-    if (isTypingRef.current) return; // Prevent sending too many events
+    if (isTypingRef.current) {
+      // If already typing, reset the timeout to extend the typing indication.
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false;
+        const stopTypingPacket: TypingPacket = {
+          type: "typing",
+          content: false,
+          sender: userId,
+        };
+        sendPacket(stopTypingPacket);
+      }, 3000);
+      return;
+    }
     isTypingRef.current = true;
 
     const startTypingPacket: TypingPacket = {
@@ -240,8 +262,11 @@ export const useAnimochatV2 = () => {
     sendPacket(startTypingPacket);
 
     // Set a timeout to automatically send a "stop typing" event.
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       isTypingRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       const stopTypingPacket: TypingPacket = {
         type: "typing",
         content: false,
@@ -333,10 +358,7 @@ export const useAnimochatV2 = () => {
   );
 
   const disconnect = useCallback(() => {
-
-
     const disconnectFromApi = async () => {
-
       const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
       try {
         const response = await fetch(disconnectApi, {
@@ -360,11 +382,9 @@ export const useAnimochatV2 = () => {
       }
     };
 
-
-
     disconnectFromApi().then(() => {
       console.log("Disconnected from matchmaking and chat.");
-    })
+    });
 
     if (wsRef.current) {
       const disconnectPacket: DisconnectPacket = {
@@ -375,8 +395,8 @@ export const useAnimochatV2 = () => {
       wsRef.current.send(JSON.stringify(disconnectPacket));
     }
 
-   
- wsRef.current?.close();    wsRef.current = null;
+    wsRef.current?.close();
+    wsRef.current = null;
     eventSourceRef.current?.close();
     eventSourceRef.current = null;
 
@@ -389,7 +409,7 @@ export const useAnimochatV2 = () => {
   const startMatchmaking = useCallback(
     (interests: string[]) => {
       console.log("Starting matchmaking with interests:", interests);
-    
+
       if (!userId) {
         console.error("User ID not set yet. Cannot start matchmaking.");
         setStatus("error");
@@ -446,182 +466,183 @@ export const useAnimochatV2 = () => {
     [userId]
   );
 
-  const setupWebsocketListeners = useCallback((
-    ws: WebSocket,
-    chatId: string,
-    interests: string[] = [],
-    reconnecting = false
-  ) => {
-    ws.onopen = () => {
-      console.log("WebSocket connection established.");
-      setStatus("connected");
+  const setupWebsocketListeners = useCallback(
+    (
+      ws: WebSocket,
+      chatId: string,
+      interests: string[] = [],
+      reconnecting = false
+    ) => {
+      ws.onopen = () => {
+        console.log("WebSocket connection established.");
+        setStatus("connected");
 
-      let message = `You matched with a stranger on ${interests.join(
-        ", "
-      )}! Say hi!`;
-      if (reconnecting) {
-        message = `Reconnected to chat with a stranger. Previous messages may not be visible yet.`;
-      }
+        let message = `You matched with a stranger on ${interests.join(
+          ", "
+        )}! Say hi!`;
+        if (reconnecting) {
+          message = `Reconnected to chat with a stranger. Previous messages may not be visible yet.`;
+        }
 
-      const welcomeMessage: SystemMessage = {
-        id: `system_${Date.now()}`,
-        session_id: chatId,
-        created_at: new Date().toISOString(),
-        type: "system",
-        content: message,
-        sender: "system",
+        const welcomeMessage: SystemMessage = {
+          id: `system_${Date.now()}`,
+          session_id: chatId,
+          created_at: new Date().toISOString(),
+          type: "system",
+          content: message,
+          sender: "system",
+        };
+        setMessages([welcomeMessage]);
       };
-      setMessages([welcomeMessage]);
-    };
 
-    ws.onmessage = async (e: MessageEvent<any>) => {
-      const rawPacket = e.data;
+      ws.onmessage = async (e: MessageEvent<any>) => {
+        const rawPacket = e.data;
 
-      let jsonPacket: any;
-      if (rawPacket instanceof Blob) {
-        const text = await rawPacket.text();
-        jsonPacket = JSON.parse(text);
-      } else if (typeof rawPacket === "string") {
-        jsonPacket = JSON.parse(rawPacket);
-      } else {
-        jsonPacket = rawPacket;
-      }
+        let jsonPacket: any;
+        if (rawPacket instanceof Blob) {
+          const text = await rawPacket.text();
+          jsonPacket = JSON.parse(text);
+        } else if (typeof rawPacket === "string") {
+          jsonPacket = JSON.parse(rawPacket);
+        } else {
+          jsonPacket = rawPacket;
+        }
 
-      const packet = jsonPacket;
+        const packet = jsonPacket;
 
-      console.log("Received packet:", jsonPacket);
+        console.log("Received packet:", jsonPacket);
 
-      // Ignore messages sent by ourselves. The server relays everything.
-      if (packet.sender === userId) return;
-      console.log("Packet sender: ", packet.sender);
-      console.log("Current user ID: ", userId);
+        // Ignore messages sent by ourselves. The server relays everything.
+        if (packet.sender === userId) return;
+        console.log("Packet sender: ", packet.sender);
+        console.log("Current user ID: ", userId);
 
-      switch (packet.type) {
-        case "change_theme":
-          console.log("Received change theme packet from server.");
-          const { mode, theme } = packet.content;
-          setMode(mode);
-          setTheme(theme);
-          const themeMessage: SystemMessage = {
-            id: `system_${Date.now()}`,
-            session_id: chatId,
-            created_at: new Date().toISOString(),
-            type: "system",
-            content: `Theme changed to ${theme.name} in ${mode} mode.`,
-            sender: "system",
-          };
-          setMessages((prev) => [...prev, themeMessage]);
-          break;
-        case "offline":
-          console.log("Received offline packet from server.");
+        switch (packet.type) {
+          case "change_theme":
+            console.log("Received change theme packet from server.");
+            const { mode, theme } = packet.content;
+            setMode(mode);
+            setTheme(theme);
+            const themeMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: `Theme changed to ${theme.name} in ${mode} mode.`,
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, themeMessage]);
+            break;
+          case "offline":
+            console.log("Received offline packet from server.");
 
-          const isPartnerOffline = packet.content !== userId;
-          const message = isPartnerOffline
-            ? `Your partner has went offline.`
-            : "You are currently offline.";
+            const isPartnerOffline = packet.content !== userId;
+            const message = isPartnerOffline
+              ? `Your partner has went offline.`
+              : "You are currently offline.";
 
-          const offlineMessage: SystemMessage = {
-            id: `system_${Date.now()}`,
-            session_id: chatId,
-            created_at: new Date().toISOString(),
-            type: "system",
-            content: message,
-            sender: "system",
-          };
-          setMessages((prev) => [...prev, offlineMessage]);
-          break;
-        case "disconnect":
-          console.log("Received disconnect packet from server.");
-          setStatus("disconnected");
-          const disconnectMessage: SystemMessage = {
-            id: `system_${Date.now()}`,
-            session_id: chatId,
-            created_at: new Date().toISOString(),
-            type: "system",
-            content: "The other user has disconnected.",
-            sender: "system",
-          };
-          setMessages((prev) => [...prev, disconnectMessage]);
+            const offlineMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: message,
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, offlineMessage]);
+            break;
+          case "disconnect":
+            console.log("Received disconnect packet from server.");
+            setStatus("disconnected");
+            const disconnectMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: "The other user has disconnected.",
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, disconnectMessage]);
 
-          ws.close();
-          wsRef.current = null;
-          eventSourceRef.current?.close();
-          eventSourceRef.current = null;
-          setChatId("");
+            ws.close();
+            wsRef.current = null;
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
+            setChatId("");
 
-          
-
-          break;
-        case "STATUS":
-          const statusMessage: SystemMessage = {
-            id: `system_${Date.now()}`,
-            session_id: chatId,
-            created_at: new Date().toISOString(),
-            type: "system",
-            content: packet.message,
-            sender: "system",
-          };
-          setMessages((prev) => [...prev, statusMessage]);
-          break;
-        case "message":
-          setMessages((prev) => [...prev, packet.content]);
-          break;
-        case "reaction":
-          const { message_id, emoji, user_id } = packet.content;
-          handleReaction(message_id, emoji, user_id);
-          break;
-        case "typing":
-          if (packet.sender === userId) return;
-          setStrangerTyping(packet.content as boolean);
-          break;
-        case "edit_message":
-          const {
-            message_id: editId,
-            new_content,
-            user_id: editorId,
-          } = packet.content;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === editId && msg.sender === editorId
-                ? { ...msg, content: new_content, edited: true }
-                : msg
-            )
-          );
-          break;
+            break;
+          case "STATUS":
+            const statusMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: packet.message,
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, statusMessage]);
+            break;
+          case "message":
+            setMessages((prev) => [...prev, packet.content]);
+            break;
+          case "reaction":
+            const { message_id, emoji, user_id } = packet.content;
+            handleReaction(message_id, emoji, user_id);
+            break;
+          case "typing":
+            if (packet.sender === userId) return;
+            setStrangerTyping(packet.content as boolean);
+            break;
+          case "edit_message":
+            const {
+              message_id: editId,
+              new_content,
+              user_id: editorId,
+            } = packet.content;
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === editId && msg.sender === editorId
+                  ? { ...msg, content: new_content, edited: true }
+                  : msg
+              )
+            );
+            break;
 
           default:
-          console.warn("Unknown packet type received:", packet.type);
-          const unknownMessage: SystemMessage = {
-            id: `system_${Date.now()}`,
-            session_id: chatId,
-            created_at: new Date().toISOString(),
-            type: "system",
-            content: `Unknown packet type received: ${packet.type} there is probably a new version of the site available. Please refresh the page.`,
-            sender: "system",
-          };
-          setMessages((prev) => [...prev, unknownMessage]);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket connection closed.");
-      setStatus("disconnected");
-      const disconnectMessage: SystemMessage = {
-        id: `system_${Date.now()}`,
-        session_id: chatId,
-        created_at: new Date().toISOString(),
-        type: "system",
-        content: "The connection has been closed.",
-        sender: "system",
+            console.warn("Unknown packet type received:", packet.type);
+            const unknownMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: `Unknown packet type received: ${packet.type} there is probably a new version of the site available. Please refresh the page.`,
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, unknownMessage]);
+        }
       };
-      setMessages((prev) => [...prev, disconnectMessage]);
-    };
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-      setStatus("error");
-    };
-  }, [userId, chatId, handleReaction]);
+      ws.onclose = () => {
+        console.log("WebSocket connection closed.");
+        setStatus("disconnected");
+        const disconnectMessage: SystemMessage = {
+          id: `system_${Date.now()}`,
+          session_id: chatId,
+          created_at: new Date().toISOString(),
+          type: "system",
+          content: "The connection has been closed.",
+          sender: "system",
+        };
+        setMessages((prev) => [...prev, disconnectMessage]);
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        setStatus("error");
+      };
+    },
+    [userId, chatId, handleReaction]
+  );
 
   return {
     screen,
