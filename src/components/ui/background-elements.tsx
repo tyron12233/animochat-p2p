@@ -1,6 +1,6 @@
 export default function BackgroundElements() {
     return (
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-5">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-5">
             {/* Floating Circles */}
             <div className="absolute top-1/4 left-1/4 w-24 h-24 bg-gradient-to-r from-green-100 to-green-50 rounded-full opacity-50 animate-float mix-blend-multiply"></div>
 

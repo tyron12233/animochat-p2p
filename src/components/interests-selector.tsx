@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { X, MessageSquarePlus, ChevronDown } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
 
 // Assuming this type is defined in a central types file
 export type PopularInterest = {
@@ -33,9 +34,13 @@ const UpdatesBox = () => {
         />
       </button>
       {isOpen && (
-        <div
+        <motion.div
           id="updatesbox-content"
-          className="p-4 border-t border-blue-200 text-sm text-blue-900 animate-in fade-in-0 slide-in-from-top-2 duration-300"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="p-4 border-t border-blue-200 text-sm text-blue-900 overflow-hidden"
         >
           <p className="font-semibold">
             First, a huge thank you to everyone who has been using the app and
@@ -63,7 +68,7 @@ const UpdatesBox = () => {
           <p>
             happy chatting :D -ts
           </p>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -79,6 +84,7 @@ interface InterestSelectorProps {
 }
 
 // --- CHILD COMPONENT: InterestTag ---
+// We remove the old `animate-in` class to let framer-motion handle it.
 const InterestTag = ({
   text,
   onRemove,
@@ -86,7 +92,7 @@ const InterestTag = ({
   text: string;
   onRemove: (text: string) => void;
 }) => (
-  <div className="tag inline-flex items-center bg-green-600 text-white py-1 px-3 rounded-full m-1 font-medium text-sm transition-all duration-200 animate-in fade-in-50">
+  <div className="tag inline-flex items-center bg-green-600 text-white py-1 px-3 rounded-full m-1 font-medium text-sm transition-all duration-200">
     <span>{text}</span>
     <button
       onClick={() => onRemove(text)}
@@ -150,7 +156,6 @@ const FeedbackDialog = ({
 
   useEffect(() => {
     if (isOpen) {
-      // Reset state when dialog opens
       dialogRef.current?.focus();
       setFeedback("");
       setIsSubmitting(false);
@@ -174,7 +179,7 @@ const FeedbackDialog = ({
       setSubmitSuccess(true);
       setTimeout(() => {
         onClose();
-      }, 2000); // Close dialog automatically after 2 seconds on success
+      }, 2000); 
     } catch (error) {
       setSubmitError("Failed to submit feedback. Please try again.");
       console.error(error);
@@ -184,72 +189,81 @@ const FeedbackDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-in fade-in-50"
-      aria-modal="true"
-      role="dialog"
-    >
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 p-8 relative transform transition-all duration-300 scale-95 animate-in slide-in-from-bottom-10"
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close dialog"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+          aria-modal="true"
+          role="dialog"
         >
-          <X size={24} />
-        </button>
-
-        <div className="flex flex-col items-center text-center">
-          <div className="bg-green-100 p-3 rounded-full mb-4">
-            <MessageSquarePlus className="text-green-600" size={32} />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Got a suggestion?
-          </h2>
-          <p className="text-gray-500 mb-6">
-            We'd love to hear your ideas for new features or improvements.
-          </p>
-        </div>
-
-        {submitSuccess ? (
-          <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="font-semibold text-green-700">
-              Thank you! Your feedback has been submitted.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="feedback-content" className="sr-only">
-                Your suggestion
-              </label>
-              <textarea
-                id="feedback-content"
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Type your suggestion here..."
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                required
-              />
-            </div>
-            {submitError && (
-              <p className="text-red-600 text-sm text-center">{submitError}</p>
-            )}
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-base disabled:bg-gray-400 disabled:cursor-wait flex items-center justify-center"
+          <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 p-8 relative"
+          >
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close dialog"
             >
-              {isSubmitting && <LoadingSpinner />}
-              {isSubmitting ? "Submitting..." : "Submit Feedback"}
-            </Button>
-          </form>
-        )}
-      </div>
-    </div>
+              <X size={24} />
+            </button>
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-green-100 p-3 rounded-full mb-4">
+                <MessageSquarePlus className="text-green-600" size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Got a suggestion?
+              </h2>
+              <p className="text-gray-500 mb-6">
+                We'd love to hear your ideas for new features or improvements.
+              </p>
+            </div>
+            {submitSuccess ? (
+              <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="font-semibold text-green-700">
+                  Thank you! Your feedback has been submitted.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="feedback-content" className="sr-only">
+                    Your suggestion
+                  </label>
+                  <textarea
+                    id="feedback-content"
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="Type your suggestion here..."
+                    className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    required
+                  />
+                </div>
+                {submitError && (
+                  <p className="text-red-600 text-sm text-center">{submitError}</p>
+                )}
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full rounded-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-base disabled:bg-gray-400 disabled:cursor-wait flex items-center justify-center"
+                >
+                  {isSubmitting && <LoadingSpinner />}
+                  {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                </Button>
+              </form>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -270,6 +284,26 @@ export default function InterestSelector({
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
   const API_BASE_URL = "https://animochat-turn-server.onrender.com";
+
+  // Animation variants for staggering the popular topics
+  const popularTopicsContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.07,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const popularTopicItemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+    },
+  };
 
   useEffect(() => {
     const fetchPopularInterests = async () => {
@@ -320,7 +354,7 @@ export default function InterestSelector({
       finalInterests = new Set(finalInterests).add(
         currentInput.trim().toUpperCase()
       );
-      onInterestsChange(finalInterests); // Update parent state immediately
+      onInterestsChange(finalInterests);
     }
     onFindMatch(finalInterests);
   };
@@ -329,7 +363,6 @@ export default function InterestSelector({
     const { error } = await supabase
       .from("suggestions")
       .insert([{ content: content }]);
-
     if (error) {
       console.error("Error submitting feedback to Supabase:", error);
       throw error;
@@ -342,17 +375,22 @@ export default function InterestSelector({
     if (error) return <p className="text-sm text-red-500">{error}</p>;
     if (popularInterests.length === 0)
       return <p className="text-sm text-gray-400">No active topics.</p>;
+      
+    // Each button is now a motion.button with animation variants
     return popularInterests.map(({ interest, count }) => (
-      <button
+      <motion.button
         key={interest}
+        variants={popularTopicItemVariants}
         onClick={() => addInterest(interest)}
-        className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 hover:scale-105 transition-all duration-200"
+        className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 transition-colors"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
       >
         <span>{interest}</span>
         <span className="bg-green-200 text-green-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-2">
           {count}
         </span>
-      </button>
+      </motion.button>
     ));
   };
 
@@ -360,13 +398,28 @@ export default function InterestSelector({
     <>
       <div className="w-[350px] max-w-full mx-auto">
         <div className="flex flex-wrap justify-center gap-2 min-h-[36px] mb-4">
-          {Array.from(interests).map((interest) => (
-            <InterestTag
-              key={interest}
-              text={interest}
-              onRemove={removeInterest}
-            />
-          ))}
+          {/* AnimatePresence will handle the enter/exit of tags */}
+          <AnimatePresence>
+            {Array.from(interests).map((interest) => (
+              <motion.div
+                key={interest}
+                layout
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
+                }}
+              >
+                <InterestTag
+                  text={interest}
+                  onRemove={removeInterest}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
         <Input
           id="interest-input"
@@ -384,9 +437,15 @@ export default function InterestSelector({
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
           Popular Topics
         </h3>
-        <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+        {/* This container animates its children when they appear */}
+        <motion.div 
+          className="flex flex-wrap justify-center gap-2 max-w-md mx-auto"
+          variants={popularTopicsContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {renderPopularInterests()}
-        </div>
+        </motion.div>
       </div>
 
       <div className="mt-12 w-[350px] max-w-full mx-auto">

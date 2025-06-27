@@ -8,7 +8,7 @@ import InterestSelector from "../components/interests-selector";
 import Chat from "../components/chat"; 
 import { useAnimochatV2 } from "../hooks/useAnimochat";
 import { Button } from "@/components/ui/button";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 export default function Home() {
   const {
@@ -37,12 +37,27 @@ export default function Home() {
     }
     startMatchmaking(Array.from(interestsToMatch));
   };
+  
+  // Animation properties for page transitions
+  // This defines how a screen will enter and exit the view.
+  const pageTransition = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.23, ease: "easeInOut" },
+  } as Variants;
 
   const renderScreen = () => {
+    // The switch statement now returns a motion.div for each screen.
+    // The `key` prop is crucial for AnimatePresence to track which element is entering/exiting.
     switch (screen) {
       case "chat":
         return (
-           <div className="h-full w-full flex items-center justify-center sm:p-4">
+           <motion.div 
+              key="chat"
+              {...pageTransition}
+              className="h-full w-full flex items-center justify-center sm:p-4"
+            >
               <Chat
                 goBack={() => {
                     handleGetStarted();
@@ -60,12 +75,16 @@ export default function Home() {
                 peerId={userId}
                 status={status}
               />
-          </div>
+          </motion.div>
         );
 
       case "matchmaking":
         return (
-          <>
+          <motion.div 
+            key="matchmaking"
+            {...pageTransition}
+            className="w-full h-full flex flex-col justify-center items-center"
+          >
             <div className="max-w-3xl mx-auto relative w-full">
               <div className="text-center mb-12">
                 <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
@@ -83,13 +102,17 @@ export default function Home() {
               isConnecting={isConnecting}
               status={status}
             />
-          </>
+          </motion.div>
         );
 
       case "intro":
       default:
         return (
-          <>
+          <motion.div 
+            key="intro"
+            {...pageTransition}
+            className="w-full h-full flex flex-col justify-center items-center"
+          >
             <div className="max-w-3xl mx-auto relative w-full">
               <div className="text-center mb-12">
                 <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
@@ -118,25 +141,25 @@ export default function Home() {
                 Get Started
               </Button>
             </div>
-          </>
+          </motion.div>
         );
     }
   };
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
-        {/* The main container now adapts its padding based on the screen */}
         <main className={`container h-full mx-auto flex flex-col ${screen === 'chat' ? 'p-0' : 'px-4 py-8 md:py-16'}`}>
-            {/* Background is only shown on intro/matchmaking screens */}
             {screen !== 'chat' && <BackgroundElements />}
 
             <div className="flex-grow flex flex-col justify-center items-center">
-                <AnimatePresence mode="sync">
+                {/* AnimatePresence handles the animation of components when they are mounted or unmounted.
+                  mode="wait" ensures that the exiting animation finishes before the new one begins, preventing layout overlaps.
+                */}
+                <AnimatePresence mode="wait">
                   {renderScreen()}
                 </AnimatePresence>
             </div>
 
-            {/* Footer is only shown on intro/matchmaking screens */}
             {screen !== 'chat' && (
                 <footer className="text-xs text-gray-500 text-center py-4 shrink-0">
                     <h3 className="py-4">
