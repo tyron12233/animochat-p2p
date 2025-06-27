@@ -58,17 +58,21 @@ const UpdatesBox = () => {
           </p>
 
           <p>
-            Our top priority is a seamless experience for every user. That's why we're moving to a new and improved system with a powerful network of dedicated chat servers to act as a robust middleman. (While still being cost-effective!)
+            Our top priority is a seamless experience for every user. That's why
+            we're moving to a new and improved system with a powerful network of
+            dedicated chat servers to act as a robust middleman. (While still
+            being cost-effective!)
           </p>
 
           <p>
-            This move is a significant step forward in our mission to provide a stable, fast, and scalable platform for all of our users. We're confident this new architecture will lead to a dramatically better chat experience.
+            This move is a significant step forward in our mission to provide a
+            stable, fast, and scalable platform for all of our users. We're
+            confident this new architecture will lead to a dramatically better
+            chat experience.
           </p>
 
-          <br/>
-          <p>
-            happy chatting :D -ts
-          </p>
+          <br />
+          <p>happy chatting :D -ts</p>
         </motion.div>
       )}
     </div>
@@ -180,7 +184,7 @@ const FeedbackDialog = ({
       setSubmitSuccess(true);
       setTimeout(() => {
         onClose();
-      }, 2000); 
+      }, 2000);
     } catch (error) {
       setSubmitError("Failed to submit feedback. Please try again.");
       console.error(error);
@@ -249,7 +253,9 @@ const FeedbackDialog = ({
                   />
                 </div>
                 {submitError && (
-                  <p className="text-red-600 text-sm text-center">{submitError}</p>
+                  <p className="text-red-600 text-sm text-center">
+                    {submitError}
+                  </p>
                 )}
                 <Button
                   type="submit"
@@ -377,7 +383,7 @@ export default function InterestSelector({
     if (error) return <p className="text-sm text-red-500">{error}</p>;
     if (popularInterests.length === 0)
       return <p className="text-sm text-gray-400">No active topics.</p>;
-      
+
     // Each button is now a motion.button with animation variants
     return popularInterests.map(({ interest, count }) => (
       <motion.button
@@ -400,30 +406,31 @@ export default function InterestSelector({
     <>
       <div className="w-[350px] max-w-full mx-auto">
         <AnimateChangeInHeight>
-          <div className="flex flex-wrap justify-center gap-2 min-h-[36px] mb-4">
-          {/* AnimatePresence will handle the enter/exit of tags */}
-          <AnimatePresence>
-            {Array.from(interests).map((interest) => (
-              <motion.div
-                key={interest}
-                layout
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.15 } }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 30,
-                }}
-              >
-                <InterestTag
-                  text={interest}
-                  onRemove={removeInterest}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+          <div className="flex flex-wrap justify-center gap-2 pb-4">
+            {/* AnimatePresence will handle the enter/exit of tags */}
+            <AnimatePresence>
+              {Array.from(interests).map((interest) => (
+                <motion.div
+                  key={interest}
+                  layout
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.5,
+                    transition: { duration: 0.12 },
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                >
+                  <InterestTag text={interest} onRemove={removeInterest} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </AnimateChangeInHeight>
         <Input
           id="interest-input"
@@ -443,14 +450,14 @@ export default function InterestSelector({
         </h3>
         {/* This container animates its children when they appear */}
         <AnimateChangeInHeight>
-          <motion.div 
-          className="flex flex-wrap justify-center gap-2 max-w-md mx-auto"
-          variants={popularTopicsContainerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {renderPopularInterests()}
-        </motion.div>
+          <motion.div
+            className="flex flex-wrap justify-center gap-2 max-w-md mx-auto"
+            variants={popularTopicsContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {renderPopularInterests()}
+          </motion.div>
         </AnimateChangeInHeight>
       </div>
 
