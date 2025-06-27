@@ -550,14 +550,14 @@ export default function Chat({
                 onStartTyping();
               }}
               placeholder="Type a message..."
-              className="text-[16px] flex-grow p-3 border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 bg-white/80"
+              className="text-[16px] flex-grow p-3 border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-600 bg-white/80"
               autoComplete="off"
               required
             />
             <Button
               type="submit"
               disabled={!currentMessage.trim() || status !== "connected"}
-              className="bg-green-500 text-white font-bold w-12 h-12 rounded-full hover:bg-green-600 flex items-center justify-center shadow-lg"
+              className="bg-green-600 text-white font-bold w-12 h-12 rounded-full hover:bg-green-700 flex items-center justify-center shadow-lg"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
