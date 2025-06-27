@@ -6,6 +6,7 @@ import { ChatThemeV2 } from "../lib/chat-theme";
 import { Message, User } from "../lib/types";
 import { AnimateChangeInHeight } from "../lib/animate-height-change";
 import ChatMessageItem from "./chat/chat-message-item";
+import { Circle, CircleIcon } from "lucide-react";
 
 interface ThemePickerDialogProps {
   isOpen: boolean;
@@ -159,6 +160,13 @@ export default function ThemePickerDialog({
     onClose();
   };
 
+  const handleThemeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTheme = themes.find((t) => t.name === event.target.value);
+    if (selectedTheme) {
+      setPreviewTheme(selectedTheme);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -186,24 +194,35 @@ export default function ThemePickerDialog({
             <div className="grid md:grid-cols-2 gap-6 p-5">
               {/* Left Side: Controls */}
               <div className="flex flex-col space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-3 text-gray-700 dark:text-gray-300">
-                    Theme
-                  </h3>
-                  <div className="flex flex-col space-y-2">
+                <div className="relative">
+                  <select
+                    value={previewTheme.name}
+                    onChange={handleThemeChange}
+                    style={{
+                      backgroundColor:
+                        previewTheme.inputArea.inputBackground[previewMode],
+                      color: previewTheme.inputArea.inputText[previewMode],
+                      borderColor: previewTheme.inputArea.border[previewMode],
+                    }}
+                    className="w-full px-4 py-2.5 rounded-lg border appearance-none transition-colors duration-300 focus:outline-none focus:ring-2"
+                  >
                     {themes.map((theme) => (
-                      <button
-                        key={theme.name}
-                        onClick={() => setPreviewTheme(theme)}
-                        className={`w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-medium ${
-                          previewTheme.name === theme.name
-                            ? "bg-green-600 text-white shadow"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
+                      <option key={theme.name} value={theme.name}>
                         {theme.name}
-                      </button>
+                      </option>
                     ))}
+                  </select>
+                  <div
+                    className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2"
+                    style={{ color: previewTheme.secondaryText[previewMode] }}
+                  >
+                    <svg
+                      className="fill-current h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                    </svg>
                   </div>
                 </div>
 
