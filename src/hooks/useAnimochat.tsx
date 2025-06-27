@@ -11,6 +11,8 @@ import type {
   UserMessage,
 } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
+import { useChatTheme } from "../context/theme-context";
+import { ChatThemeV2 } from "../lib/chat-theme";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
@@ -32,12 +34,18 @@ type EditMessagePacket = Packet<
   "edit_message"
 >;
 type DisconnectPacket = Packet<null, "disconnect">;
+type ChangeThemePacket = Packet<{
+  mode: "light" | "dark";
+  theme: ChatThemeV2
+}, "change_theme">;
 
 // This packet is used when the user is offline or not connected.
 // the content is a string (the user id of the user who when offline).
 type OfflinePacket = Packet<string, "offline">;
 
 export const useAnimochatV2 = () => {
+  const { setTheme, setMode } = useChatTheme();
+
   // --- State Management ---
   const [screen, setScreen] = useState<Screen>("intro");
   const [status, setStatus] = useState<Status>("initializing");
@@ -181,6 +189,30 @@ export const useAnimochatV2 = () => {
 
   // --- User Actions ---
 
+  const onChangeTheme = (mode: "light" | "dark", theme: ChatThemeV2) => {
+    console.log("THEME CHANGE REQUESTED");
+      if (!userId || !chatId) return;
+
+      const packet: ChangeThemePacket = {
+        type: "change_theme",
+        content: { mode, theme },
+        sender: userId,
+      };
+      sendPacket(packet);
+
+      setMode(mode);
+      setTheme(theme);
+
+      const themeMessage: SystemMessage = {
+        id: `system_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        type: "system",
+        content: `Theme changed to ${theme.name} in ${mode} mode.`,
+        sender: "system",
+      };
+      setMessages((prev) => [...prev, themeMessage]);
+    }
   const onStartTyping = useCallback(() => {
     if (isTypingRef.current) return; // Prevent sending too many events
     isTypingRef.current = true;
@@ -447,6 +479,21 @@ export const useAnimochatV2 = () => {
       console.log("Current user ID: ", userId);
 
       switch (packet.type) {
+        case "change_theme":
+          console.log("Received change theme packet from server.");
+          const { mode, theme } = packet.content;
+          setMode(mode);
+          setTheme(theme);
+          const themeMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatId,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: `Theme changed to ${theme.name} in ${mode} mode.`,
+            sender: "system",
+          };
+          setMessages((prev) => [...prev, themeMessage]);
+          break;
         case "offline":
           console.log("Received offline packet from server.");
 
@@ -557,6 +604,7 @@ export const useAnimochatV2 = () => {
     sendMessage,
     disconnect,
     onReact,
+    onChangeTheme,
     editMessage,
     onStartTyping,
   };

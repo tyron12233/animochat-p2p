@@ -17,6 +17,7 @@ export default function Home() {
     status,
     messages,
     startMatchmaking,
+    onChangeTheme,
     disconnect,
     editMessage,
     sendMessage,
@@ -48,8 +49,6 @@ export default function Home() {
   } as Variants;
 
   const renderScreen = () => {
-    // The switch statement now returns a motion.div for each screen.
-    // The `key` prop is crucial for AnimatePresence to track which element is entering/exiting.
     switch (screen) {
       case "chat":
         return (
@@ -66,6 +65,7 @@ export default function Home() {
                 onStartTyping={onStartTyping}
                 isStrangerTyping={isStrangerTyping}
                 onReact={onReact}
+                onChangeTheme={onChangeTheme}
                 messages={messages}
                 sendMessage={sendMessage}
                 newChat={() => {

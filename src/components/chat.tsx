@@ -26,6 +26,7 @@ interface ChatProps {
   messages: Message[];
   sendMessage: (text: string, replyingToId: string | undefined) => void;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
+  onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   isStrangerTyping: boolean;
   onStartTyping: () => void;
@@ -78,6 +79,7 @@ export default function Chat({
   onStartTyping,
   onEditMessage,
   isStrangerTyping,
+  onChangeTheme,
   endChat,
   newChat,
   onReact,
@@ -284,8 +286,6 @@ export default function Chat({
   };
 
   const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
-  const [activeTheme, setActiveTheme] = useState<ChatThemeV2>(defaultTheme);
-  const [activeMode, setActiveMode] = useState<"light" | "dark">("light");
 
   return (
     <>
@@ -294,10 +294,11 @@ export default function Chat({
          isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
         themes={[defaultTheme]}
-        activeTheme={activeTheme}
-        setActiveTheme={setActiveTheme}
-        activeMode={activeMode}
-        setActiveMode={setActiveMode}
+        activeTheme={theme}
+        setActiveThemeAndMode={(theme, mode) => {
+          onChangeTheme?.(mode, theme);
+        }}
+        activeMode={mode}
       />
       <EmojiOverlay
         open={emojiMenuState.open}

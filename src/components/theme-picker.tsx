@@ -12,9 +12,8 @@ interface ThemePickerDialogProps {
   onClose: () => void;
   themes: ChatThemeV2[];
   activeTheme: ChatThemeV2;
-  setActiveTheme: (theme: ChatThemeV2) => void;
+  setActiveThemeAndMode: (theme: ChatThemeV2, mode: "light" | "dark") => void;
   activeMode: "light" | "dark";
-  setActiveMode: (mode: "light" | "dark") => void;
 }
 
 const ThemePreview = ({
@@ -27,7 +26,7 @@ const ThemePreview = ({
   const isEmojiMenuOpen = useRef(false);
   const user: User = {
     id: "me",
-  }
+  };
   const previewMessages: Message[] = [
     {
       id: "1",
@@ -38,7 +37,7 @@ const ThemePreview = ({
       hasNext: true,
     } as Message,
 
-       {
+    {
       id: "3",
       content: "I can't think of anything to put here",
       sender: "stranger",
@@ -62,9 +61,8 @@ const ThemePreview = ({
       created_at: new Date().toISOString(),
       session_id: "1",
       hasPrevious: true,
-      // haha react
-         reactions: [{ emoji: "😆", user_id: "1", message_id: "8" }],
-    } as any
+      reactions: [{ emoji: "😆", user_id: "1", message_id: "8" }],
+    } as any,
   ];
 
   const renderMessage = (msg: Message, index: number) => {
@@ -138,9 +136,8 @@ export default function ThemePickerDialog({
   onClose,
   themes,
   activeTheme,
-  setActiveTheme,
+  setActiveThemeAndMode,
   activeMode,
-  setActiveMode,
 }: ThemePickerDialogProps) {
   const [previewTheme, setPreviewTheme] = useState(activeTheme);
   const [previewMode, setPreviewMode] = useState(activeMode);
@@ -151,8 +148,7 @@ export default function ThemePickerDialog({
   }, [isOpen, activeTheme, activeMode]);
 
   const handleSave = () => {
-    setActiveTheme(previewTheme);
-    setActiveMode(previewMode);
+    setActiveThemeAndMode(previewTheme, previewMode);
     onClose();
   };
 

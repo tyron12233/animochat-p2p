@@ -7,6 +7,7 @@ type ThemeMode = "light" | "dark";
 interface ThemeContextType {
   theme: ChatThemeV2;
   mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
   setTheme: (theme: ChatThemeV2) => void;
 }
 
@@ -24,6 +25,7 @@ export const ChatThemeProvider = ({
     () => ({
       theme,
       mode,
+      setMode,
       setTheme,
     }),
     [theme, mode]
