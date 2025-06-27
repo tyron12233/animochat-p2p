@@ -398,6 +398,9 @@ export const useAnimochatV2 = () => {
 
       setScreen("chat");
       setStatus("finding_match");
+      setTheme(defaultTheme);
+      setMode("light");
+
       const interestsParam = interests.join(",");
       const url = `${API_BASE_URL}/matchmaking?userId=${userId}&interest=${interestsParam}`;
 
