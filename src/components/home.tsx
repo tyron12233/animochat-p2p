@@ -31,7 +31,10 @@ export default function Home() {
   const [interests, setInterests] = useState<Set<string>>(new Set());
 
   const handleFindMatch = (interestsToMatch: Set<string>) => {
-    if (interestsToMatch.size === 0) return;
+    if (interestsToMatch.size === 0) {
+      handleGetStarted()
+      return;
+    }
     startMatchmaking(Array.from(interestsToMatch));
   };
 

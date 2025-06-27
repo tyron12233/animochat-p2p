@@ -396,7 +396,7 @@ export const useAnimochatV2 = () => {
     [userId]
   );
 
-  const setupWebsocketListeners = (
+  const setupWebsocketListeners = useCallback((
     ws: WebSocket,
     chatId: string,
     interests: string[] = [],
@@ -443,6 +443,8 @@ export const useAnimochatV2 = () => {
 
       // Ignore messages sent by ourselves. The server relays everything.
       if (packet.sender === userId) return;
+      console.log("Packet sender: ", packet.sender);
+      console.log("Current user ID: ", userId);
 
       switch (packet.type) {
         case "offline":
@@ -504,6 +506,7 @@ export const useAnimochatV2 = () => {
           handleReaction(message_id, emoji, user_id);
           break;
         case "typing":
+          if (packet.sender === userId) return;
           setStrangerTyping(packet.content as boolean);
           break;
         case "edit_message":
@@ -541,7 +544,7 @@ export const useAnimochatV2 = () => {
       console.error("WebSocket error:", err);
       setStatus("error");
     };
-  };
+  }, [userId, chatId, handleReaction]);
 
   return {
     screen,
