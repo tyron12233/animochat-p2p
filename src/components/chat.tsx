@@ -246,9 +246,9 @@ export default function Chat({
     if (isSystem) {
       return (
         <div key={index} className="text-center my-2 mx-4">
-          <p className="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+          <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1">
             {msg.content}
-          </p>
+          </span>
         </div>
       );
     }
