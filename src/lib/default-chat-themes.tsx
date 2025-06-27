@@ -8,7 +8,7 @@ export const defaultTheme: ChatThemeV2 = {
     baseFontSize: "16px",
   },
   accent: {
-    main: { light: "#16a34a", dark: "#22c55e" },
+    main: { light: "#16a34a", dark: "#16a34a" },
     faded: { light: "rgba(22, 163, 74, 0.1)", dark: "rgba(34, 197, 94, 0.1)" },
   },
   secondaryText: { light: "#6b7280", dark: "#9ca3af" },
@@ -36,7 +36,7 @@ export const defaultTheme: ChatThemeV2 = {
     },
     replyingPreview: {
         background: { light: "#f3f4f6", dark: "#1f2937" },
-        border: { light: "#16a34a", dark: "#22c55e" },
+        border: { light: "#16a34a", dark: "#16a34a" },
         closeIcon: {
             light: "#6b7280",
             dark: "#9ca3af",
@@ -61,16 +61,16 @@ export const defaultTheme: ChatThemeV2 = {
     background: { light: "rgba(255, 255, 255, 0.6)", dark: "rgba(29, 39, 53, 0.6)" },
     border: { light: "rgba(229, 231, 235, 0.8)", dark: "rgba(55, 65, 81, 0.8)" },
     statusLabel: { light: "#6b7280", dark: "#9ca3af" },
-    statusValue: { light: "#16a34a", dark: "#22c55e" },
+    statusValue: { light: "#16a34a", dark: "#16a34a" },
   },
   message: {
      myMessage: {
-        background: { light: '#22c55e', dark: '#16a34a' },
+        background: { light: '#16a34a', dark: '#16a34a' },
         text: { light: '#ffffff', dark: '#ffffff' },
         isAnimated: false,
      },
      strangerMessage: {
-        background: { light: '#e5e7eb', dark: '#374151' },
+        background: { light: '#f3f4f6', dark: '#374151' },
         text: { light: '#1f2937', dark: '#f9fafb' },
         isAnimated: false,
      },
@@ -92,16 +92,16 @@ export const defaultTheme: ChatThemeV2 = {
     inputBackground: { light: "rgba(255, 255, 255, 0.8)", dark: "rgba(55, 65, 81, 0.5)" },
     inputText: { light: "#111827", dark: "#f9fafb" },
     placeholderText: { light: "#9ca3af", dark: "#6b7280" },
-    focusRing: { light: "#16a34a", dark: "#22c55e" },
+    focusRing: { light: "#16a34a", dark: "#16a34a" },
   },
   buttons: {
     primary: {
-      background: { light: "#16a34a", dark: "#22c55e" },
+      background: { light: "#16a34a", dark: "#16a34a" },
       text: { light: "#ffffff", dark: "#ffffff" },
       hoverBackground: { light: "#15803d", dark: "#16a34a" },
     },
     secondary: {
-      background: { light: "#e5e7eb", dark: "#374151" },
+      background: { light: "#fff", dark: "#374151" },
       text: { light: "#1f2937", dark: "#f9fafb" },
       hoverBackground: { light: "#d1d5db", dark: "#4b5563" },
       border: { light: "#d1d5db", dark: "#4b5563" }
@@ -117,11 +117,11 @@ export const defaultTheme: ChatThemeV2 = {
       text: { light: "#ffffff", dark: "#ffffff" },
       hoverBackground: { light: "#d97706", dark: "#f59e0b" },
     },
-
+    
   },
   reactions: {
     bubble: {
-      background: { light: "#e5e7eb", dark: "#374151" },
+      background: { light: "#f3f4f6", dark: "#374151" },
       border: { light: "#ffffff", dark: "#111827" },
       text: { light: "#111827", dark: "#f3f4f6" },
     },

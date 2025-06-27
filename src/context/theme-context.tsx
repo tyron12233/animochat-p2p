@@ -18,7 +18,7 @@ export const ChatThemeProvider = ({
   children: React.ReactNode;
 }) => {
   const [theme, setTheme] = useState<ChatThemeV2>(defaultTheme);
-  const [mode, setMode] = useState<ThemeMode>("dark");
+  const [mode, setMode] = useState<ThemeMode>("light");
 
   const value = useMemo(
     () => ({

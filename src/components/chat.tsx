@@ -17,6 +17,10 @@ import { AnimateChangeInHeight } from "../lib/animate-height-change";
 import { supabase } from "../lib/supabase";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
+import { Button } from "@/components/ui/button";
+import { Palette } from "lucide-react";
+import ThemePickerDialog from "./theme-picker";
+import { defaultTheme } from "../lib/default-chat-themes";
 
 interface ChatProps {
   messages: Message[];
@@ -279,9 +283,22 @@ export default function Chat({
     );
   };
 
+  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<ChatThemeV2>(defaultTheme);
+  const [activeMode, setActiveMode] = useState<"light" | "dark">("light");
+
   return (
     <>
       <DynamicGlobalStyles theme={theme} mode={mode} />
+      <ThemePickerDialog 
+         isOpen={isThemePickerOpen}
+        onClose={() => setIsThemePickerOpen(false)}
+        themes={[defaultTheme]}
+        activeTheme={activeTheme}
+        setActiveTheme={setActiveTheme}
+        activeMode={activeMode}
+        setActiveMode={setActiveMode}
+      />
       <EmojiOverlay
         open={emojiMenuState.open}
         message={emojiMenuState.message!}
@@ -342,7 +359,7 @@ export default function Chat({
           className="p-4 border-b flex items-center shrink-0"
         >
           {status !== "connected" && (
-            <button onClick={goBack} className="rounded-full mr-2 p-1">
+            <Button onClick={goBack} className="rounded-full mr-2 p-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -356,7 +373,7 @@ export default function Chat({
               >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </button>
+            </Button>
           )}
 
           <div className="text-left mr-auto ml-2">
@@ -374,9 +391,23 @@ export default function Chat({
             </p>
           </div>
 
+          {/* Icon Button For Theme Picker */}
+          <Button
+          onClick={() => setIsThemePickerOpen(true)}
+            variant={"outline"}
+            className="mr-2 rounded-full"
+            style={{
+              backgroundColor: theme.buttons.secondary.background[mode],
+              color: theme.buttons.secondary.text[mode],
+              borderColor:
+                theme.buttons.secondary.border?.[mode] || "transparent",
+            }}
+          >
+            <Palette />
+          </Button>
           {/* These buttons can be further customized via theme props if the Button component supports it */}
           {status === "connected" && (
-            <button
+            <Button
               onClick={() =>
                 confirmedEnd
                   ? (endChat(), setConfirmedEnd(false))
@@ -406,7 +437,7 @@ export default function Chat({
               }}
             >
               {confirmedEnd ? "Confirm?" : "End Chat"}
-            </button>
+            </Button>
           )}
           {status !== "connected" && (
             <button
