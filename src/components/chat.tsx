@@ -20,7 +20,7 @@ import { ChatThemeV2 } from "../lib/chat-theme";
 import { Button } from "@/components/ui/button";
 import { Palette } from "lucide-react";
 import ThemePickerDialog from "./theme-picker";
-import { defaultTheme } from "../lib/default-chat-themes";
+import { defaultTheme, tyronsTheme } from "../lib/default-chat-themes";
 
 interface ChatProps {
   messages: Message[];
@@ -290,10 +290,10 @@ export default function Chat({
   return (
     <>
       <DynamicGlobalStyles theme={theme} mode={mode} />
-      <ThemePickerDialog 
-         isOpen={isThemePickerOpen}
+      <ThemePickerDialog
+        isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
-        themes={[defaultTheme]}
+        themes={[defaultTheme, tyronsTheme,]}
         activeTheme={theme}
         setActiveThemeAndMode={(theme, mode) => {
           onChangeTheme?.(mode, theme);
@@ -394,7 +394,7 @@ export default function Chat({
 
           {/* Icon Button For Theme Picker */}
           <Button
-          onClick={() => setIsThemePickerOpen(true)}
+            onClick={() => setIsThemePickerOpen(true)}
             variant={"outline"}
             className="mr-2 rounded-full"
             style={{
