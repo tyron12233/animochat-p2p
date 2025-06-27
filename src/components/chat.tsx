@@ -18,6 +18,7 @@ import { TypingIndicator } from "./chat/typing-indicator";
 import { AnimatePresence, motion } from "framer-motion";
 import { FindingMatchAnimation } from "./chat/finding-match";
 import { AnimateChangeInHeight } from "../lib/animate-height-change";
+import { supabase } from "../lib/supabase";
 
 interface ChatProps {
   messages: Message[];
@@ -47,6 +48,60 @@ export default function Chat({
   status,
 }: ChatProps) {
   const user: User = { id: peerId };
+
+  const [announcement, setAnnouncement] = useState<string | null>(null);
+
+  // supabase notification
+  useEffect(() => {
+    const getAnnouncement = async () => {
+      // from the supabase client, fetch latest announcement on the announcements table
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error("Error fetching announcement:", error);
+        return;
+      }
+
+      if (!data || !data.content ) {
+        return;
+      }
+
+      if (data) {
+        setAnnouncement(data.content);
+      }
+    };
+
+    const channel = supabase
+      .channel("public:announcements")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, (payload) => {
+        console.log("New announcement:", payload);
+        if (!payload.new.content) return;
+        setAnnouncement(payload.new.content);
+      })
+      .subscribe();
+
+    //  on update
+    const updateChannel = supabase
+      .channel("public:announcements")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "announcements" }, (payload) => {
+        console.log("Updated announcement:", payload);
+        if (!payload.new.content) return;
+        setAnnouncement(payload.new.content);
+      })
+      .subscribe();
+
+    getAnnouncement();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(updateChannel);
+    };
+  }, []);
 
   const actualMessages = useActualMessages(messages);
 

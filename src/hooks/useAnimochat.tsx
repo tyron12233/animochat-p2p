@@ -31,6 +31,7 @@ type EditMessagePacket = Packet<
   { message_id: string; new_content: string; user_id: string },
   "edit_message"
 >;
+type DisconnectPacket = Packet<null, "disconnect">;
 
 export const useAnimochatV2 = () => {
   // --- State Management ---
@@ -74,6 +75,8 @@ export const useAnimochatV2 = () => {
           setStatus("ready");
           return;
         }
+
+        console.log("Found existing session:", data);
 
         setChatId(data.chatId);
 
@@ -279,10 +282,7 @@ export const useAnimochatV2 = () => {
   );
 
   const disconnect = useCallback(() => {
-    wsRef.current?.close();
-    wsRef.current = null;
-    eventSourceRef.current?.close();
-    eventSourceRef.current = null;
+
 
     const disconnectFromApi = async () => {
 
@@ -309,9 +309,25 @@ export const useAnimochatV2 = () => {
       }
     };
 
+
+
     disconnectFromApi().then(() => {
       console.log("Disconnected from matchmaking and chat.");
     })
+
+    if (wsRef.current) {
+      const disconnectPacket: DisconnectPacket = {
+        type: "disconnect",
+        content: null,
+        sender: userId,
+      };
+      wsRef.current.send(JSON.stringify(disconnectPacket));
+    }
+
+   
+ wsRef.current?.close();    wsRef.current = null;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
 
     setStatus("disconnected");
     setChatId("");
@@ -425,6 +441,28 @@ export const useAnimochatV2 = () => {
       if (packet.sender === userId) return;
 
       switch (packet.type) {
+        case "disconnect":
+          console.log("Received disconnect packet from server.");
+          setStatus("disconnected");
+          const disconnectMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatId,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: "The other user has disconnected.",
+            sender: "system",
+          };
+          setMessages((prev) => [...prev, disconnectMessage]);
+
+          ws.close();
+          wsRef.current = null;
+          eventSourceRef.current?.close();
+          eventSourceRef.current = null;
+          setChatId("");
+
+          
+
+          break;
         case "STATUS":
           const statusMessage: SystemMessage = {
             id: `system_${Date.now()}`,
