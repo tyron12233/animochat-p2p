@@ -1,453 +1,410 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  Dispatch,
-} from "react";
-import { DataConnection, Peer } from "peerjs";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type {
   Screen,
   MatchmakingData,
-  ChatMessage,
   Message,
   Reaction,
   Status,
+  SystemMessage,
+  UserMessage,
 } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
 
+// --- Configuration ---
+// The base URL for your matchmaking server.
 const API_BASE_URL = "https://animochat-turn-server.onrender.com";
 
-type PeerConnectionPacket<Content, Type extends String> = {
-  type: Type;
-  content: Content;
+// --- Packet Types for WebSocket Communication ---
+// These define the structure of messages sent over the WebSocket connection.
+type Packet<T, K extends string> = {
+  type: K;
+  content: T;
   sender: string;
 };
 
-type MessagePacket = PeerConnectionPacket<Message, "message">;
-type ReactionPacket = PeerConnectionPacket<Reaction, "reaction">;
-type HandshakePacket = PeerConnectionPacket<string, "handshake">;
-type HandshakeResponsePacket = PeerConnectionPacket<
-  string,
-  "handshake_response"
+type MessagePacket = Packet<UserMessage, "message">;
+type ReactionPacket = Packet<Reaction, "reaction">;
+type TypingPacket = Packet<boolean, "typing">;
+type EditMessagePacket = Packet<
+  { message_id: string; new_content: string; user_id: string },
+  "edit_message"
 >;
-type TypingPacket = PeerConnectionPacket<boolean, "typing">;
 
-/**
- * Custom hook to manage all state and logic for the AnimoChat application,
- * including PeerJS setup, matchmaking, and chat state.
- */
-export const useAnimoChat = () => {
+export const useAnimochatV2 = () => {
+  // --- State Management ---
   const [screen, setScreen] = useState<Screen>("intro");
-  const [peerId, setPeerId] = useState<string>("");
-  const [conn, setConn] = useState<DataConnection | null>(null);
   const [status, setStatus] = useState<Status>("initializing");
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [userId, setUserId] = useState<string>("");
+  const [chatId, setChatId] = useState<string>("");
+  const [isStrangerTyping, setStrangerTyping] = useState<boolean>(false);
 
-  const peerRef = useRef<Peer | null>(null);
-  const matchmakingSource = useRef<EventSource | null>(null);
+  // --- Refs for managing connections and state ---
+  const wsRef = useRef<WebSocket | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const isTypingRef = useRef<boolean>(false);
 
-  const [isStrangerTyping, setStrangerTyping] = useState(false);
+  // --- Initial setup: Generate a unique ID for the user ---
+  useEffect(() => {
+    // Generate a unique identifier for this user session.
+    setUserId(uuidv4());
+    setStatus("ready");
 
-  const resetState = useCallback(
-    (statusMessage: Status = "ready") => {
-      if (conn) conn.close();
-      if (matchmakingSource.current) matchmakingSource.current.close();
-      setConn(null);
-      setMessages([]);
-      setScreen("matchmaking");
-      setStatus(statusMessage);
-      setIsConnecting(false);
-    },
-    [conn]
-  );
+    // Cleanup function to close any open connections when the component unmounts.
+    return () => {
+      console.log("Cleaning up useAnimochat hook.");
+      eventSourceRef.current?.close();
+      wsRef.current?.close();
+    };
+  }, []);
 
-  const initializePeer = useCallback(() => {
-    if (typeof window !== "undefined" && !peerRef.current) {
-      const newPeer = new Peer({
-        config: {
-          iceTransportPolicy: "relay",
-          iceServers: [
-            {
-              urls: "turn:relay1.expressturn.com:3480",
-              username: "000000002066065602",
-              credential: "AlQhdlmP9HdGw+NC1+Zs9vtvHQU=",
-            },
+  // --- Core Data Handling Functions ---
 
-            { url: "stun:stun.l.google.com:19302" },
-          ],
-        },
-      });
-      peerRef.current = newPeer;
+  /**
+   * Handles updating the UI when a reaction is added, changed, or removed.
+   * @param messageId The ID of the message being reacted to.
+   * @param emoji The emoji string, or null to remove the reaction.
+   * @param reactingUserId The ID of the user who is reacting.
+   */
+  const handleReaction = (
+    messageId: string,
+    emoji: string | null,
+    reactingUserId: string
+  ) => {
+    console.log("Handling reaction:", {
+      messageId,
+      emoji,
+      userId: reactingUserId,
+    });
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) => {
+        if (msg.id !== messageId || msg.type === "system") return msg;
 
-      newPeer.on("open", (id) => {
-        setPeerId(id);
-        setStatus("ready");
-        setIsConnecting(false);
-      });
+        const reactions = msg.reactions || [];
+        const existingReactionIndex = reactions.findIndex(
+          (r) => r.user_id === reactingUserId
+        );
+        let newReactions: Reaction[];
 
-      newPeer.on("connection", (newConn) => {
-        console.log("New connection");
-        setConn(newConn);
-        setScreen("chat");
-        setIsConnecting(false);
-        setStatus("connecting");
-      });
-
-      newPeer.on("error", (err) => {
-        console.error("PeerJS error:", err);
-        resetState("error");
-      });
-    }
-  }, [resetState]);
-
-  const handleGetStarted = () => {
-    setScreen("matchmaking");
-    if (!peerRef.current) {
-      setIsConnecting(true);
-      initializePeer();
-    }
+        if (existingReactionIndex > -1) {
+          if (emoji) {
+            // Replace existing reaction
+            newReactions = [...reactions];
+            newReactions[existingReactionIndex] = {
+              user_id: reactingUserId,
+              emoji,
+              message_id: messageId,
+            };
+          } else {
+            // Remove the reaction
+            newReactions = reactions.filter(
+              (_, index) => index !== existingReactionIndex
+            );
+          }
+        } else if (emoji) {
+          // Add a new reaction
+          newReactions = [
+            ...reactions,
+            { user_id: reactingUserId, emoji, message_id: messageId },
+          ];
+        } else {
+          // Do nothing
+          newReactions = reactions;
+        }
+        return { ...msg, reactions: newReactions };
+      })
+    );
   };
 
-  const handleReaction = useCallback(
-    (messageId: string, emoji: string | null, userId: string) => {
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) => {
-          if (msg.id !== messageId || msg.type === "system") return msg;
+  /**
+   * Sends a packet through the WebSocket connection if it is open.
+   * @param packet The data packet to send.
+   */
+  const sendPacket = useCallback((packet: any) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(packet));
+    } else {
+      console.error("Cannot send packet, WebSocket connection is not open.");
+    }
+  }, []);
 
-          const reactions = msg.reactions || [];
-          const existingReactionIndex = reactions.findIndex(
-            (r) => r.user_id === userId
-          );
-          let newReactions: Reaction[];
+  // --- User Actions ---
 
-          if (existingReactionIndex > -1) {
-            // User has reacted before.
-            if (emoji) {
-              // Replace existing reaction.
-              newReactions = [...reactions];
-              newReactions[existingReactionIndex] = {
-                user_id: userId,
-                emoji,
-                message_id: messageId,
-              };
-            } else {
-              // Emoji is null, so remove the reaction.
-              newReactions = reactions.filter(
-                (_, index) => index !== existingReactionIndex
-              );
-            }
-          } else if (emoji) {
-            // User has not reacted before, and there's an emoji to add.
-            newReactions = [
-              ...reactions,
-              { user_id: userId, emoji, message_id: messageId },
-            ];
-          } else {
-            // No existing reaction and no new emoji, so do nothing.
-            newReactions = reactions;
-          }
+  const onStartTyping = useCallback(() => {
+    if (isTypingRef.current) return; // Prevent sending too many events
+    isTypingRef.current = true;
 
-          return { ...msg, reactions: newReactions };
-        })
-      );
-    },
-    []
-  );
+    const startTypingPacket: TypingPacket = {
+      type: "typing",
+      content: true,
+      sender: userId,
+    };
+    sendPacket(startTypingPacket);
 
-  const startMatchmaking = useCallback(
-    (interests: string[]) => {
-      if (!peerId || interests.length === 0 || !peerRef.current) return;
-
-      setMessages([]);
-
-      setStatus("finding_match");
-      setIsConnecting(true);
-
-      const interestsParam = interests.join(",");
-      const url = `${API_BASE_URL}/matchmaking?userId=${peerId}&interest=${interestsParam}`;
-
-      const eventSource = new EventSource(url);
-      matchmakingSource.current = eventSource;
-
-      eventSource.onopen = () => setStatus("waiting_for_match");
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data: MatchmakingData = JSON.parse(event.data);
-          if (data.state === "MATCHED" && peerRef.current) {
-            setStatus("connecting");
-            const newConn = peerRef.current.connect(data.matchedUserId, {
-              metadata: { interest: data.interest },
-            });
-
-            setConn(newConn);
-            setScreen("chat");
-            setIsConnecting(false);
-            eventSource.close();
-          }
-        } catch (e) {
-          console.error("Failed to parse matchmaking data:", e);
-        }
+    // Set a timeout to automatically send a "stop typing" event.
+    setTimeout(() => {
+      isTypingRef.current = false;
+      const stopTypingPacket: TypingPacket = {
+        type: "typing",
+        content: false,
+        sender: userId,
       };
+      sendPacket(stopTypingPacket);
+    }, 3000);
+  }, [userId, sendPacket]);
 
-      eventSource.onerror = () => {
-        console.error("Matchmaking EventSource error.");
-        resetState("error");
-      };
-    },
-    [peerId, resetState]
-  );
+  const onReact = useCallback(
+    async (messageId: string, emoji?: string | null) => {
+      if (!userId) return;
+      // Optimistically update the UI for the local user immediately.
+      handleReaction(messageId, emoji || null, userId);
 
-  const onReact = async (messageId: string, emoji?: string | null) => {
-    // Optimistically update the UI for the local user.
-    handleReaction(messageId, emoji || null, peerId);
-
-    // Send the reaction to the other peer.
-    if (conn && conn.open) {
+      // Send the reaction packet to the server to be relayed to the other user.
       const packet: ReactionPacket = {
         type: "reaction",
-        sender: peerId,
+        sender: userId,
         content: {
           message_id: messageId,
           emoji: emoji || null,
-          user_id: peerId,
+          user_id: userId,
         },
       };
-      conn.send(packet);
-    }
-  };
+      sendPacket(packet);
+    },
+    [userId, sendPacket]
+  );
 
-  const isTypingRef = useRef<boolean>(false);
+  const editMessage = useCallback(
+    (messageId: string, newContent: string) => {
+      if (!newContent || !messageId || !userId) return;
 
-  // the current user typing
-  const onStartTyping = () => {
-    // add debounce
-    if (isTypingRef.current) return; // Prevent multiple calls
-    isTypingRef.current = true;
+      // Optimistically update local UI.
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, content: newContent, edited: true }
+            : msg
+        )
+      );
 
-    if (conn && conn.open) {
-      const packet: TypingPacket = {
-        type: "typing",
-        content: true,
-        sender: peerId,
+      const packet: EditMessagePacket = {
+        type: "edit_message",
+        content: {
+          message_id: messageId,
+          new_content: newContent,
+          user_id: userId,
+        },
+        sender: userId,
       };
-      conn.send(packet);
-    }
+      sendPacket(packet);
+    },
+    [userId, sendPacket]
+  );
 
-    setTimeout(() => {
-      isTypingRef.current = false;
-      if (conn && conn.open) {
-        const packet: TypingPacket = {
-          type: "typing",
-          content: false,
-          sender: peerId,
-        };
-        conn.send(packet);
-      }
-    }, 3000);
-  };
+  const sendMessage = useCallback(
+    (content: string, replyingToId?: string) => {
+      if (!userId || !chatId) return;
 
-  const sendMessage = (text: string) => {
-    // set typing to false
-    isTypingRef.current = false;
-    if (conn && conn.open) {
-      const packet: TypingPacket = {
+      const stopTypingPacket: TypingPacket = {
         type: "typing",
         content: false,
-        sender: peerId,
+        sender: userId,
       };
-      conn.send(packet);
-    }
+      sendPacket(stopTypingPacket);
 
-    if (conn && conn.open && text) {
-      const message: Message = {
-        id: uuidv4(),
-        content: text,
-        sender: peerId,
-        session_id: "1",
+      const message: UserMessage = {
+        id: `msg_${Date.now()}`,
+        session_id: chatId,
         created_at: new Date().toISOString(),
+        content,
+        replyingTo: replyingToId,
+        sender: userId,
       };
 
       const packet: MessagePacket = {
         type: "message",
         content: message,
-        sender: peerId,
+        sender: userId,
       };
-      conn.send(packet);
+      sendPacket(packet);
 
+      // Add the message to the local state immediately.
       setMessages((prev) => [...prev, message]);
-    }
-  };
+    },
+    [userId, chatId, sendPacket]
+  );
 
-  const endChat = () => {
+  const disconnect = useCallback(() => {
+    wsRef.current?.close();
+    wsRef.current = null;
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+
     setStatus("disconnected");
+    setChatId("");
+  }, []);
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: uuidv4(),
-        content: "You have ended the chat.",
-        type: "system",
-        sender: "system",
-        timestamp: new Date().toISOString(),
-        session_id: "1",
-        created_at: new Date().toISOString(),
-      },
-    ]);
+  // --- Matchmaking and Connection Logic ---
 
-    if (conn) {
-      conn.close();
-      setConn(null);
-    }
-    if (matchmakingSource.current) {
-      matchmakingSource.current.close();
-      matchmakingSource.current = null;
-    }
+  const startMatchmaking = useCallback(
+    (interests: string[]) => {
+      if (!userId) {
+        console.error("User ID not set yet. Cannot start matchmaking.");
+        setStatus("error");
+        return;
+      }
 
-    setIsConnecting(false);
-  };
+      setScreen("chat");
+      setStatus("finding_match");
+      const interestsParam = interests.join(",");
+      const url = `${API_BASE_URL}/matchmaking?userId=${userId}&interest=${interestsParam}`;
 
-  useEffect(() => {
-    if (status == "connected" && conn && peerRef.current) {
-      const matchedOn = conn.metadata?.interest || "an unknown topic";
-      setMessages([
-        {
-          id: uuidv4(),
-          content: `Connected with a stranger on: ${matchedOn}`,
-          type: "system",
-          sender: "system",
-          created_at: new Date().toISOString(),
-          session_id: "1",
-        },
-      ]);
-    }
+      console.log(`Connecting to matchmaking server: ${url}`);
+      const es = new EventSource(url);
+      eventSourceRef.current = es;
 
-    if (status === "connecting") {
-      // 5 seconds timout to wait for handshake response
-      const timeoutId = setTimeout(() => {
-        if (conn && conn.open) {
-          //   add message that the other peer did not send a handshake response, probably using an old version of the app
-          const systemMessage: Message = {
-            id: uuidv4(),
-            content:
-              "The other peer did not respond to the handshake. They might be using an older version of the app.",
-            type: "system",
-            sender: "system",
-            created_at: new Date().toISOString(),
-            session_id: "1",
-          };
-          setMessages((prev) => [...prev, systemMessage]);
-          setStatus("disconnected");
-          conn.close();
-          setConn(null);
-          setIsConnecting(false);
-          console.warn("Handshake response timeout. Closing connection.");
-        }
-      }, 7000);
+      es.onmessage = (event) => {
+        const data: MatchmakingData = JSON.parse(event.data);
+        console.log("Matchmaking update:", data);
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [status]);
+        if (data.state === "MATCHED" && data.chatId) {
+          console.log(
+            `Match found with user ${data.matchedUserId}! ChatID: ${data.chatId}`
+          );
+          setStatus("connecting");
+          es.close(); // Stop listening for matchmaking events.
+          setChatId(data.chatId);
 
-  // called when a new connection is received
-  // this is the case when a user connects to a stranger
-  useEffect(() => {
-    if (conn) {
-      conn.on("open", () => {
-        const handshakePacket: HandshakePacket = {
-          type: "handshake",
-          content: "hi",
-          sender: peerId,
-        };
-        conn.send(handshakePacket);
-        console.log("Sent handshake packet:", handshakePacket);
-      });
+          const WEBSOCKET_URL = data.chatServerUrl;
 
-      conn.on("data", (data: any) => {
-        let packet: PeerConnectionPacket<any, any>;
-        try {
-          packet = typeof data === "string" ? JSON.parse(data) : data;
-        } catch (error) {
-          console.error("Failed to parse incoming data:", data);
-          return;
-        }
+          // --- INITIATE WEBSOCKET CONNECTION ---
+          const wsUrl = `${WEBSOCKET_URL}?userId=${userId}&chatId=${data.chatId}`;
+          console.log(`Connecting to WebSocket server: ${wsUrl}`);
+          const ws = new WebSocket(wsUrl);
+          wsRef.current = ws;
 
-        console.log("Received packet:", packet);
-
-        if (packet.type === "handshake") {
-          const handshakePacket: HandshakePacket = packet;
-          if (handshakePacket.content === "hi") {
-            const responsePacket: HandshakeResponsePacket = {
-              type: "handshake_response",
-              content: "hello",
-              sender: peerId,
-            };
-            conn.send(responsePacket);
-          }
-
-          setStatus("connected");
-          return;
-        }
-
-        if (packet.type === "handshake_response") {
-          const handshakeResponsePacket: HandshakeResponsePacket = packet;
-          if (handshakeResponsePacket.content === "hello") {
+          ws.onopen = () => {
+            console.log("WebSocket connection established.");
             setStatus("connected");
-            return;
-          }
+            const welcomeMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: data.chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: `You matched on ${
+                data.interest || "a common interest"
+              }.`,
+              sender: "system",
+            };
+            setMessages([welcomeMessage]);
+          };
+
+          ws.onmessage = async (e: MessageEvent<any>) => {
+            const rawPacket = e.data;
+
+            let jsonPacket: any;
+            if (rawPacket instanceof Blob) {
+              const text = await rawPacket.text();
+              jsonPacket = JSON.parse(text);
+            } else if (typeof rawPacket === "string") {
+              jsonPacket = JSON.parse(rawPacket);
+            } else {
+              jsonPacket = rawPacket;
+            }
+
+            const packet = jsonPacket;
+
+            console.log("Received packet:", jsonPacket);
+
+            // Ignore messages sent by ourselves. The server relays everything.
+            if (packet.sender === userId) return;
+
+            switch (packet.type) {
+              case "STATUS":
+                const statusMessage: SystemMessage = {
+                  id: `system_${Date.now()}`,
+                  session_id: data.chatId,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: packet.message,
+                  sender: "system",
+                };
+                setMessages((prev) => [...prev, statusMessage]);
+                break;
+              case "message":
+                setMessages((prev) => [...prev, packet.content]);
+                break;
+              case "reaction":
+                const { message_id, emoji, user_id } = packet.content;
+                handleReaction(message_id, emoji, user_id);
+                break;
+              case "typing":
+                setStrangerTyping(packet.content as boolean);
+                break;
+              case "edit_message":
+                const {
+                  message_id: editId,
+                  new_content,
+                  user_id: editorId,
+                } = packet.content;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === editId && msg.sender === editorId
+                      ? { ...msg, content: new_content, edited: true }
+                      : msg
+                  )
+                );
+                break;
+            }
+          };
+
+          ws.onclose = () => {
+            console.log("WebSocket connection closed.");
+            setStatus("disconnected");
+            const disconnectMessage: SystemMessage = {
+              id: `system_${Date.now()}`,
+              session_id: data.chatId,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: "The connection has been closed.",
+              sender: "system",
+            };
+            setMessages((prev) => [...prev, disconnectMessage]);
+          };
+
+          ws.onerror = (err) => {
+            console.error("WebSocket error:", err);
+            setStatus("error");
+          };
+        } else if (data.state === "WAITING") {
+          console.log("Waiting for a match...");
+          setStatus("waiting_for_match");
         }
+      };
 
-        if (packet.type === "typing") {
-          setStrangerTyping(packet.content as boolean);
-          return;
-        }
-
-        if (packet.type === "message") {
-          const message: Message = packet.content;
-          // CRITICAL: Use functional update here to avoid stale state.
-          setMessages((prev) => [...prev, message]);
-        } else if (packet.type === "reaction") {
-          const { messageId, emoji, userId } = packet.content;
-          // Use the stable handler function to process the incoming reaction.
-          handleReaction(messageId, emoji, userId);
-        }
-      });
-
-      conn.on("close", () => {
-        if (!peerRef.current) return;
-
-        const systemMessage: Message = {
-          id: uuidv4(),
-          content: "Connection closed by the other peer.",
-          type: "system",
-          sender: "system",
-          created_at: new Date().toISOString(),
-          session_id: "1",
-        };
-        setMessages((prev) => [...prev, systemMessage]);
-        setStatus("disconnected");
-        setIsConnecting(false);
-      });
-    }
-  }, [conn, resetState, handleReaction]);
+      es.onerror = (err) => {
+        console.error("EventSource failed:", err);
+        setStatus("error");
+        es.close();
+      };
+    },
+    [userId]
+  );
 
   return {
     screen,
-    peerId,
     status,
-    isConnecting,
-    isStrangerTyping,
-    conn,
     messages,
-    handleGetStarted,
+    userId,
+    isStrangerTyping,
+    handleGetStarted: () => setScreen("matchmaking"),
     startMatchmaking,
-    endChat,
     sendMessage,
+    disconnect,
     onReact,
+    editMessage,
     onStartTyping,
   };
 };

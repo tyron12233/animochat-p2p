@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from "motion/react";
 import EmojiMenu from "./emoji-menu";
 import ContextMenu from "./context-menu";
-import { DEFAULT_THEME, Message, User } from "@/src/lib/types";
+import { DEFAULT_THEME, Message, User, UserMessage } from "@/src/lib/types";
 
 interface EmojiOverlayProps {
   open: boolean;
-  message: Message;
+  message: UserMessage;
   messageDiv: HTMLDivElement;
   user: User;
-  onReact: (messageId: string, reaction?: string | null) => Promise<void>;
+  onReact: (messageId: string, reaction: string | null) => Promise<void>;
   onEdit: (messageId: string) => void;
   onCopy: (messageId: string) => void;
   onReply: (messageId: string) => void;

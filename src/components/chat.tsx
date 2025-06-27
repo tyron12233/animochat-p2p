@@ -1,23 +1,29 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   DEFAULT_THEME,
   Message,
+  UserMessage,
   type ChatMessage,
   type User,
-} from "../lib/types"; 
+} from "../lib/types";
 import ChatMessageItem from "./chat/chat-message-item";
 import { useActualMessages } from "../hooks/use-actual-messages";
 import { EmojiOverlay } from "./chat/emoji-overlay";
+import { VList, VListHandle } from "virtua";
 import { TypingIndicator } from "./chat/typing-indicator";
+import { AnimatePresence, motion } from "framer-motion";
+import { FindingMatchAnimation } from "./chat/finding-match";
+import { AnimateChangeInHeight } from "../lib/animate-height-change";
 
 interface ChatProps {
   messages: Message[];
-  sendMessage: (text: string) => void;
-  onReact: (messageId: string, reaction?: string | null) => Promise<void>;
+  sendMessage: (text: string, replyingToId: string | undefined) => void;
+  onReact: (messageId: string, reaction: string | null) => Promise<void>;
+  onEditMessage?: (messageId: string, newContent: string) => void;
   isStrangerTyping: boolean;
   onStartTyping: () => void;
   goBack: () => void;
@@ -32,6 +38,7 @@ export default function Chat({
   goBack,
   sendMessage,
   onStartTyping,
+  onEditMessage,
   isStrangerTyping,
   endChat,
   newChat,
@@ -41,22 +48,44 @@ export default function Chat({
 }: ChatProps) {
   const user: User = { id: peerId };
 
+  const actualMessages = useActualMessages(messages);
+
+  // VIRTUAL CHAT EFFECTS
+  const scrollerRef = useRef<VListHandle>(null);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const prevMessagesLength = useRef(actualMessages.length);
+  const [showNewMessagesButton, setShowNewMessagesButton] = useState(false);
+  const renderedMessageIds = useRef<Set<string>>(new Set());
+  const currentRange = useRef<{ startIndex: number; endIndex: number }>({
+    startIndex: 0,
+    endIndex: 0,
+  });
+  const [scrolling, setIsScrolling] = useState(false);
+  const isAtBottom = useRef(true);
+
+  //
+
   const [currentMessage, setCurrentMessage] = useState("");
   const [confirmedEnd, setConfirmedEnd] = useState(false);
-  
+
   const chatLogRef = useRef<HTMLDivElement>(null);
   const isEmojiMenuOpen = useRef(false);
 
   const [emojiMenuState, setEmojiMenuState] = useState<{
     open: boolean;
-    message?: Message | null;
+    message?: UserMessage | null;
     messageDiv?: HTMLDivElement | null;
   }>({ open: false });
   const emojiMenuOpenRef = useRef(false);
 
-  const actualMessages = useActualMessages(messages);
+  const [bottomMessagePreviewState, setBottomMessagePreviewState] = useState<{
+    type: "editing" | "replying";
+    message: Message;
+    title: string;
+    description: string;
+  } | null>(null);
 
-  const onOpenEmojiMenu = (message: Message | null) => {
+  const onOpenEmojiMenu = (message: UserMessage | null) => {
     if (!message) {
       setEmojiMenuState({ open: false });
       emojiMenuOpenRef.current = false;
@@ -76,12 +105,78 @@ export default function Chat({
     }
   };
 
+  useEffect(() => {
+    renderedMessageIds.current = new Set(
+      actualMessages.map((message) => message.id)
+    );
+  }, [actualMessages]);
+
+  useEffect(() => {
+    if (actualMessages.length === 0) return;
+
+    const newMessagesAdded = actualMessages.length > prevMessagesLength.current;
+    const lastMessage = actualMessages[actualMessages.length - 1];
+
+    // Skip typing indicators
+    if (lastMessage.id === "typing") {
+      prevMessagesLength.current = actualMessages.length;
+      return;
+    }
+
+    if (newMessagesAdded) {
+      const isUserMessage = lastMessage.sender === user.id;
+      // If it's a user message or the user is near the bottom (even if just a short scroll),
+      // auto-scroll. Otherwise, show the new messages button.
+      if (isUserMessage || isAtBottom.current) {
+        scrollerRef.current?.scrollToIndex(actualMessages.length - 1, {
+          align: "end",
+          smooth: true,
+        });
+      } else {
+        setShowNewMessagesButton(true);
+      }
+    }
+
+    prevMessagesLength.current = actualMessages.length;
+  }, [actualMessages, user.id, scrollerRef]);
+
+  useEffect(() => {
+    if (isAtBottom.current && isStrangerTyping) {
+      // scroll
+      scrollerRef.current?.scrollToIndex(actualMessages.length);
+    }
+  }, [isStrangerTyping, scrollerRef, actualMessages]);
+
+  useEffect(() => {
+    const scroller = document.querySelector(
+      "#chat-messages-list"
+    ) as HTMLDivElement;
+    if (!scroller) return;
+
+    const scrollDisabled = isSwiping || emojiMenuState.open;
+    scroller.style.overflow = scrollDisabled ? "hidden" : "auto";
+  }, [isSwiping, emojiMenuState]);
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
+
     const trimmedMessage = currentMessage.trim();
     if (trimmedMessage) {
-      sendMessage(trimmedMessage);
+      let messageId = bottomMessagePreviewState?.message?.id;
+
+      if (messageId && bottomMessagePreviewState?.type === "editing") {
+        onEditMessage?.(messageId, trimmedMessage);
+        setBottomMessagePreviewState(null);
+        setCurrentMessage("");
+        return;
+      }
+
+      sendMessage(trimmedMessage, messageId);
       setCurrentMessage("");
+
+      if (messageId) {
+        setBottomMessagePreviewState(null);
+      }
     }
   };
 
@@ -103,23 +198,35 @@ export default function Chat({
     };
 
     return (
-      <ChatMessageItem
-        key={index}
-        index={index}
-        message={msg}
-        user={user}
-        isLast={index === 0}
-        onSwipe={() => {}}
-        onStartedSwipe={() => {}}
-        onEndedSwipe={() => {}}
-        onReact={onReact}
-        onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
-        onResendMessage={() => {}}
-        isEmojiMenuOpen={isEmojiMenuOpen}
-        theme={DEFAULT_THEME}
-        animate={false}
-        secondVisibleElement={null}
-      />
+      <AnimateChangeInHeight key={msg.id + "listener"}>
+        <ChatMessageItem
+          key={index}
+          index={index}
+          message={msg}
+          user={user}
+          isLast={index === 0}
+          onSwipe={(messageId) => {
+            const message = messages.find((m) => m.id === messageId);
+            if (!message) return;
+
+            setBottomMessagePreviewState({
+              message: message,
+              type: "replying",
+              title: "Replying",
+              description: message.content,
+            });
+          }}
+          onStartedSwipe={() => {}}
+          onEndedSwipe={() => {}}
+          onReact={onReact}
+          onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
+          onResendMessage={() => {}}
+          isEmojiMenuOpen={isEmojiMenuOpen}
+          theme={DEFAULT_THEME}
+          animate={true}
+          secondVisibleElement={null}
+        />
+      </AnimateChangeInHeight>
     );
   };
 
@@ -131,10 +238,53 @@ export default function Chat({
         messageDiv={emojiMenuState.messageDiv!}
         user={user}
         onReact={onReact}
-        onReply={() => {}}
-        onEdit={() => {}}
-        onCopy={() => {}}
-        onDelete={() => {}}
+        onReply={(messageId) => {
+          const message = messages.find((m) => m.id === messageId);
+          if (!message) return;
+
+          setBottomMessagePreviewState({
+            message: message,
+            type: "replying",
+            title: "Replying",
+            description: message.content,
+          });
+        }}
+        onEdit={(messageId) => {
+          const message = messages.find((m) => m.id === messageId);
+          if (!message) return;
+
+          setCurrentMessage(message.content);
+
+          setBottomMessagePreviewState({
+            message: message,
+            type: "editing",
+            title: "Editing",
+            description: message.content,
+          });
+        }}
+        onCopy={(messageId) => {
+          const message = messages.find((m) => m.id === messageId);
+          if (!message) return;
+
+          navigator.clipboard
+            .writeText(message.content)
+            .then(() => {
+              console.log("Message copied to clipboard");
+            })
+            .catch((err) => {
+              console.error("Failed to copy message: ", err);
+            });
+          onOpenEmojiMenu(null);
+        }}
+        onDelete={(messageId) => {
+          const message = messages.find((m) => m.id === messageId);
+          if (!message) return;
+
+          // Here you would typically call a function to delete the message
+          // For example: deleteMessage(messageId);
+          console.log(`Delete message with ID: ${messageId}`);
+          onOpenEmojiMenu(null);
+        }}
         onClose={() => onOpenEmojiMenu(null)}
       />
 
@@ -144,7 +294,6 @@ export default function Chat({
       >
         {/* Chat Header */}
         <div className="p-4 bg-white/60 border-b border-gray-200/80 flex items-center shrink-0">
-
           {/* back arrow button */}
           {status !== "connected" && (
             <Button
@@ -196,48 +345,137 @@ export default function Chat({
 
           {status !== "connected" && (
             <Button
-             variant="outline"
+              variant="default"
               size="sm"
               onClick={newChat}
-              className="rounded-full">
-                New Chat
-              </Button>
+              className="bg-green-600 rounded-full hover:bg-green-700"
+            >
+              New Chat
+            </Button>
           )}
         </div>
 
         <div className="p-2 text-center text-xs text-gray-500 bg-white/60 border-b border-gray-200/80 shrink-0">
-          not all features are implemented, still in early stages <br/> -@tyronscott_
+          not all features are implemented, still in early stages <br />{" "}
+          -@tyronscott_
         </div>
 
-        {/* Chat Log */}
-        {/*
-          CHANGE 1: Added `flex-col-reverse`.
-          This will make the flex container stack items from the bottom.
-          The overflow-y-auto will now show the bottom (newest) content first.
-        */}
-        <div
-          ref={chatLogRef}
-          className="flex-grow overflow-y-auto py-4 flex flex-col-reverse"
-        >
-          {isStrangerTyping && (
-            <TypingIndicator />
-          )}
+        <div className="max-h-full h-full scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-gray-100 hover:scrollbar-thumb-green-700">
+          <VList
+            ref={scrollerRef}
+            style={{
+              overflowX: "hidden",
+            }}
+            id="chat-messages-list"
+            onScroll={(offset) => {
+              if (!scrollerRef.current) return;
 
-          {/*
-            CHANGE 2: Reversed the `actualMessages` array before mapping.
-            This ensures that newer messages are rendered first in the reversed column,
-            placing them at the bottom of the visible area.
-          */}
-          {status !== "finding_match" && 
-            [...actualMessages].reverse().map(renderMessage)
-          }
+              setIsScrolling(true);
 
-          {status === "finding_match" && (
-            <div className="flex justify-center items-center h-full">
-              <p className="text-gray-500">Finding a match...</p>
-            </div> 
-          )}
+              let scrollOffset =
+                offset -
+                scrollerRef.current.scrollSize +
+                scrollerRef.current.viewportSize;
+              isAtBottom.current = scrollOffset >= -100;
+
+              if (isAtBottom.current) {
+                setShowNewMessagesButton(false);
+              }
+            }}
+            onScrollEnd={() => {
+              setIsScrolling(false);
+            }}
+            reverse
+          >
+            {actualMessages.map((msg, index) => {
+              return renderMessage(msg, index);
+            })}
+
+            <AnimateChangeInHeight>
+              {isStrangerTyping && <TypingIndicator key="typing-indicator" />}
+            </AnimateChangeInHeight>
+          </VList>
+
+          <AnimatePresence>
+            {(status === "waiting_for_match" ||
+              status === "finding_match" ||
+              status === "connecting") && <FindingMatchAnimation />}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showNewMessagesButton && (
+              <motion.div
+                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-24 pt-4"
+                initial={{ y: "100%" }}
+                animate={{ y: "0" }}
+                exit={{ y: "100%" }}
+              >
+                <button
+                  onClick={() => {
+                    scrollerRef.current?.scrollToIndex(
+                      actualMessages.length - 1,
+                      { align: "end", smooth: true }
+                    );
+                    setShowNewMessagesButton(false);
+                  }}
+                  className="bg-green-600 text-white px-4 py-2 rounded-full shadow-md flex items-center gap-2 hover:bg-green-700 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                  New messages
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* replying or editing */}
+        {bottomMessagePreviewState && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-gray-100 border-l-4 mb-2 relative">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-green-700">
+                  {bottomMessagePreviewState.type === "replying"
+                    ? "Replying to"
+                    : "Editing"}
+                </span>
+                <button
+                  type="button"
+                  className="ml-auto text-gray-400 hover:text-gray-600"
+                  aria-label="Cancel"
+                  onClick={() => setBottomMessagePreviewState(null)}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div className="text-xs text-gray-700 truncate max-w-xs">
+                {bottomMessagePreviewState.description}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Message Input Form */}
         <div className="p-4 bg-white/60 border-t border-gray-200/80 shrink-0">
@@ -247,7 +485,7 @@ export default function Chat({
               type="text"
               value={currentMessage}
               onChange={(e) => {
-                setCurrentMessage(e.target.value)
+                setCurrentMessage(e.target.value);
                 onStartTyping();
               }}
               placeholder="Type a message..."

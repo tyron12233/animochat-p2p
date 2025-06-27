@@ -10,7 +10,7 @@ interface ChatMessageItemProps {
   user: User;
   isLast: boolean;
   onSwipe: (messageId: string) => void;
-  onReact: (messageId: string, reaction?: string | null) => Promise<void>;
+  onReact: (messageId: string, reaction: string | null) => Promise<void>;
   // called when a swipe is started, to prevent the react menu from opening
   onStartedSwipe: () => void;
   onEndedSwipe: () => void;

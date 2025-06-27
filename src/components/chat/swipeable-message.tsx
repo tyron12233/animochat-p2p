@@ -25,7 +25,7 @@ export interface MessageProps {
   animate?: boolean;
   user: User;
   onSwipe: (messageId: string) => void;
-  onReact: (messageId: string, emoji?: string | null) => void;
+  onReact: (messageId: string, emoji: string | null) => void;
   onStartedSwipe: () => void;
   onEndedSwipe: () => void;
   onOpenEmojiMenu?: (message: Message | null) => void;

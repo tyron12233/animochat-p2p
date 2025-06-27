@@ -67,6 +67,10 @@ const config: Config = {
                 'color-5': 'hsl(var(--color-5))'
             },
             keyframes: {
+                 float: {
+          '0%, 100%': { transform: 'translateY(0px) scale(1)', opacity: '1' },
+          '50%': { transform: 'translateY(-10px) scale(1.05)', opacity: '0.8' },
+        },
                 'accordion-down': {
                     from: {
                         height: '0'
@@ -172,6 +176,7 @@ const config: Config = {
             },
             animation: {
                 'accordion-down': 'accordion-down 0.2s ease-out',
+                float: 'float 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                 'accordion-up': 'accordion-up 0.2s ease-out',
                 marquee: 'marquee var(--duration) infinite linear',
                 'marquee-vertical': 'marquee-vertical var(--duration) linear infinite'

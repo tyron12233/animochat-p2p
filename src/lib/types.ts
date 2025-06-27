@@ -4,6 +4,9 @@ import type { DataConnection as PeerJSDataConnection } from 'peerjs';
 export type DataConnection = PeerJSDataConnection;
 
 export type Screen = 'intro' | 'matchmaking' | 'chat';
+
+
+
 export type Status = 'initializing' | 'ready' | 'connecting' | 'connected' | 'disconnected' | 'error' | 'finding_match' | 'waiting_for_match';
 
 export interface ChatMessage {
@@ -20,29 +23,74 @@ export interface User {
     id: string;
 }
 
-export type MatchmakingData =
-    | { state: 'WAITING' }
-    | { state: 'MATCHED'; matchedUserId: string; interest: string; }
-    | { state: 'ERROR'; message: string; };
-
+export type MatchmakingData = {
+  state: "MATCHED" | "WAITING";
+  matchedUserId: string;
+  interest: string;
+  chatId: string;
+  chatServerUrl: string;
+};
 export interface Reaction {
   message_id: string;
   user_id: string;
   emoji: string | null;
 }
 
-export interface Message {
+interface BaseMessage {
   id: string;
-  sender: string;
-  content: string;
-  session_id: string | undefined;
-  created_at?: string;
-  replyingTo?: any;
-  reactions?: Reaction[];
+  session_id: string;
+  created_at: string; // ISO string
   edited?: boolean;
-  visible_to?: string[];
-  type?: string;
 }
+
+export interface SystemMessage extends BaseMessage {
+  type: "system";
+  content: string;
+  sender: "system";
+}
+
+export interface UserMessage extends BaseMessage {
+  type?: undefined | "deleted"; // or 'user'
+  content: string;
+  sender: string; // peerId
+  replyingTo?: string;
+  reactions?: Reaction[];
+}
+
+export type Message = UserMessage | SystemMessage;
+
+
+export type PeerConnectionPacket<Content, T extends String> = {
+  type: T;
+  content: Content;
+  sender: string;
+};
+
+export type MessagePacket = PeerConnectionPacket<UserMessage, "message">;
+export type ReactionPacket = PeerConnectionPacket<Reaction, "reaction">;
+export type HandshakePacket = PeerConnectionPacket<string, "handshake">;
+export type HandshakeResponsePacket = PeerConnectionPacket<
+  string,
+  "handshake_response"
+>;
+export type TypingPacket = PeerConnectionPacket<boolean, "typing">;
+export type EditMessagePacket = PeerConnectionPacket<
+  {
+    message_id: string;
+    new_content: string;
+    user_id: string;
+  },
+  "edit_message"
+>;
+
+export type AnyPacket =
+  | MessagePacket
+  | ReactionPacket
+  | HandshakePacket
+  | HandshakeResponsePacket
+  | TypingPacket
+  | EditMessagePacket;
+
 
 export interface ChatTheme {
   /** A unique identifier for the theme */

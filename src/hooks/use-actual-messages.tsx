@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Message } from "../lib/types";
+import { Message, UserMessage } from "../lib/types";
 
 // Define the time threshold (e.g., 5 minutes) in milliseconds
 const TIME_THRESHOLD_MS = 5 * 60 * 1000;
@@ -55,12 +55,36 @@ export function useActualMessages(messages: Message[]): Message[] {
       });
     }
 
+
+
+    // resolve replies to messages
+    processedMessages = processedMessages.map((message) => {
+      const replyingTo = message.replyingTo;
+      if (replyingTo && typeof replyingTo === "string") {
+        // Find the original message that this one is replying to
+        const originalMessage = processedMessages.find(
+          (msg) => msg.id === replyingTo
+        );
+        if (originalMessage) {
+          return {
+            ...message,
+            replyingTo: originalMessage, // Replace string ID with the actual message object
+          };
+        }
+      }
+
+      return message; // Return the message unchanged if no valid reply found
+    });
+
+
     // --- Pass 2: Refine grouping (hasPrevious/hasNext) based on sender, showTime, reactions, replies ---
     // We need a loop here (not map) to easily modify properties of adjacent elements (like previous.hasNext)
     for (let i = 0; i < processedMessages.length; i++) {
         const current = processedMessages[i];
         const previous = processedMessages[i - 1];
         const next = processedMessages[i + 1];
+
+        if (!current) continue; // Skip if current is undefined
 
         // 1. Initial grouping based on sender continuity
         current.hasPrevious = !!previous && previous.sender === current.sender;
