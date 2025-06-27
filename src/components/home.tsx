@@ -136,7 +136,7 @@ export default function Home() {
               <Button
                 onClick={handleGetStarted}
                 size="lg"
-                className="rounded-full py-7 px-8 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
+                className="rounded-full py-7 px-8 bg-green-600 hover:bg-green-700 text-white font-bold text-lg"
               >
                 Get Started
               </Button>
