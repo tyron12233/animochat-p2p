@@ -67,7 +67,7 @@ export default function Chat({
         return;
       }
 
-      if (!data || !data.content ) {
+      if (!data || !data.content) {
         return;
       }
 
@@ -76,21 +76,28 @@ export default function Chat({
       }
     };
 
-    const channel = supabase
-      .channel("public:announcements");
-      
-      channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, (payload) => {
+    const channel = supabase.channel("public:announcements");
+
+    channel.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "announcements" },
+      (payload) => {
         console.log("New announcement:", payload);
         if (!payload.new.content) return;
         setAnnouncement(payload.new.content);
-      });
+      }
+    );
 
     //  on update
-      channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "announcements" }, (payload) => {
+    channel.on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "announcements" },
+      (payload) => {
         console.log("Updated announcement:", payload);
         if (!payload.new.content) return;
         setAnnouncement(payload.new.content);
-      });
+      }
+    );
 
     getAnnouncement();
 
@@ -238,10 +245,10 @@ export default function Chat({
 
     if (isSystem) {
       return (
-        <div key={index} className="text-center my-2">
-          <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+        <div key={index} className="text-center my-2 mx-4">
+          <p className="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1">
             {msg.content}
-          </span>
+          </p>
         </div>
       );
     }
@@ -410,8 +417,8 @@ export default function Chat({
 
         {announcement && (
           <div className="p-2 text-center text-xs text-gray-500 bg-white/60 border-b border-gray-200/80 shrink-0">
-             {announcement}
-        </div>
+            <div dangerouslySetInnerHTML={{ __html: announcement }} />
+          </div>
         )}
 
         <div className="max-h-full h-full scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-gray-100 hover:scrollbar-thumb-green-700">
