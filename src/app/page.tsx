@@ -4,6 +4,7 @@
 
 import Home from "../components/home";
 import MaintenancePage from "../components/maintenance";
+import { ChatThemeProvider } from "../context/theme-context";
 import { useMaintenanceStatus } from "../hooks/use-maintenance-status";
 
 export default function App() {
@@ -24,7 +25,9 @@ export default function App() {
 
   return (
     <>
-      <Home />
+      <ChatThemeProvider>
+          <Home />
+      </ChatThemeProvider>
     </>
   );
 }

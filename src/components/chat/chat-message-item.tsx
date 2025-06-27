@@ -3,6 +3,8 @@ import { format } from "date-fns";
 import { SwipeableMessage } from "./swipeable-message";
 import { RefObject } from "react";
 import { User, Message, ChatTheme } from "@/src/lib/types";
+import { ChatThemeV2 } from "@/src/lib/chat-theme";
+import { defaultTheme } from "@/src/lib/default-chat-themes";
 
 interface ChatMessageItemProps {
   index: number;
@@ -17,7 +19,8 @@ interface ChatMessageItemProps {
   onOpenEmojiMenu: (message: Message | null) => void;
   onResendMessage: (message: Message) => void;
   isEmojiMenuOpen: RefObject<boolean>;
-  theme?: ChatTheme;
+  theme: ChatThemeV2;
+  mode: "light" | "dark";
   animate?: boolean;
   secondVisibleElement: string | null;
   onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
@@ -36,7 +39,8 @@ export default function ChatMessageItem({
   onOpenEmojiMenu,
   onResendMessage,
   isEmojiMenuOpen,
-  theme,
+  theme = defaultTheme,
+  mode,
   secondVisibleElement,
   onLinkClick,
 }: ChatMessageItemProps) {
@@ -83,6 +87,7 @@ export default function ChatMessageItem({
         onOpenEmojiMenu={onOpenEmojiMenu}
         onResendMessage={onResendMessage}
         theme={theme}
+        mode={mode}
         isEmojiMenuOpen={isEmojiMenuOpen}
         onLinkClick={onLinkClick}
       />

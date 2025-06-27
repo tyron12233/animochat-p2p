@@ -16,6 +16,8 @@ import Linkify from "react-linkify";
 import MessageBubble from "./message-bubble";
 import { SwipeIcon } from "./swipe-icon";
 import { ChatTheme, DEFAULT_THEME, Message, User } from "@/src/lib/types";
+import { defaultTheme } from "@/src/lib/default-chat-themes";
+import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 export const SWIPE_THRESHOLD = 50;
 export const TAP_THRESHOLD = 5;
@@ -30,7 +32,8 @@ export interface MessageProps {
   onEndedSwipe: () => void;
   onOpenEmojiMenu?: (message: Message | null) => void;
   onResendMessage?: (message: Message) => void;
-  theme?: ChatTheme;
+  theme: ChatThemeV2;
+  mode: "light" | "dark";
   advertisementMessageId?: string | null;
   isEmojiMenuOpen?: RefObject<boolean>;
   onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
@@ -44,7 +47,8 @@ export function SwipeableMessage({
   onStartedSwipe,
   onEndedSwipe,
   animate = false,
-  theme = DEFAULT_THEME,
+  mode,
+  theme,
   advertisementMessageId,
   onOpenEmojiMenu = () => {},
   onResendMessage = () => {},
@@ -77,6 +81,7 @@ export function SwipeableMessage({
           key={message.id + "-bubble"}
           message={message}
           user={user}
+          mode={mode}
           hovered={hovered}
           reply={() => onSwipe(message.id)}
           onOpenEmojiMenu={() => onOpenEmojiMenu(message)}

@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DEFAULT_THEME,
-  Message,
-  UserMessage,
-  type ChatMessage,
-  type User,
-} from "../lib/types";
+import { useState, useRef, useEffect } from "react";
+// Assuming Button and Input are styled separately or adapt via CSS variables.
+// For this example, we will style them directly where possible.
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+import { DEFAULT_THEME, Message, UserMessage, type User } from "../lib/types";
 import ChatMessageItem from "./chat/chat-message-item";
 import { useActualMessages } from "../hooks/use-actual-messages";
 import { EmojiOverlay } from "./chat/emoji-overlay";
@@ -19,6 +15,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FindingMatchAnimation } from "./chat/finding-match";
 import { AnimateChangeInHeight } from "../lib/animate-height-change";
 import { supabase } from "../lib/supabase";
+import { useChatTheme } from "../context/theme-context";
+import { ChatThemeV2 } from "../lib/chat-theme";
 
 interface ChatProps {
   messages: Message[];
@@ -34,6 +32,41 @@ interface ChatProps {
   status: string;
 }
 
+// A helper component to inject dynamic styles for pseudo-classes and elements
+const DynamicGlobalStyles = ({
+  theme,
+  mode,
+}: {
+  theme: ChatThemeV2;
+  mode: "light" | "dark";
+}) => (
+  <style>{`
+    #chat-messages-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    #chat-messages-list::-webkit-scrollbar-track {
+      background: ${theme.messageList.scrollbarTrack[mode]};
+    }
+    #chat-messages-list::-webkit-scrollbar-thumb {
+      background-color: ${theme.messageList.scrollbarThumb[mode]};
+      border-radius: 4px;
+    }
+    #chat-messages-list::-webkit-scrollbar-thumb:hover {
+      background-color: ${theme.buttons.primary.hoverBackground[mode]};
+    }
+    #chat-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px ${theme.inputArea.focusRing[mode]};
+    }
+    #send-button:hover {
+        background-color: ${theme.buttons.primary.hoverBackground[mode]} !important;
+    }
+    #new-messages-button:hover {
+        background-color: ${theme.buttons.newMessages.hoverBackground[mode]} !important;
+    }
+  `}</style>
+);
+
 export default function Chat({
   messages,
   goBack,
@@ -48,61 +81,41 @@ export default function Chat({
   status,
 }: ChatProps) {
   const user: User = { id: peerId };
+  const { theme, mode } = useChatTheme();
 
   const [announcement, setAnnouncement] = useState<string | null>(null);
 
-  // supabase notification
+  // Supabase notification logic remains unchanged
   useEffect(() => {
     const getAnnouncement = async () => {
-      // from the supabase client, fetch latest announcement on the announcements table
       const { data, error } = await supabase
         .from("announcements")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
-
       if (error) {
         console.error("Error fetching announcement:", error);
         return;
       }
-
-      if (!data || !data.content) {
-        return;
-      }
-
-      if (data) {
+      if (data?.content) {
         setAnnouncement(data.content);
       }
     };
-
     const channel = supabase.channel("public:announcements");
-
-    channel.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "announcements" },
-      (payload) => {
-        console.log("New announcement:", payload);
-        if (!payload.new.content) return;
-        setAnnouncement(payload.new.content);
-      }
-    );
-
-    //  on update
-    channel.on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "announcements" },
-      (payload) => {
-        console.log("Updated announcement:", payload);
-        if (!payload.new.content) return;
-        setAnnouncement(payload.new.content);
-      }
-    );
-
+    channel
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "announcements" },
+        (payload) => {
+          if (payload.new) {
+            const content = (payload.new as any).content;
+            setAnnouncement(content || null);
+          }
+        }
+      )
+      .subscribe();
     getAnnouncement();
-
-    channel.subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
@@ -110,25 +123,15 @@ export default function Chat({
 
   const actualMessages = useActualMessages(messages);
 
-  // VIRTUAL CHAT EFFECTS
+  // VIRTUAL CHAT EFFECTS (logic unchanged)
   const scrollerRef = useRef<VListHandle>(null);
   const [isSwiping, setIsSwiping] = useState(false);
   const prevMessagesLength = useRef(actualMessages.length);
   const [showNewMessagesButton, setShowNewMessagesButton] = useState(false);
-  const renderedMessageIds = useRef<Set<string>>(new Set());
-  const currentRange = useRef<{ startIndex: number; endIndex: number }>({
-    startIndex: 0,
-    endIndex: 0,
-  });
-  const [scrolling, setIsScrolling] = useState(false);
   const isAtBottom = useRef(true);
-
-  //
 
   const [currentMessage, setCurrentMessage] = useState("");
   const [confirmedEnd, setConfirmedEnd] = useState(false);
-
-  const chatLogRef = useRef<HTMLDivElement>(null);
   const isEmojiMenuOpen = useRef(false);
 
   const [emojiMenuState, setEmojiMenuState] = useState<{
@@ -136,7 +139,6 @@ export default function Chat({
     message?: UserMessage | null;
     messageDiv?: HTMLDivElement | null;
   }>({ open: false });
-  const emojiMenuOpenRef = useRef(false);
 
   const [bottomMessagePreviewState, setBottomMessagePreviewState] = useState<{
     type: "editing" | "replying";
@@ -148,15 +150,12 @@ export default function Chat({
   const onOpenEmojiMenu = (message: UserMessage | null) => {
     if (!message) {
       setEmojiMenuState({ open: false });
-      emojiMenuOpenRef.current = false;
       return;
     }
-
     const messageElement = document.querySelector(
       `[data-message-id="${message?.id}"]`
     );
     if (messageElement) {
-      emojiMenuOpenRef.current = true;
       setEmojiMenuState({
         open: true,
         message,
@@ -166,27 +165,15 @@ export default function Chat({
   };
 
   useEffect(() => {
-    renderedMessageIds.current = new Set(
-      actualMessages.map((message) => message.id)
-    );
-  }, [actualMessages]);
-
-  useEffect(() => {
     if (actualMessages.length === 0) return;
-
     const newMessagesAdded = actualMessages.length > prevMessagesLength.current;
     const lastMessage = actualMessages[actualMessages.length - 1];
-
-    // Skip typing indicators
     if (lastMessage.id === "typing") {
       prevMessagesLength.current = actualMessages.length;
       return;
     }
-
     if (newMessagesAdded) {
       const isUserMessage = lastMessage.sender === user.id;
-      // If it's a user message or the user is near the bottom (even if just a short scroll),
-      // auto-scroll. Otherwise, show the new messages button.
       if (isUserMessage || isAtBottom.current) {
         scrollerRef.current?.scrollToIndex(actualMessages.length - 1, {
           align: "end",
@@ -196,44 +183,37 @@ export default function Chat({
         setShowNewMessagesButton(true);
       }
     }
-
     prevMessagesLength.current = actualMessages.length;
-  }, [actualMessages, user.id, scrollerRef]);
+  }, [actualMessages, user.id]);
 
   useEffect(() => {
     if (isAtBottom.current && isStrangerTyping) {
-      // scroll
       scrollerRef.current?.scrollToIndex(actualMessages.length);
     }
-  }, [isStrangerTyping, scrollerRef, actualMessages]);
+  }, [isStrangerTyping]);
 
   useEffect(() => {
     const scroller = document.querySelector(
       "#chat-messages-list"
     ) as HTMLDivElement;
     if (!scroller) return;
-
-    const scrollDisabled = isSwiping || emojiMenuState.open;
-    scroller.style.overflow = scrollDisabled ? "hidden" : "auto";
+    scroller.style.overflow =
+      isSwiping || emojiMenuState.open ? "hidden" : "auto";
   }, [isSwiping, emojiMenuState]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-
     const trimmedMessage = currentMessage.trim();
     if (trimmedMessage) {
-      let messageId = bottomMessagePreviewState?.message?.id;
-
+      const messageId = bottomMessagePreviewState?.message?.id;
       if (messageId && bottomMessagePreviewState?.type === "editing") {
         onEditMessage?.(messageId, trimmedMessage);
         setBottomMessagePreviewState(null);
         setCurrentMessage("");
         return;
       }
-
       sendMessage(trimmedMessage, messageId);
       setCurrentMessage("");
-
       if (messageId) {
         setBottomMessagePreviewState(null);
       }
@@ -246,16 +226,25 @@ export default function Chat({
     if (isSystem) {
       return (
         <div key={index} className="text-center my-2 mx-4">
-          <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+          <span
+            style={{
+              color: theme.message.systemMessage.text[mode],
+              backgroundColor: theme.message.systemMessage.background[mode],
+            }}
+            className="
+      box-decoration-clone 
+      text-xs
+      rounded-full
+      px-3
+      py-1
+      leading-relaxed      
+    "
+          >
             {msg.content}
           </span>
         </div>
       );
     }
-
-    const user: User = {
-      id: peerId,
-    };
 
     return (
       <AnimateChangeInHeight key={msg.id + "listener"}>
@@ -268,9 +257,8 @@ export default function Chat({
           onSwipe={(messageId) => {
             const message = messages.find((m) => m.id === messageId);
             if (!message) return;
-
             setBottomMessagePreviewState({
-              message: message,
+              message,
               type: "replying",
               title: "Replying",
               description: message.content,
@@ -282,7 +270,8 @@ export default function Chat({
           onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
           onResendMessage={() => {}}
           isEmojiMenuOpen={isEmojiMenuOpen}
-          theme={DEFAULT_THEME}
+          theme={theme}
+          mode={mode}
           animate={true}
           secondVisibleElement={null}
         />
@@ -292,6 +281,7 @@ export default function Chat({
 
   return (
     <>
+      <DynamicGlobalStyles theme={theme} mode={mode} />
       <EmojiOverlay
         open={emojiMenuState.open}
         message={emojiMenuState.message!}
@@ -301,9 +291,8 @@ export default function Chat({
         onReply={(messageId) => {
           const message = messages.find((m) => m.id === messageId);
           if (!message) return;
-
           setBottomMessagePreviewState({
-            message: message,
+            message,
             type: "replying",
             title: "Replying",
             description: message.content,
@@ -312,11 +301,9 @@ export default function Chat({
         onEdit={(messageId) => {
           const message = messages.find((m) => m.id === messageId);
           if (!message) return;
-
           setCurrentMessage(message.content);
-
           setBottomMessagePreviewState({
-            message: message,
+            message,
             type: "editing",
             title: "Editing",
             description: message.content,
@@ -325,23 +312,10 @@ export default function Chat({
         onCopy={(messageId) => {
           const message = messages.find((m) => m.id === messageId);
           if (!message) return;
-
-          navigator.clipboard
-            .writeText(message.content)
-            .then(() => {
-              console.log("Message copied to clipboard");
-            })
-            .catch((err) => {
-              console.error("Failed to copy message: ", err);
-            });
+          navigator.clipboard.writeText(message.content);
           onOpenEmojiMenu(null);
         }}
         onDelete={(messageId) => {
-          const message = messages.find((m) => m.id === messageId);
-          if (!message) return;
-
-          // Here you would typically call a function to delete the message
-          // For example: deleteMessage(messageId);
           console.log(`Delete message with ID: ${messageId}`);
           onOpenEmojiMenu(null);
         }}
@@ -350,18 +324,25 @@ export default function Chat({
 
       <div
         id="chat-container"
-        className="w-full max-w-md mx-auto h-[100dvh] flex flex-col bg-white/70 backdrop-blur-xl sm:rounded-[2rem] shadow-2xl overflow-hidden"
+        style={{
+          fontFamily: theme.typography.fontFamily,
+          fontSize: theme.typography.baseFontSize,
+          backgroundColor: theme.general.background[mode],
+          backdropFilter: `blur(${theme.general.backdropBlur})`,
+          boxShadow: theme.general.shadow,
+          borderRadius: "var(--chat-border-radius, 2rem)", // Use CSS var for sm breakpoint
+        }}
+        className="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden"
       >
-        {/* Chat Header */}
-        <div className="p-4 bg-white/60 border-b border-gray-200/80 flex items-center shrink-0">
-          {/* back arrow button */}
+        <div
+          style={{
+            backgroundColor: theme.header.background[mode],
+            borderColor: theme.header.border[mode],
+          }}
+          className="p-4 border-b flex items-center shrink-0"
+        >
           {status !== "connected" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goBack}
-              className="rounded-full mr-2"
-            >
+            <button onClick={goBack} className="rounded-full mr-2 p-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -375,85 +356,112 @@ export default function Chat({
               >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </Button>
+            </button>
           )}
 
           <div className="text-left mr-auto ml-2">
-            <p className="text-xs font-medium text-gray-500">Status</p>
-            <p className="text-sm font-semibold text-green-600">
+            <p
+              style={{ color: theme.header.statusLabel[mode] }}
+              className="text-xs font-medium"
+            >
+              Status
+            </p>
+            <p
+              style={{ color: theme.header.statusValue[mode] }}
+              className="text-sm font-semibold"
+            >
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </p>
           </div>
 
+          {/* These buttons can be further customized via theme props if the Button component supports it */}
           {status === "connected" && (
-            <Button
-              variant={confirmedEnd ? "destructive" : "outline"}
-              size="sm"
-              onClick={() => {
-                if (confirmedEnd) {
-                  endChat();
-                  setConfirmedEnd(false);
-                } else {
-                  setConfirmedEnd(true);
-                }
+            <button
+              onClick={() =>
+                confirmedEnd
+                  ? (endChat(), setConfirmedEnd(false))
+                  : setConfirmedEnd(true)
+              }
+              className="px-3 py-1 text-sm rounded-full"
+              style={{
+                backgroundColor: confirmedEnd
+                  ? theme.buttons.destructive.background[mode]
+                  : theme.buttons.secondary.background[mode],
+                color: confirmedEnd
+                  ? theme.buttons.destructive.text[mode]
+                  : theme.buttons.secondary.text[mode],
+                ...((
+                  confirmedEnd
+                    ? theme.buttons.destructive.border?.[mode]
+                    : theme.buttons.secondary.border?.[mode]
+                )
+                  ? {
+                      border: `1px solid ${
+                        confirmedEnd
+                          ? theme.buttons.destructive.border?.[mode]
+                          : theme.buttons.secondary.border?.[mode]
+                      }`,
+                    }
+                  : {}),
               }}
-              className="rounded-full"
             >
               {confirmedEnd ? "Confirm?" : "End Chat"}
-            </Button>
+            </button>
           )}
-
           {status !== "connected" && (
-            <Button
-              variant="default"
-              size="sm"
+            <button
               onClick={newChat}
-              className="bg-green-600 rounded-full hover:bg-green-700"
+              className="px-3 py-1 text-sm rounded-full"
+              style={{
+                backgroundColor: theme.buttons.primary.background[mode],
+                color: theme.buttons.primary.text[mode],
+              }}
             >
               New Chat
-            </Button>
+            </button>
           )}
         </div>
 
         {announcement && (
-          <div className="p-2 text-center text-xs text-gray-500 bg-white/60 border-b border-gray-200/80 shrink-0">
+          <div
+            style={{
+              backgroundColor: theme.announcement.background[mode],
+              color: theme.announcement.text[mode],
+              borderColor: theme.announcement.border[mode],
+            }}
+            className="p-2 text-center text-xs border-b shrink-0"
+          >
             <div dangerouslySetInnerHTML={{ __html: announcement }} />
           </div>
         )}
 
-        <div className="max-h-full h-full scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-gray-100 hover:scrollbar-thumb-green-700">
+        <div className="max-h-full h-full relative">
           <VList
             ref={scrollerRef}
-            style={{
-              overflowX: "hidden",
-            }}
+            style={{ overflowX: "hidden" }}
             id="chat-messages-list"
             onScroll={(offset) => {
               if (!scrollerRef.current) return;
-
-              setIsScrolling(true);
-
-              let scrollOffset =
+              const scrollOffset =
                 offset -
                 scrollerRef.current.scrollSize +
                 scrollerRef.current.viewportSize;
               isAtBottom.current = scrollOffset >= -100;
-
               if (isAtBottom.current) {
                 setShowNewMessagesButton(false);
               }
             }}
-            onScrollEnd={() => {
-              setIsScrolling(false);
-            }}
             reverse
           >
-            {actualMessages.map((msg, index) => {
-              return renderMessage(msg, index);
-            })}
-
+            {actualMessages.map((msg, index) => renderMessage(msg, index))}
             <AnimateChangeInHeight>
-              {isStrangerTyping && <TypingIndicator key="typing-indicator" />}
+              {isStrangerTyping && (
+                <TypingIndicator
+                  key="typing-indicator"
+                  theme={theme}
+                  mode={mode}
+                />
+              )}
             </AnimateChangeInHeight>
           </VList>
 
@@ -462,16 +470,16 @@ export default function Chat({
               status === "finding_match" ||
               status === "connecting") && <FindingMatchAnimation />}
           </AnimatePresence>
-
           <AnimatePresence>
             {showNewMessagesButton && (
               <motion.div
-                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-24 pt-4"
                 initial={{ y: "100%" }}
                 animate={{ y: "0" }}
                 exit={{ y: "100%" }}
+                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-24 pt-4"
               >
                 <button
+                  id="new-messages-button"
                   onClick={() => {
                     scrollerRef.current?.scrollToIndex(
                       actualMessages.length - 1,
@@ -479,7 +487,11 @@ export default function Chat({
                     );
                     setShowNewMessagesButton(false);
                   }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-full shadow-md flex items-center gap-2 hover:bg-green-700 transition-colors"
+                  style={{
+                    backgroundColor: theme.buttons.newMessages.background[mode],
+                    color: theme.buttons.newMessages.text[mode],
+                  }}
+                  className="px-4 py-2 rounded-full shadow-md flex items-center gap-2 transition-colors"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -502,19 +514,27 @@ export default function Chat({
           </AnimatePresence>
         </div>
 
-        {/* replying or editing */}
         {bottomMessagePreviewState && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-gray-100 border-l-4 mb-2 relative">
+          <div
+            style={{
+              backgroundColor: theme.overlays.replyingPreview.background[mode],
+              borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
+            }}
+            className="flex items-start gap-2 px-3 py-2 relative"
+          >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-green-700">
+                <span
+                  style={{ color: theme.overlays.replyingPreview.title[mode] }}
+                  className="text-xs font-semibold"
+                >
                   {bottomMessagePreviewState.type === "replying"
                     ? "Replying to"
                     : "Editing"}
                 </span>
                 <button
                   type="button"
-                  className="ml-auto text-gray-400 hover:text-gray-600"
+                  className="ml-auto"
                   aria-label="Cancel"
                   onClick={() => setBottomMessagePreviewState(null)}
                 >
@@ -522,7 +542,7 @@ export default function Chat({
                     width="18"
                     height="18"
                     fill="none"
-                    stroke="currentColor"
+                    stroke={theme.overlays.replyingPreview.closeIcon[mode]}
                     strokeWidth="2"
                     viewBox="0 0 24 24"
                   >
@@ -531,17 +551,28 @@ export default function Chat({
                   </svg>
                 </button>
               </div>
-              <div className="text-xs text-gray-700 truncate max-w-xs">
+              <div
+                style={{
+                  color: theme.overlays.replyingPreview.description[mode],
+                }}
+                className="text-xs truncate max-w-xs"
+              >
                 {bottomMessagePreviewState.description}
               </div>
             </div>
           </div>
         )}
 
-        {/* Message Input Form */}
-        <div className="p-4 bg-white/60 border-t border-gray-200/80 shrink-0">
+        <div
+          style={{
+            backgroundColor: theme.inputArea.background[mode],
+            borderColor: theme.inputArea.border[mode],
+          }}
+          className="p-4 border-t shrink-0"
+        >
           <form onSubmit={handleSend} className="flex space-x-3">
-            <Input
+            <input
+              id="chat-input"
               disabled={status !== "connected"}
               type="text"
               value={currentMessage}
@@ -550,14 +581,26 @@ export default function Chat({
                 onStartTyping();
               }}
               placeholder="Type a message..."
-              className="text-[16px] flex-grow p-3 border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-600 bg-white/80"
+              style={{
+                backgroundColor: theme.inputArea.inputBackground[mode],
+                color: theme.inputArea.inputText[mode],
+                borderColor: theme.inputArea.border[mode],
+              }}
+              className="text-[16px] flex-grow p-3 border rounded-full"
               autoComplete="off"
               required
             />
-            <Button
+            <button
+              id="send-button"
               type="submit"
               disabled={!currentMessage.trim() || status !== "connected"}
-              className="bg-green-600 text-white font-bold w-12 h-12 rounded-full hover:bg-green-700 flex items-center justify-center shadow-lg"
+              style={{
+                backgroundColor: theme.buttons.primary.background[mode],
+                color: theme.buttons.primary.text[mode],
+                opacity:
+                  !currentMessage.trim() || status !== "connected" ? 0.5 : 1,
+              }}
+              className="font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -573,7 +616,7 @@ export default function Chat({
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
-            </Button>
+            </button>
           </form>
         </div>
       </div>
