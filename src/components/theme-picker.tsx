@@ -199,10 +199,7 @@ export default function ThemePickerDialog({
                     value={previewTheme.name}
                     onChange={handleThemeChange}
                     style={{
-                      backgroundColor:
-                        previewTheme.inputArea.inputBackground[previewMode],
-                      color: previewTheme.inputArea.inputText[previewMode],
-                      borderColor: previewTheme.inputArea.border[previewMode],
+                      backgroundColor: previewTheme.accent.faded[previewMode]
                     }}
                     className="w-full px-4 py-2.5 rounded-lg border appearance-none transition-colors duration-300 focus:outline-none focus:ring-2"
                   >
