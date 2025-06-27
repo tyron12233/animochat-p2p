@@ -570,6 +570,18 @@ export const useAnimochatV2 = () => {
             )
           );
           break;
+
+          default:
+          console.warn("Unknown packet type received:", packet.type);
+          const unknownMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatId,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: `Unknown packet type received: ${packet.type} there is probably a new version of the site available. Please refresh the page.`,
+            sender: "system",
+          };
+          setMessages((prev) => [...prev, unknownMessage]);
       }
     };
 
