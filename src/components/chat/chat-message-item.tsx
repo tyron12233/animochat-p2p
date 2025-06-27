@@ -102,3 +102,130 @@ export default function ChatMessageItem({
     </div>
   );
 }
+
+
+export const bumbleTheme: ChatThemeV2 = {
+  name: "🐝 Theme",
+  typography: {
+    fontFamily: "inherit",
+    baseFontSize: "16px",
+  },
+  accent: {
+    main: { light: "#FFCB37", dark: "#FFD966" },
+    faded: { light: "rgba(255, 203, 55, 0.15)", dark: "rgba(255, 217, 102, 0.15)" },
+  },
+  secondaryText: { light: "#707070", dark: "#A0A0A0" },
+  errorText: { light: "#D9534F", dark: "#f87171" },
+  linkColor: { light: "#FFCB37", dark: "#FFD966" },
+  announcement: {
+    background: { light: "#FFFBEB", dark: "#3A301A" },
+    text: { light: "#282828", dark: "#FFFBEB" },
+    border: { light: "#FEEBC8", dark: "#4A3C22" },
+  },
+  animations: {
+    typingIndicatorDots: {
+        dark: "#FFFBEB",
+        light: "#333333",
+    }
+  },
+  messageList: {
+    scrollbarThumb: { light: "#FFD966", dark: "#5A4C29" },
+    scrollbarTrack: { light: "#FFFBEB", dark: "#1E1E1E" },
+  },
+  overlays: {
+    emojiMenu: {
+        background: { light: "#FFFFFF", dark: "#1E1E1E" },
+        shadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    },
+    replyingPreview: {
+        background: { light: "#F0F0F0", dark: "#2C2C2C" },
+        border: { light: "#FFCB37", dark: "#FFD966" },
+        closeIcon: {
+            light: "#707070",
+            dark: "#A0A0A0",
+        },
+        description: {
+            light: "#333333",
+            dark: "#F0F0F0",
+        },
+        title: {
+            light: "#222222",
+            dark: "#FFFFFF",
+        }
+    }
+  },
+  general: {
+    background: { light: "#FFFFFF", dark: "#121212" },
+    backdropBlur: "1.5rem",
+    shadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+    borderRadius: "2rem",
+  },
+  header: {
+    background: { light: "rgba(255, 255, 255, 0.8)", dark: "rgba(30, 30, 30, 0.8)" },
+    border: { light: "rgba(240, 240, 240, 0.8)", dark: "rgba(44, 44, 44, 0.8)" },
+    statusLabel: { light: "#707070", dark: "#A0A0A0" },
+    statusValue: { light: "#333333", dark: "#FFD966" },
+  },
+  message: {
+     myMessage: {
+        background: { light: "#FFCB37", dark: "#FFD966" },
+        text: { light: "#222222", dark: "#222222" },
+        isAnimated: false,
+     },
+     strangerMessage: {
+        background: { light: "#F0F0F0", dark: "#2C2C2C" },
+        text: { light: "#222222", dark: "#FFFFFF" },
+        isAnimated: false,
+     },
+     systemMessage: {
+        background: { light: "#F0F0F0", dark: "#2C2C2C" },
+        text: { light: "#707070", dark: "#A0A0A0" },
+     },
+     deletedMessage: {
+        text: { light: "#A0A0A0", dark: "#707070" },
+    },
+    imageOverlay: {
+        background: { light: "rgba(0, 0, 0, 0.4)", dark: "rgba(0, 0, 0, 0.4)" },
+        text: { light: "#ffffff", dark: "#ffffff" },
+    },
+  },
+  inputArea: {
+    background: { light: "rgba(255, 255, 255, 0.8)", dark: "rgba(30, 30, 30, 0.8)" },
+    border: { light: "rgba(240, 240, 240, 0.8)", dark: "rgba(44, 44, 44, 0.8)" },
+    inputBackground: { light: "#FFFFFF", dark: "#2C2C2C" },
+    inputText: { light: "#222222", dark: "#FFFFFF" },
+    placeholderText: { light: "#A0A0A0", dark: "#707070" },
+    focusRing: { light: "#FFD966", dark: "#FFCB37" },
+  },
+  buttons: {
+    primary: {
+      background: { light: "#FFCB37", dark: "#FFD966" },
+      text: { light: "#222222", dark: "#222222" },
+      hoverBackground: { light: "#FFD966", dark: "#FFCB37" },
+    },
+    secondary: {
+      background: { light: "#FFFFFF", dark: "#2C2C2C" },
+      text: { light: "#222222", dark: "#FFFFFF" },
+      hoverBackground: { light: "#F0F0F0", dark: "#3C3C3C" },
+      border: { light: "#F0F0F0", dark: "#3C3C3C" }
+    },
+    destructive: {
+      background: { light: "#D9534F", dark: "#D9534F" },
+      text: { light: "#FFFFFF", dark: "#FFFFFF" },
+      hoverBackground: { light: "#C9302C", dark: "#C9302C" },
+      border: { light: "#D43F3A", dark: "#D43F3A" }
+    },
+    newMessages: {
+      background: { light: "#FFCB37", dark: "#FFD966" },
+      text: { light: "#222222", dark: "#222222" },
+      hoverBackground: { light: "#FFD966", dark: "#FFCB37" },
+    },
+  },
+  reactions: {
+    bubble: {
+      background: { light: "#F0F0F0", dark: "#3C3C3C" },
+      border: { light: "#FFFFFF", dark: "#121212" },
+      text: { light: "#222222", dark: "#FFFFFF" },
+    },
+  },
+};

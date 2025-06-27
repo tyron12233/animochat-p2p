@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 // import { Button } from "@/components/ui/button";
 // import { Input } from "@/components/ui/input";
 import { DEFAULT_THEME, Message, UserMessage, type User } from "../lib/types";
-import ChatMessageItem from "./chat/chat-message-item";
+import ChatMessageItem, { bumbleTheme } from "./chat/chat-message-item";
 import { useActualMessages } from "../hooks/use-actual-messages";
 import { EmojiOverlay } from "./chat/emoji-overlay";
 import { VList, VListHandle } from "virtua";
@@ -293,7 +293,7 @@ export default function Chat({
       <ThemePickerDialog
         isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
-        themes={[defaultTheme, tyronsTheme,]}
+        themes={[defaultTheme, tyronsTheme, bumbleTheme]}
         activeTheme={theme}
         setActiveThemeAndMode={(theme, mode) => {
           onChangeTheme?.(mode, theme);
