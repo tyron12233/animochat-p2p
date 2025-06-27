@@ -77,29 +77,27 @@ export default function Chat({
     };
 
     const channel = supabase
-      .channel("public:announcements")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, (payload) => {
+      .channel("public:announcements");
+      
+      channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, (payload) => {
         console.log("New announcement:", payload);
         if (!payload.new.content) return;
         setAnnouncement(payload.new.content);
-      })
-      .subscribe();
+      });
 
     //  on update
-    const updateChannel = supabase
-      .channel("public:announcements")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "announcements" }, (payload) => {
+      channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "announcements" }, (payload) => {
         console.log("Updated announcement:", payload);
         if (!payload.new.content) return;
         setAnnouncement(payload.new.content);
-      })
-      .subscribe();
+      });
 
     getAnnouncement();
 
+    channel.subscribe();
+
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(updateChannel);
     };
   }, []);
 
