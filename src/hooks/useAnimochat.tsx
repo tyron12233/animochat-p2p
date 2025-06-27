@@ -33,6 +33,10 @@ type EditMessagePacket = Packet<
 >;
 type DisconnectPacket = Packet<null, "disconnect">;
 
+// This packet is used when the user is offline or not connected.
+// the content is a string (the user id of the user who when offline).
+type OfflinePacket = Packet<string, "offline">;
+
 export const useAnimochatV2 = () => {
   // --- State Management ---
   const [screen, setScreen] = useState<Screen>("intro");
@@ -441,6 +445,24 @@ export const useAnimochatV2 = () => {
       if (packet.sender === userId) return;
 
       switch (packet.type) {
+        case "offline":
+          console.log("Received offline packet from server.");
+
+          const isPartnerOffline = packet.content !== userId;
+          const message = isPartnerOffline
+            ? `Your partner has went offline.`
+            : "You are currently offline.";
+
+          const offlineMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatId,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: message,
+            sender: "system",
+          };
+          setMessages((prev) => [...prev, offlineMessage]);
+          break;
         case "disconnect":
           console.log("Received disconnect packet from server.");
           setStatus("disconnected");

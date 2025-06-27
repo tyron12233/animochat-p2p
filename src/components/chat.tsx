@@ -410,10 +410,11 @@ export default function Chat({
           )}
         </div>
 
-        <div className="p-2 text-center text-xs text-gray-500 bg-white/60 border-b border-gray-200/80 shrink-0">
-          not all features are implemented, still in early stages <br />{" "}
-          -@tyronscott_
+        {announcement && (
+          <div className="p-2 text-center text-xs text-gray-500 bg-white/60 border-b border-gray-200/80 shrink-0">
+             {announcement}
         </div>
+        )}
 
         <div className="max-h-full h-full scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-gray-100 hover:scrollbar-thumb-green-700">
           <VList
