@@ -1,6 +1,3 @@
-"use client";
-
-
 import { Message } from "@/src/lib/types";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -24,73 +21,57 @@ export default function EmojiMenu({
   onReact,
   onClose,
 }: EmojiMenuProps) {
-  // Ref for the emoji container so we can measure its dimensions if needed
   const emojiContainerRef = useRef<HTMLDivElement>(null);
-
-  // State to hold the computed position
   const [position, setPosition] = useState({ top: 0, left: 0 });
-
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
 
-  // Use layout effect to measure before paint
+  // For tracking pointer interaction
+  const activePointerIdRef = useRef<number | null>(null);
+
   useLayoutEffect(() => {
-    // get div with id "message-bubble"
     const messageBubble = messageDiv.querySelector(
       "#message-bubble"
     )! as HTMLDivElement;
-
     messageBubble.style.position = "relative";
     messageBubble.style.zIndex = "30";
 
     if (messageBubble && emojiContainerRef.current) {
       const bubbleRect = messageBubble.getBoundingClientRect();
       const container = emojiContainerRef.current;
-      // Optionally measure container dimensions
       const containerHeight = container.offsetHeight;
-
-      // position at the top and left of the message bubble
-      // accounting for scroll position
-      let top = bubbleRect.top;
-
-      // add window scroll
-      top += window.scrollY;
-
-      // currently, the top is set to the top of the message bubble
-      // so it will be right above the message bubble
-      // adjust it to be at the top of the message bubble
-      top -= containerHeight + 10;
-
-      // top = Math.max(top, -containerHeight * 4);
-
-      // centered horizontally on the window
+      let top = bubbleRect.top + window.scrollY - containerHeight - 10;
       let left = bubbleRect.right - container.offsetWidth - 16;
-      const isUserMessage = messageBubble.classList.contains("items-end");
-      if (!isUserMessage) {
-        // if the message is from the user, then move the emoji container to the left
-        // so it is right next to the message bubble
+      const isUser = messageBubble.classList.contains("items-end");
+      if (!isUser) {
         left = bubbleRect.left - 16;
       }
       setPosition({ top, left });
     }
 
     return () => {
-      // messageBubble.style.position = "static";
       messageBubble.style.zIndex = "0";
     };
   }, [messageDiv]);
 
   useEffect(() => {
-    // Global listener to “capture” pointer moves after the long press
-    const handlePointerMove = (event: PointerEvent) => {
-      // Check if our emoji container is mounted
-      if (!emojiContainerRef.current) return;
-      // Find the element at the pointer coordinates
-      const targetElem = document.elementFromPoint(
-        event.clientX,
-        event.clientY
-      );
+    const container = emojiContainerRef.current;
+    if (!container) return;
+
+    // pointerdown on container: begin capturing
+    const handlePointerDown = (e: PointerEvent) => {
+      // Only proceed for primary button / touch
+      if (e.button !== 0) return;
+      // Capture this pointer so we continue getting move/up
+      try {
+        container.setPointerCapture(e.pointerId);
+      } catch {
+        // some browsers may throw if not on the same element; but we are on container
+      }
+      activePointerIdRef.current = e.pointerId;
+
+      // Optionally, immediately check hovered emoji at down:
+      const targetElem = document.elementFromPoint(e.clientX, e.clientY);
       if (targetElem) {
-        // Look for an emoji element (make sure each emoji element has a data attribute, e.g., data-emoji)
         const emojiElem = targetElem.closest("[data-emoji]");
         if (emojiElem) {
           const emoji = emojiElem.getAttribute("data-emoji");
@@ -101,41 +82,54 @@ export default function EmojiMenu({
       setHoveredEmoji(null);
     };
 
-    const handlePointerUp = (event: PointerEvent) => {
-        console.log("Pointer up event:", event);
-
-      if (hoveredEmoji) {
-        onReact(
-          message.id,
-          preselectedEmoji?.emoji === hoveredEmoji ? null : hoveredEmoji
-        );
-
-        onClose();
+    // pointermove: update hoveredEmoji
+    const handlePointerMove = (e: PointerEvent) => {
+      if (activePointerIdRef.current !== e.pointerId) return;
+      if (!container) return;
+      const targetElem = document.elementFromPoint(e.clientX, e.clientY);
+      if (targetElem) {
+        const emojiElem = targetElem.closest("[data-emoji]");
+        if (emojiElem) {
+          const emoji = emojiElem.getAttribute("data-emoji");
+          setHoveredEmoji(emoji);
+          return;
+        }
       }
+      setHoveredEmoji(null);
     };
 
-    // Listen at the window level so that even if the pointer isn’t directly over our container
+    // pointerup: finalize selection if pointerId matches
+    const handlePointerUp = (e: PointerEvent) => {
+      if (activePointerIdRef.current !== e.pointerId) return;
+      // On pointerup, if hoveredEmoji is non-null, we select it
+      if (hoveredEmoji) {
+        const chosen = hoveredEmoji;
+        // If same as preselected, toggle off
+        const reactEmoji =
+          preselectedEmoji?.emoji === chosen ? null : chosen;
+        onReact(message.id, reactEmoji);
+      }
+      onClose();
+      // release capture
+      try {
+        container.releasePointerCapture(e.pointerId);
+      } catch {}
+      activePointerIdRef.current = null;
+    };
+
+    container.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
 
     return () => {
+      container.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
   }, [hoveredEmoji, onReact, onClose, preselectedEmoji, message.id]);
 
-  useEffect(() => {
-    if (emojiContainerRef.current) {
-      // Dispatch a synthetic pointerdown event to “capture” events on this element.
-      const pointerDownEvent = new PointerEvent("pointerdown", {
-        bubbles: true,
-        cancelable: true,
-      });
-      emojiContainerRef.current.dispatchEvent(pointerDownEvent);
-      // You could also call containerRef.current.setPointerCapture(event.pointerId)
-      // if you had access to the pointerId (but that typically comes during an actual pointerdown).
-    }
-  }, []);
+  // Remove the synthetic pointerdown dispatch in your original code; now we rely on the real pointerdown
+  // useEffect(() => { ... synthetic dispatch removed ... }, []);
 
   return (
     <motion.div
@@ -206,20 +200,12 @@ export default function EmojiMenu({
                       ? "bg-gray-100/80 dark:bg-gray-600/80"
                       : ""
                   }`}
-                //   onClick={() => {
-                //     onReact(
-                //       message.id,
-                //       preselectedEmoji?.emoji === emoji ? null : emoji
-                //     );
-                //     onClose();
-                //   }}
+                  // Remove onClick entirely
                   data-emoji={emoji}
                   animate={{ scale: hoveredEmoji === emoji ? 1.6 : 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <span className="text-xl">{emoji}</span>
-
-                  {/* Selected indicator dot */}
                   {preselectedEmoji?.emoji === emoji && (
                     <motion.div
                       className="absolute -bottom-0.5 left-1/2 w-1 h-1 bg-green-500 rounded-full"

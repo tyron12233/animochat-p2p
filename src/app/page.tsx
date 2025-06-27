@@ -15,13 +15,14 @@ export default function App() {
     peerId,
     status,
     isConnecting,
+    isStrangerTyping,
     messages,
     handleGetStarted,
     startMatchmaking,
     endChat,
     sendMessage,
     onReact,
-    isPeerOutdated, // Import the flag for the UI
+    onStartTyping,
   } = useAnimoChat();
 
   const [interests, setInterests] = useState<Set<string>>(new Set());
@@ -37,9 +38,17 @@ export default function App() {
         return (
            <div className="h-full w-full flex items-center justify-center sm:p-4">
               <Chat
+                goBack={() => {
+                  handleGetStarted();
+                }}
+                onStartTyping={onStartTyping}
+                isStrangerTyping={isStrangerTyping}
                 onReact={onReact}
                 messages={messages}
                 sendMessage={sendMessage}
+                newChat={() => {
+                  handleFindMatch(interests);
+                }}
                 endChat={endChat}
                 peerId={peerId}
                 status={status}

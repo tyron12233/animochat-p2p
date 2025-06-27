@@ -4,6 +4,7 @@ import type { DataConnection as PeerJSDataConnection } from 'peerjs';
 export type DataConnection = PeerJSDataConnection;
 
 export type Screen = 'intro' | 'matchmaking' | 'chat';
+export type Status = 'initializing' | 'ready' | 'connecting' | 'connected' | 'disconnected' | 'error' | 'finding_match' | 'waiting_for_match';
 
 export interface ChatMessage {
     text: string;
@@ -25,8 +26,9 @@ export type MatchmakingData =
     | { state: 'ERROR'; message: string; };
 
 export interface Reaction {
+  message_id: string;
   user_id: string;
-  emoji: string;
+  emoji: string | null;
 }
 
 export interface Message {
