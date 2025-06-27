@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { X, MessageSquarePlus, ChevronDown } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
+import { motion, AnimatePresence, Variants, delay } from "framer-motion"; // Import motion and AnimatePresence
+import { AnimateChangeInHeight } from "../lib/animate-height-change";
 
 // Assuming this type is defined in a central types file
 export type PopularInterest = {
@@ -291,11 +292,12 @@ export default function InterestSelector({
     visible: {
       opacity: 1,
       transition: {
+        delay: 0.3,
         staggerChildren: 0.07,
         delayChildren: 0.2,
       },
     },
-  };
+  } as Variants;
 
   const popularTopicItemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -397,7 +399,8 @@ export default function InterestSelector({
   return (
     <>
       <div className="w-[350px] max-w-full mx-auto">
-        <div className="flex flex-wrap justify-center gap-2 min-h-[36px] mb-4">
+        <AnimateChangeInHeight>
+          <div className="flex flex-wrap justify-center gap-2 min-h-[36px] mb-4">
           {/* AnimatePresence will handle the enter/exit of tags */}
           <AnimatePresence>
             {Array.from(interests).map((interest) => (
@@ -421,6 +424,7 @@ export default function InterestSelector({
             ))}
           </AnimatePresence>
         </div>
+        </AnimateChangeInHeight>
         <Input
           id="interest-input"
           type="text"
@@ -438,7 +442,8 @@ export default function InterestSelector({
           Popular Topics
         </h3>
         {/* This container animates its children when they appear */}
-        <motion.div 
+        <AnimateChangeInHeight>
+          <motion.div 
           className="flex flex-wrap justify-center gap-2 max-w-md mx-auto"
           variants={popularTopicsContainerVariants}
           initial="hidden"
@@ -446,6 +451,7 @@ export default function InterestSelector({
         >
           {renderPopularInterests()}
         </motion.div>
+        </AnimateChangeInHeight>
       </div>
 
       <div className="mt-12 w-[350px] max-w-full mx-auto">
