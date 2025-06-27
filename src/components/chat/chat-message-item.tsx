@@ -67,7 +67,11 @@ export default function ChatMessageItem({
     >
       {message.showTime && (
         <div key={message.id + "_time"} className="flex justify-center py-4">
-          <p className="text-xs text-gray-500 font-normal">
+          <p className="text-xs font-normal"
+          style={{
+            color: theme.message.systemMessage.text[mode],
+          }}
+          >
             {message.created_at &&
               format(new Date(message.created_at), "h:mm a")}
           </p>
