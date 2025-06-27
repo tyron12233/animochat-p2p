@@ -48,9 +48,51 @@ export const useAnimochatV2 = () => {
 
   // --- Initial setup: Generate a unique ID for the user ---
   useEffect(() => {
-    // Generate a unique identifier for this user session.
-    setUserId(uuidv4());
-    setStatus("ready");
+    const storedUserId = localStorage.getItem("animochat_user_id");
+    if (!storedUserId) {
+      const newUserId = uuidv4();
+      localStorage.setItem("animochat_user_id", newUserId);
+      setUserId(newUserId);
+    } else {
+      setUserId(storedUserId);
+    }
+
+    const getExistingSession = async () => {
+      const sessionApi = `${API_BASE_URL}/session/${storedUserId}`;
+      try {
+        const response = await fetch(sessionApi);
+        if (!response.ok) {
+          // If the session API returns an error, then there's probably no existing session.
+          setStatus("ready");
+          return;
+        }
+
+        const data = await response.json();
+        const { chatId, serverUrl, participants } = data;
+        if (!chatId || !serverUrl) {
+          console.log("No existing session found.");
+          setStatus("ready");
+          return;
+        }
+
+        setChatId(data.chatId);
+
+        const wsUrl = `${serverUrl}?userId=${storedUserId}&chatId=${data.chatId}`;
+        console.log(`Connecting to WebSocket server: ${wsUrl}`);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        setupWebsocketListeners(ws, data.chatId, [], true);
+        setScreen("chat");
+        setStatus("connecting");
+        console.log(`Reconnected to chat: ${data.chatId}`);
+      } catch (error) {
+        console.error("Error fetching existing session:", error);
+        setStatus("error");
+      }
+    };
+
+    getExistingSession();
 
     // Cleanup function to close any open connections when the component unmounts.
     return () => {
@@ -242,14 +284,45 @@ export const useAnimochatV2 = () => {
     eventSourceRef.current?.close();
     eventSourceRef.current = null;
 
+    const disconnectFromApi = async () => {
+
+      const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
+      try {
+        const response = await fetch(disconnectApi, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+          console.error(
+            "Failed to disconnect from session:",
+            response.statusText
+          );
+        } else {
+          console.log("Successfully disconnected from session.");
+        }
+      } catch (error) {
+        console.error("Error disconnecting from session:", error);
+      }
+    };
+
+    disconnectFromApi().then(() => {
+      console.log("Disconnected from matchmaking and chat.");
+    })
+
     setStatus("disconnected");
     setChatId("");
-  }, []);
+  }, [userId]);
 
   // --- Matchmaking and Connection Logic ---
 
   const startMatchmaking = useCallback(
     (interests: string[]) => {
+      console.log("Starting matchmaking with interests:", interests);
+    
       if (!userId) {
         console.error("User ID not set yet. Cannot start matchmaking.");
         setStatus("error");
@@ -274,7 +347,7 @@ export const useAnimochatV2 = () => {
             `Match found with user ${data.matchedUserId}! ChatID: ${data.chatId}`
           );
           setStatus("connecting");
-          es.close(); // Stop listening for matchmaking events.
+          es.close();
           setChatId(data.chatId);
 
           const WEBSOCKET_URL = data.chatServerUrl;
@@ -285,99 +358,9 @@ export const useAnimochatV2 = () => {
           const ws = new WebSocket(wsUrl);
           wsRef.current = ws;
 
-          ws.onopen = () => {
-            console.log("WebSocket connection established.");
-            setStatus("connected");
-            const welcomeMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: data.chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: `You matched on ${
-                data.interest || "a common interest"
-              }.`,
-              sender: "system",
-            };
-            setMessages([welcomeMessage]);
-          };
+          const interests = data.interest?.split(",") || [];
 
-          ws.onmessage = async (e: MessageEvent<any>) => {
-            const rawPacket = e.data;
-
-            let jsonPacket: any;
-            if (rawPacket instanceof Blob) {
-              const text = await rawPacket.text();
-              jsonPacket = JSON.parse(text);
-            } else if (typeof rawPacket === "string") {
-              jsonPacket = JSON.parse(rawPacket);
-            } else {
-              jsonPacket = rawPacket;
-            }
-
-            const packet = jsonPacket;
-
-            console.log("Received packet:", jsonPacket);
-
-            // Ignore messages sent by ourselves. The server relays everything.
-            if (packet.sender === userId) return;
-
-            switch (packet.type) {
-              case "STATUS":
-                const statusMessage: SystemMessage = {
-                  id: `system_${Date.now()}`,
-                  session_id: data.chatId,
-                  created_at: new Date().toISOString(),
-                  type: "system",
-                  content: packet.message,
-                  sender: "system",
-                };
-                setMessages((prev) => [...prev, statusMessage]);
-                break;
-              case "message":
-                setMessages((prev) => [...prev, packet.content]);
-                break;
-              case "reaction":
-                const { message_id, emoji, user_id } = packet.content;
-                handleReaction(message_id, emoji, user_id);
-                break;
-              case "typing":
-                setStrangerTyping(packet.content as boolean);
-                break;
-              case "edit_message":
-                const {
-                  message_id: editId,
-                  new_content,
-                  user_id: editorId,
-                } = packet.content;
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === editId && msg.sender === editorId
-                      ? { ...msg, content: new_content, edited: true }
-                      : msg
-                  )
-                );
-                break;
-            }
-          };
-
-          ws.onclose = () => {
-            console.log("WebSocket connection closed.");
-            setStatus("disconnected");
-            const disconnectMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: data.chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: "The connection has been closed.",
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, disconnectMessage]);
-          };
-
-          ws.onerror = (err) => {
-            console.error("WebSocket error:", err);
-            setStatus("error");
-          };
+          setupWebsocketListeners(ws, data.chatId, interests, false);
         } else if (data.state === "WAITING") {
           console.log("Waiting for a match...");
           setStatus("waiting_for_match");
@@ -392,6 +375,113 @@ export const useAnimochatV2 = () => {
     },
     [userId]
   );
+
+  const setupWebsocketListeners = (
+    ws: WebSocket,
+    chatId: string,
+    interests: string[] = [],
+    reconnecting = false
+  ) => {
+    ws.onopen = () => {
+      console.log("WebSocket connection established.");
+      setStatus("connected");
+
+      let message = `You matched with a stranger on ${interests.join(
+        ", "
+      )}! Say hi!`;
+      if (reconnecting) {
+        message = `Reconnected to chat with a stranger. Previous messages may not be visible yet.`;
+      }
+
+      const welcomeMessage: SystemMessage = {
+        id: `system_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        type: "system",
+        content: message,
+        sender: "system",
+      };
+      setMessages([welcomeMessage]);
+    };
+
+    ws.onmessage = async (e: MessageEvent<any>) => {
+      const rawPacket = e.data;
+
+      let jsonPacket: any;
+      if (rawPacket instanceof Blob) {
+        const text = await rawPacket.text();
+        jsonPacket = JSON.parse(text);
+      } else if (typeof rawPacket === "string") {
+        jsonPacket = JSON.parse(rawPacket);
+      } else {
+        jsonPacket = rawPacket;
+      }
+
+      const packet = jsonPacket;
+
+      console.log("Received packet:", jsonPacket);
+
+      // Ignore messages sent by ourselves. The server relays everything.
+      if (packet.sender === userId) return;
+
+      switch (packet.type) {
+        case "STATUS":
+          const statusMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatId,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: packet.message,
+            sender: "system",
+          };
+          setMessages((prev) => [...prev, statusMessage]);
+          break;
+        case "message":
+          setMessages((prev) => [...prev, packet.content]);
+          break;
+        case "reaction":
+          const { message_id, emoji, user_id } = packet.content;
+          handleReaction(message_id, emoji, user_id);
+          break;
+        case "typing":
+          setStrangerTyping(packet.content as boolean);
+          break;
+        case "edit_message":
+          const {
+            message_id: editId,
+            new_content,
+            user_id: editorId,
+          } = packet.content;
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === editId && msg.sender === editorId
+                ? { ...msg, content: new_content, edited: true }
+                : msg
+            )
+          );
+          break;
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed.");
+      setStatus("disconnected");
+      const disconnectMessage: SystemMessage = {
+        id: `system_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        type: "system",
+        content: "The connection has been closed.",
+        sender: "system",
+      };
+      setMessages((prev) => [...prev, disconnectMessage]);
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+      setStatus("error");
+    };
+  };
 
   return {
     screen,
