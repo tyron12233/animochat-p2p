@@ -57,7 +57,7 @@ export default function ReplyIndicator({
   return (
     <>
       <div
-        className="rounded-t-lg rounded-b-md px-3 pt-2 text-sm opacity-[0.65] pb-[32px] -mb-[32px] -z-10"
+        className="rounded-tl-3xl rounded-tr-3xl rounded-b-3xl px-3 pt-2 text-sm opacity-[0.65] pb-[32px] -mb-[32px] -z-10"
         style={{
           // Re-using the replyingPreview theme keys as they serve a similar purpose
           backgroundColor: theme.overlays.replyingPreview.background[mode],
