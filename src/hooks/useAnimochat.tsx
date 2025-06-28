@@ -791,7 +791,7 @@ export const useAnimochatV2 = () => {
           let showRandomStrangerMessage = false;
           // if we specified interests, but we matched with no interests,
           // then we should show a message that we matched with a random stranger.
-          if (interest.length !== interests.length) {
+          if (interest.length !== interests.length && interests.length > 0) {
             showRandomStrangerMessage = true;
           }
 
