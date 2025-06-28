@@ -528,6 +528,12 @@ export const useAnimochatV2 = () => {
                 },
               ]);
               ws.close();
+              isDisconnectingRef.current = true;
+              if (reconnectionTimerRef.current) {
+                clearTimeout(reconnectionTimerRef.current);
+              }
+              reconnectionAttemptsRef.current = 0;
+              
               wsRef.current = null;
               eventSourceRef.current?.close();
               setChatId("");
