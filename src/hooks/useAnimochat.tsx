@@ -9,6 +9,7 @@ import type {
   Status,
   SystemMessage,
   UserMessage,
+  MessagesSyncPacket,
 } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
 import { useChatTheme } from "../context/theme-context";
@@ -78,6 +79,25 @@ export const useAnimochatV2 = () => {
   useEffect(() => {
     if (!userId) return;
 
+    const syncMessages = async (chatId: string) => {
+      ///sync/:chatId
+      const syncApi = `${API_BASE_URL}/sync/${chatId}`;
+      try {
+        const response = await fetch(syncApi);
+        if (!response.ok) {
+          throw new Error(`Failed to sync messages: ${response.statusText}`);
+        }
+
+        // will return a message sync packet
+        const packet: MessagesSyncPacket = await response.json();
+
+        return packet.content;
+      } catch (error) {
+        console.error("Error syncing messages:", error);
+        return [];
+      }
+    };
+
     const getExistingSession = async () => {
       const sessionApi = `${API_BASE_URL}/session/${userId}`;
       try {
@@ -102,6 +122,12 @@ export const useAnimochatV2 = () => {
         setMode("light");
         setScreen("chat");
         setStatus("connecting");
+
+        // first get
+
+        const messages = await syncMessages(chatId);
+        setMessages(messages);
+
         await connectToChat(data.chatId, [], true);
       } catch (error) {
         console.error("Error fetching existing session:", error);

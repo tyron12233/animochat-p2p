@@ -66,6 +66,7 @@ export type PeerConnectionPacket<Content, T extends String> = {
   sender: string;
 };
 
+export type MessagesSyncPacket = PeerConnectionPacket<Message[], "messages_sync">;
 export type MessagePacket = PeerConnectionPacket<UserMessage, "message">;
 export type ReactionPacket = PeerConnectionPacket<Reaction, "reaction">;
 export type HandshakePacket = PeerConnectionPacket<string, "handshake">;
