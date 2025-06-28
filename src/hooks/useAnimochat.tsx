@@ -771,7 +771,17 @@ export const useAnimochatV2 = () => {
 
           setMode("light");
           setTheme(defaultTheme);
-          connectToChat(data.chatId, data.interest?.split(",") || []);
+
+          let interest = [];
+
+          if (!data.interest || data.interest === "") {
+            console.log("No interests provided, using default.");
+          } else {
+            interest = data.interest.split(",");
+            console.log("Interests for this match:", interest);
+          }
+
+          connectToChat(data.chatId, interest);
         } else if (data.state === "WAITING") {
           setStatus("waiting_for_match");
         }
