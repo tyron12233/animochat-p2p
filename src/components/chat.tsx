@@ -384,7 +384,14 @@ export default function Chat({
           className="p-4 border-b flex items-center shrink-0"
         >
           {status !== "connected" && (
-            <Button onClick={goBack} className="rounded-full mr-2 p-1">
+            <Button onClick={goBack} 
+            variant={"outline"}
+            style={{
+              background: theme.buttons.secondary.background[mode],
+              color: theme.buttons.secondary.text[mode],
+              borderColor: theme.buttons.secondary.border?.[mode] || "transparent",
+            }}
+            className="rounded-full mr-2 p-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -465,7 +472,9 @@ export default function Chat({
             </Button>
           )}
           {status !== "connected" && (
-            <button
+            <Button
+              id="new-chat-button"
+              
               onClick={newChat}
               className="px-3 py-1 text-sm rounded-full"
               style={{
@@ -474,7 +483,7 @@ export default function Chat({
               }}
             >
               New Chat
-            </button>
+            </Button>
           )}
         </div>
 
