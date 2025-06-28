@@ -119,7 +119,7 @@ const ThemePreview = ({
   return (
     <div
       className="w-full p-4 rounded-lg flex flex-col"
-      style={{ backgroundColor: theme.general.background[mode] }}
+      style={{ background: theme.general.background[mode] }}
     >
       <div className="flex flex-col">
         {previewMessages.map((msg, index) => (

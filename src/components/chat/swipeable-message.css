@@ -1,18 +1,20 @@
 .animate-gradient-x {
     position: absolute;
     inset: 0;
-    /* background: linear-gradient(to right, #4ade80, #3b82f6, #9333ea); */
     background-size: 200% 100%;
-    animation: gradientFlow 3s ease infinite;
+    animation: gradientFlow 5s ease infinite;
 }
 
 /* smooth gradient transition x and y */
 @keyframes gradientFlow {
-    0%, 100% {
-        background-position: 0% 25%;
+    0% {
+        background-position: 0% 50%;
     }
     50% {
-        background-position: 100% 25%;
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
     }
 }
 

@@ -20,7 +20,7 @@ import { ChatThemeV2 } from "../lib/chat-theme";
 import { Button } from "@/components/ui/button";
 import { Palette } from "lucide-react";
 import ThemePickerDialog from "./theme-picker";
-import { defaultTheme, tyronsTheme } from "../lib/default-chat-themes";
+import { auroraGlowTheme, cosmicLatteTheme, defaultTheme, prideCelebrationTheme, sunsetBlissTheme, tyronsTheme } from "../lib/default-chat-themes";
 
 interface ChatProps {
   messages: Message[];
@@ -266,16 +266,9 @@ export default function Chat({
           <span
             style={{
               color: theme.message.systemMessage.text[mode],
-              backgroundColor: theme.message.systemMessage.background[mode],
+              background: theme.message.systemMessage.background[mode],
             }}
-            className="
-      box-decoration-clone 
-      text-xs
-      rounded-full
-      px-3
-      py-1
-      leading-relaxed      
-    "
+            className="box-decoration-clone text-xs rounded-full px-3 py-1 leading-relaxed"
           >
             {msg.content}
           </span>
@@ -324,7 +317,7 @@ export default function Chat({
       <ThemePickerDialog
         isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
-        themes={[defaultTheme, tyronsTheme, bumbleTheme]}
+        themes={[defaultTheme, tyronsTheme, prideCelebrationTheme, bumbleTheme, cosmicLatteTheme, sunsetBlissTheme, auroraGlowTheme]}
         activeTheme={theme}
         setActiveThemeAndMode={(theme, mode) => {
           onChangeTheme?.(mode, theme);
@@ -376,7 +369,7 @@ export default function Chat({
         style={{
           fontFamily: theme.typography.fontFamily,
           fontSize: theme.typography.baseFontSize,
-          backgroundColor: theme.general.background[mode],
+          background: theme.general.background[mode],
           backdropFilter: `blur(${theme.general.backdropBlur})`,
           boxShadow: theme.general.shadow,
           borderRadius: "var(--chat-border-radius, 2rem)", // Use CSS var for sm breakpoint
@@ -385,7 +378,7 @@ export default function Chat({
       >
         <div
           style={{
-            backgroundColor: theme.header.background[mode],
+            background: theme.header.background[mode],
             borderColor: theme.header.border[mode],
           }}
           className="p-4 border-b flex items-center shrink-0"
@@ -429,7 +422,7 @@ export default function Chat({
             variant={"outline"}
             className="mr-2 rounded-full"
             style={{
-              backgroundColor: theme.buttons.secondary.background[mode],
+              background: theme.buttons.secondary.background[mode],
               color: theme.buttons.secondary.text[mode],
               borderColor:
                 theme.buttons.secondary.border?.[mode] || "transparent",
@@ -447,7 +440,7 @@ export default function Chat({
               }
               className="px-3 py-1 text-sm rounded-full"
               style={{
-                backgroundColor: confirmedEnd
+                background: confirmedEnd
                   ? theme.buttons.destructive.background[mode]
                   : theme.buttons.secondary.background[mode],
                 color: confirmedEnd
@@ -476,7 +469,7 @@ export default function Chat({
               onClick={newChat}
               className="px-3 py-1 text-sm rounded-full"
               style={{
-                backgroundColor: theme.buttons.primary.background[mode],
+                background: theme.buttons.primary.background[mode],
                 color: theme.buttons.primary.text[mode],
               }}
             >
@@ -488,7 +481,7 @@ export default function Chat({
         {announcement && (
           <div
             style={{
-              backgroundColor: theme.announcement.background[mode],
+              background: theme.announcement.background[mode],
               color: theme.announcement.text[mode],
               borderColor: theme.announcement.border[mode],
             }}
@@ -662,7 +655,7 @@ export default function Chat({
               }}
               placeholder="Type a message..."
               style={{
-                backgroundColor: theme.inputArea.inputBackground[mode],
+                background: theme.inputArea.inputBackground[mode],
                 color: theme.inputArea.inputText[mode],
                 borderColor: theme.inputArea.border[mode],
               }}
@@ -670,12 +663,12 @@ export default function Chat({
               autoComplete="off"
               required
             />
-            <button
+            <Button
               id="send-button"
               type="submit"
               disabled={!currentMessage.trim() || status !== "connected"}
               style={{
-                backgroundColor: theme.buttons.primary.background[mode],
+                background: theme.buttons.primary.background[mode],
                 color: theme.buttons.primary.text[mode],
                 opacity:
                   !currentMessage.trim() || status !== "connected" ? 0.5 : 1,
@@ -687,7 +680,7 @@ export default function Chat({
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
-                fill="none"
+                fill="currentColor"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -696,7 +689,7 @@ export default function Chat({
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
-            </button>
+            </Button>
           </form>
         </div>
       </div>

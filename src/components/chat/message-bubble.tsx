@@ -12,6 +12,8 @@ import { useState } from "react";
 import { PhotoView } from "react-photo-view";
 import { Message, User } from "@/src/lib/types"; // Updated to ChatThemeV2
 import { ChatThemeV2 } from "@/src/lib/chat-theme"; 
+
+import "./swipeable-message.css"
 /*
 This component now expects a `theme` prop that matches the `ChatThemeV2` interface, 
 which is aligned with the main chat component's theme structure. It also requires a `mode` prop ('light' | 'dark').
@@ -305,6 +307,7 @@ function TextMessage({ message, user, theme, mode, isUserMessage, roundedCorners
                 background: bubbleTheme.background[mode],
                 backgroundSize: "200% 100%",
                 color: bubbleTheme.text[mode],
+                // animate gradient background x
               }}
             />
             <div
