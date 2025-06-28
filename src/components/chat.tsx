@@ -242,6 +242,8 @@ export default function Chat({
     e.preventDefault();
     const trimmedMessage = currentMessage.trim();
     if (trimmedMessage) {
+      setConfirmedEnd(false);
+
       const messageId = bottomMessagePreviewState?.message?.id;
       if (messageId && bottomMessagePreviewState?.type === "editing") {
         onEditMessage?.(messageId, trimmedMessage);
