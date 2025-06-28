@@ -212,6 +212,24 @@ export default function Chat({
   }, [isStrangerTyping]);
 
   useEffect(() => {
+    if (bottomMessagePreviewState) {
+      // focus chat input
+      const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+      if (chatInput) {
+        chatInput.focus();
+      }
+      return;
+    }
+
+    // clear chat input
+    const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+    if (chatInput) {
+      chatInput.value = "";
+      setCurrentMessage("");
+    }
+  }, [bottomMessagePreviewState])
+
+  useEffect(() => {
     const scroller = document.querySelector(
       "#chat-messages-list"
     ) as HTMLDivElement;
@@ -481,18 +499,19 @@ export default function Chat({
         )}
 
         <AnimatePresence>
-            {(status === "waiting_for_match" ||
-              status === "finding_match" ||
-              status === "connecting") && <FindingMatchAnimation onCancel={cancelMatchmaking}
-                key="finding-match-animation"
-                theme={theme}
-                mode={mode}
-              />}
-          </AnimatePresence>
+          {(status === "waiting_for_match" ||
+            status === "finding_match" ||
+            status === "connecting") && (
+            <FindingMatchAnimation
+              onCancel={cancelMatchmaking}
+              key="finding-match-animation"
+              theme={theme}
+              mode={mode}
+            />
+          )}
+        </AnimatePresence>
 
         <div className="max-h-full h-full relative">
-          
-
           <VList
             ref={scrollerRef}
             style={{ overflowX: "hidden" }}
@@ -525,6 +544,7 @@ export default function Chat({
           <AnimatePresence>
             {showNewMessagesButton && (
               <motion.div
+                key="new-messages-button"
                 initial={{ y: "100%" }}
                 animate={{ y: "0" }}
                 exit={{ y: "100%" }}
@@ -566,54 +586,62 @@ export default function Chat({
           </AnimatePresence>
         </div>
 
-        {bottomMessagePreviewState && (
-          <div
-            style={{
-              backgroundColor: theme.overlays.replyingPreview.background[mode],
-              borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
-            }}
-            className="flex items-start gap-2 px-3 py-2 relative"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span
-                  style={{ color: theme.overlays.replyingPreview.title[mode] }}
-                  className="text-xs font-semibold"
-                >
-                  {bottomMessagePreviewState.type === "replying"
-                    ? "Replying to"
-                    : "Editing"}
-                </span>
-                <button
-                  type="button"
-                  className="ml-auto"
-                  aria-label="Cancel"
-                  onClick={() => setBottomMessagePreviewState(null)}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke={theme.overlays.replyingPreview.closeIcon[mode]}
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-              <div
+       <AnimateChangeInHeight>
+            <motion.div
+                key="bottom-message-preview"
                 style={{
-                  color: theme.overlays.replyingPreview.description[mode],
+                  paddingBottom: bottomMessagePreviewState ? "2rem" : 0,
+                  overflow: "hidden",
+                  visibility: bottomMessagePreviewState ? "visible" : "hidden",
+                  height: bottomMessagePreviewState ? "auto" : 0,
+                  backgroundColor:
+                    theme.overlays.replyingPreview.background[mode],
+                  borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
                 }}
-                className="text-xs truncate max-w-xs"
+                className="flex items-start gap-2 px-3 py-2 relative"
               >
-                {bottomMessagePreviewState.description}
-              </div>
-            </div>
-          </div>
-        )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      style={{
+                        color: theme.overlays.replyingPreview.title[mode],
+                      }}
+                      className="text-xs font-semibold"
+                    >
+                      {bottomMessagePreviewState?.type === "replying"
+                        ? "Replying to"
+                        : "Editing"}
+                    </span>
+                    <button
+                      type="button"
+                      className="ml-auto"
+                      aria-label="Cancel"
+                      onClick={() => setBottomMessagePreviewState(null)}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke={theme.overlays.replyingPreview.closeIcon[mode]}
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      color: theme.overlays.replyingPreview.description[mode],
+                    }}
+                    className="text-xs truncate max-w-xs"
+                  >
+                    {bottomMessagePreviewState?.description}
+                  </div>
+                </div>
+              </motion.div>
+          </AnimateChangeInHeight>
 
         <div
           style={{
