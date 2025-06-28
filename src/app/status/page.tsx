@@ -1,25 +1,46 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Server, Users, MessageSquare, Database, RefreshCw, AlertTriangle, Warehouse, ServerCrash } from 'lucide-react';
+import { Server, Users, MessageSquare, Database, RefreshCw, AlertTriangle, Warehouse, ServerCrash, Cpu, MemoryStick, Activity, ChevronDown } from 'lucide-react';
 
 // =================================================================================
 // --- Type Definitions ---
-// These types define the expected structure of the data from your APIs.
+// Updated types to include OS, memory, and CPU metrics from your services.
 // =================================================================================
 
 interface ServiceInstance {
     serviceName: string;
     version: string;
     url: string;
-    timestamp: number; // Changed from lastHeartbeat
-    status: string; // Added status from discovery
+    timestamp: number;
+    status: string;
 }
 
 interface ServiceDiscoveryResponse {
     [serviceName: string]: {
         [version: string]: ServiceInstance[];
     };
+}
+
+interface OsInfo {
+    hostname: string;
+    platform: string;
+    totalMemory: string;
+    freeMemory: string;
+    cpuCount: number;
+    loadAverage: number[];
+}
+
+interface ProcessMemory {
+    rss: string;
+    heapTotal: string;
+    heapUsed: string;
+    external: string;
+}
+
+interface CpuUsage {
+    user: number;
+    system: number;
 }
 
 interface MatchmakingMetrics {
@@ -39,6 +60,10 @@ interface MatchmakingStatus {
         serviceName: string;
         version: string;
     };
+    // Optional system metrics
+    os?: OsInfo;
+    processMemory?: ProcessMemory;
+    cpuUsage?: CpuUsage;
 }
 
 interface ChatRoom {
@@ -54,7 +79,11 @@ interface ChatServerStatus {
         serviceName: string;
         version: string;
     };
-    serviceState: string; // Added to reflect discovery status
+    serviceState: string;
+    // Optional system metrics
+    os?: OsInfo;
+    processMemory?: ProcessMemory;
+    cpuUsage?: CpuUsage;
 }
 
 type ServiceStatus =
@@ -67,7 +96,6 @@ type ServiceStatus =
 // =================================================================================
 
 const StatusIndicator = ({ status }: { status: 'ACTIVE' | 'MAINTENANCE' | 'ERROR' | 'RUNNING' | string }) => {
-    // Normalize different status strings to the three display types
     let displayStatus: 'ACTIVE' | 'MAINTENANCE' | 'ERROR' = 'ERROR';
     if (status === 'ACTIVE' || status === 'RUNNING' || status === 'ready') {
         displayStatus = 'ACTIVE';
@@ -96,12 +124,56 @@ const StatCard = ({ icon, title, value }: { icon: React.ReactNode; title: string
     </div>
 );
 
+const SystemMetric = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined }) => (
+    <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-md">
+        <div className="text-gray-500">{icon}</div>
+        <div>
+            <div className="text-xs text-gray-500">{label}</div>
+            <div className="text-sm font-semibold text-gray-800">{value ?? 'N/A'}</div>
+        </div>
+    </div>
+);
+
+const SystemMetricsCard = ({ os, processMemory }: { os?: OsInfo, processMemory?: ProcessMemory }) => {
+    if (!os && !processMemory) {
+        return null;
+    }
+
+    return (
+        <div className="px-4 pb-4">
+             <details className="group">
+                <summary className="list-none flex items-center justify-between cursor-pointer text-sm font-semibold text-gray-600 hover:text-gray-900">
+                    <span>System Metrics</span>
+                    <ChevronDown className="h-5 w-5 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+                    {os && (
+                        <>
+                            <SystemMetric icon={<Cpu size={16} />} label="CPUs" value={os.cpuCount} />
+                            <SystemMetric icon={<Activity size={16} />} label="Load (1m)" value={os.loadAverage?.[0]?.toFixed(2)} />
+                            <SystemMetric icon={<MemoryStick size={16} />} label="Total Memory" value={os.totalMemory} />
+                            <SystemMetric icon={<MemoryStick size={16} />} label="Free Memory" value={os.freeMemory} />
+                        </>
+                    )}
+                    {processMemory && (
+                        <>
+                           <SystemMetric icon={<Warehouse size={16} />} label="RSS" value={processMemory.rss.split(' ')[0]} />
+                           <SystemMetric icon={<Warehouse size={16} />} label="Heap Used" value={processMemory.heapUsed.split(' ')[0]} />
+                        </>
+                    )}
+                </div>
+            </details>
+        </div>
+    );
+};
+
+
 // =================================================================================
 // --- Service-Specific Cards ---
 // =================================================================================
 
 const MatchmakingServiceCard = ({ status }: { status: MatchmakingStatus }) => (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
             <div className='flex items-center gap-3'>
                 <Server className="text-gray-500" />
@@ -116,6 +188,8 @@ const MatchmakingServiceCard = ({ status }: { status: MatchmakingStatus }) => (
             <StatCard icon={<Database size={20} className="text-green-700" />} title="Redis Commands" value={status.redis.commands} />
             <StatCard icon={<Database size={20} className="text-green-700" />} title="Redis Subscriber" value={status.redis.subscriber} />
         </div>
+        <div className="flex-grow"></div>
+        <SystemMetricsCard os={status.os} processMemory={status.processMemory} />
         <div className="p-2 bg-gray-50 border-t text-right text-xs text-gray-400">
             Last updated: {new Date(status.timestamp).toLocaleTimeString()}
         </div>
@@ -123,7 +197,7 @@ const MatchmakingServiceCard = ({ status }: { status: MatchmakingStatus }) => (
 );
 
 const ChatServiceCard = ({ status }: { status: ChatServerStatus }) => (
-     <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+     <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
              <div className='flex items-center gap-3'>
                 <Server className="text-gray-500" />
@@ -158,6 +232,8 @@ const ChatServiceCard = ({ status }: { status: ChatServerStatus }) => (
                 </div>
             )}
         </div>
+        <div className="flex-grow"></div>
+        <SystemMetricsCard os={status.os} processMemory={status.processMemory} />
     </div>
 );
 
@@ -195,11 +271,10 @@ export default function StatusPage() {
             }
             const services: ServiceDiscoveryResponse = await discoveryResponse.json();
 
-            // 2. Flatten the list of all service instances from the new nested structure
+            // 2. Flatten the list of all service instances from the nested structure
             const allInstances = Object.values(services)
                 .map(versionObject => Object.values(versionObject))
                 .flat(2);
-
 
             if (allInstances.length === 0) {
                  setStatuses([]);
@@ -221,7 +296,6 @@ export default function StatusPage() {
                     if (data.metrics && data.metrics.usersInQueue !== undefined) {
                         return { type: 'matchmaking' as const, data: data as MatchmakingStatus };
                     } else if (data.totalRooms !== undefined) {
-                        // Pass discovery status into the chat server status object
                         return { 
                             type: 'chat' as const, 
                             data: { 
@@ -234,7 +308,7 @@ export default function StatusPage() {
                         throw new Error("Unknown status response format");
                     }
                 } catch (e: any) {
-                    return { type: 'error' as const, message: e.message || 'Failed to fetch status', serviceInfo: instance } as ServiceStatus;
+                    return { type: 'error' as const, message: e.message || 'Failed to fetch status', serviceInfo: instance };
                 }
             });
 
@@ -291,11 +365,11 @@ export default function StatusPage() {
                     {statuses.map((status, index) => {
                         switch (status.type) {
                             case 'matchmaking':
-                                return <MatchmakingServiceCard key={index} status={status.data} />;
+                                return <MatchmakingServiceCard key={`${status.data.serviceInfo.serviceName}-${index}`} status={status.data} />;
                             case 'chat':
-                                return <ChatServiceCard key={index} status={status.data} />;
+                                return <ChatServiceCard key={`${status.data.serviceInfo.serviceName}-${index}`} status={status.data} />;
                             case 'error':
-                                return <ErrorCard key={index} error={status} />;
+                                return <ErrorCard key={`${status.serviceInfo.serviceName}-${index}`} error={status} />;
                             default:
                                 return null;
                         }
