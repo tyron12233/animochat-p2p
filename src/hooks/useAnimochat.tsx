@@ -746,11 +746,11 @@ export const useAnimochatV2 = () => {
 
       setScreen("chat");
       setStatus("finding_match");
-      setTheme(defaultTheme);
-      setMode("light");
 
-      const interestsParam = interests.join(",");
-      const url = `${API_BASE_URL}/matchmaking?userId=${userId}&interest=${interestsParam}`;
+      let url = `${API_BASE_URL}/matchmaking?userId=${userId}`;
+      if (interests.length > 0) {
+        url += `&interests=${encodeURIComponent(interests.join(","))}`;
+      }
 
       console.log(`Connecting to matchmaking server: ${url}`);
       const es = new EventSource(url);

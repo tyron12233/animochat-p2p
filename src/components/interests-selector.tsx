@@ -439,7 +439,7 @@ export default function InterestSelector({
           onChange={(e) => setCurrentInput(e.target.value)}
           onKeyDown={handleKeyDown}
           className="rounded-full py-6 px-6 focus-visible:border-green-500 focus-visible:ring-green-500 ring-offset-1 text-center"
-          placeholder="Type an interest & press Enter"
+          placeholder="Match randomly or type to add an interest"
           maxLength={26}
         />
       </div>
@@ -465,7 +465,7 @@ export default function InterestSelector({
         <Button
           onClick={handleFindMatch}
           disabled={
-            isConnecting || (interests.size === 0 && !currentInput.trim())
+            isConnecting
           }
           className="w-full rounded-full py-6 bg-green-600 hover:bg-green-700 text-white font-bold text-base disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
         >
