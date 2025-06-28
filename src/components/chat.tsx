@@ -47,6 +47,17 @@ const DynamicGlobalStyles = ({
   mode: "light" | "dark";
 }) => (
   <style>{`
+
+    #chat-container {
+      --chat-border-radius: 2rem; /* Default border radius */
+    }
+
+    @media (max-width: 640px) {
+      #chat-container {
+        --chat-border-radius: 0; /* No border radius on small screens */
+      }
+    }
+
     #chat-messages-list::-webkit-scrollbar {
       width: 8px;
     }
