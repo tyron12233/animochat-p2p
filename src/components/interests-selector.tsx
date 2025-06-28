@@ -439,7 +439,7 @@ export default function InterestSelector({
           onChange={(e) => setCurrentInput(e.target.value)}
           onKeyDown={handleKeyDown}
           className="rounded-full py-6 px-6 focus-visible:border-green-500 focus-visible:ring-green-500 ring-offset-1 text-center"
-          placeholder="Match randomly or type to add an interest"
+          placeholder="Match randomly or add an interest"
           maxLength={26}
         />
       </div>

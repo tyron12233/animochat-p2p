@@ -183,6 +183,37 @@ export default function Chat({
     }
   };
 
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      console.log("Escape key pressed");
+      if (
+        status === "waiting_for_match" ||
+        status === "finding_match" ||
+        status === "connecting"
+      ) {
+        cancelMatchmaking();
+        return;
+      }
+      if (status === "connected") {
+        if (!confirmedEnd) {
+          setConfirmedEnd(true);
+        } else {
+          console.log("Ending chat");
+          endChat();
+          setConfirmedEnd(false);
+        }
+      }
+      if (status !== "connected" && newChat) {
+        console.log("Starting new chat");
+        newChat();
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [status, confirmedEnd, endChat, cancelMatchmaking, newChat]);
+
   useEffect(() => {
     if (actualMessages.length === 0) return;
     const newMessagesAdded = actualMessages.length > prevMessagesLength.current;
@@ -470,6 +501,7 @@ export default function Chat({
                   : {}),
               }}
             >
+               <span className="hidden sm:inline">(Esc)</span>
               {confirmedEnd ? "Confirm?" : "End Chat"}
             </Button>
           )}
@@ -483,6 +515,7 @@ export default function Chat({
                 color: theme.buttons.primary.text[mode],
               }}
             >
+              <span className="hidden text-sm sm:inline">(Esc)</span>
               New Chat
             </Button>
           )}
@@ -615,7 +648,7 @@ export default function Chat({
                         ? "Replying to"
                         : "Editing"}
                     </span>
-                    <button
+                    <Button
                       type="button"
                       className="ml-auto"
                       aria-label="Cancel"
@@ -632,7 +665,7 @@ export default function Chat({
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
-                    </button>
+                    </Button>
                   </div>
                   <div
                     style={{

@@ -216,7 +216,7 @@ export const useAnimochatV2 = () => {
 
   // --- User Actions ---
 
-  const onCancelMatchmaking = (interests: string[]) => {
+  const onCancelMatchmaking = () => {
     const cancelApi = () => {
       const url = `${API_BASE_URL}/cancel_matchmaking`;
       return fetch(url, {
@@ -224,7 +224,7 @@ export const useAnimochatV2 = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId, interests: interests }),
+        body: JSON.stringify({ userId: userId }),
       });
     };
 
