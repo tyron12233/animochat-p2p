@@ -501,9 +501,13 @@ export const useAnimochatV2 = () => {
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
           } else {
-            message = `You matched with a stranger on ${interests.join(
+            if (interests.length > 0) {
+              message = `You matched with a stranger on ${interests.join(
               ", "
             )}! Say hi!`;
+            } else {
+              message = "You matched with a random stranger! Say hi!";
+            }
           }
 
           const welcomeMessage: SystemMessage = {
