@@ -1,33 +1,87 @@
-import { Button } from '@/components/ui/button';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Button } from "@/components/ui/button";
+import { Server } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 
 // --- Placeholder Icons & Components ---
 // These are simple placeholders for dependencies in your FeedbackDialog.
 // Replace them with your actual icon library (e.g., lucide-react).
 
-const Wrench = ({ className = '' }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const Wrench = ({ className = "" }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
   </svg>
 );
 
-const X = ({ size = 24, className = '' }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+const X = ({ size = 24, className = "" }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
 
-const MessageSquarePlus = ({ size = 32, className = '' }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"></path><line x1="12" y1="7" x2="12" y2="13"></line><line x1="9" y1="10" x2="15" y2="10"></line>
-    </svg>
+const MessageSquarePlus = ({ size = 32, className = "" }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"></path>
+    <line x1="12" y1="7" x2="12" y2="13"></line>
+    <line x1="9" y1="10" x2="15" y2="10"></line>
+  </svg>
 );
 
 const LoadingSpinner = () => (
-    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
+  <svg
+    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
 );
 
 // --- Feedback Dialog Component (as provided) ---
@@ -168,7 +222,7 @@ const MaintenancePage = () => {
   const handleFeedbackSubmit = async (content: string) => {
     console.log("Submitting feedback:", content);
     // Simulate a network request
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     // To test error state, you can uncomment the line below:
     // throw new Error("Simulated submission error");
   };
@@ -200,42 +254,53 @@ const MaintenancePage = () => {
           animation: progress-bar-shine 2.5s infinite linear;
         }
       `}</style>
-      
+
       <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center text-center p-4 font-sans overflow-hidden">
         <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
-            {/* The wrench icon now has a custom animation class */}
-            <div className="mx-auto bg-green-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6 animate-wrench">
-                 <Wrench className="w-10 h-10 text-green-600" />
-            </div>
+          {/* The wrench icon now has a custom animation class */}
+          <div className="mx-auto bg-green-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6 animate-wrench">
+            <Wrench className="w-10 h-10 text-green-600" />
+          </div>
 
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                Under Maintenance
-            </h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Under Maintenance
+          </h1>
 
-            <p className="text-lg text-gray-600 mb-4">
-                We'll be back up soon!
-            </p>
+          <p className="text-lg text-gray-600 mb-4">We'll be back up soon!</p>
 
-            <p className="text-md text-gray-500 mb-8">
-                We're just polishing things up to make your experience even better.
-            </p>
+          <p className="text-md text-gray-500 mb-8">
+            We're just polishing things up to make your experience even better.
+          </p>
 
-            {/* New animated progress bar */}
-            <div className="w-full bg-green-200 rounded-full h-4 mb-8 overflow-hidden relative">
-                <div className="bg-green-500 h-4 rounded-full w-3/4 progress-shine"></div>
-            </div>
+          {/* New animated progress bar */}
+          <div className="w-full bg-green-200 rounded-full h-4 mb-8 overflow-hidden relative">
+            <div className="bg-green-500 h-4 rounded-full w-3/4 progress-shine"></div>
+          </div>
 
-            <button 
-                onClick={() => setIsFeedbackOpen(true)}
-                className="px-8 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={() => setIsFeedbackOpen(true)}
+              className="w-full px-8 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
-                Leave Feedback
+              Leave Feedback
             </button>
+            <Link href="/status" className="w-full">
+              <Button
+                variant="ghost"
+                className="w-full text-gray-500 hover:text-green-600"
+              >
+                <Server className="h-4 w-4 mr-2" />
+                Check Service Status
+              </Button>
+            </Link>
+          </div>
         </div>
-        <p className="mt-8 text-sm text-gray-400">Patience is a virtue, and so is great software!</p>
+        <p className="mt-8 text-sm text-gray-400">
+          Patience is a virtue, and so is great software!
+        </p>
       </div>
 
-      <FeedbackDialog 
+      <FeedbackDialog
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
         onSubmit={handleFeedbackSubmit}
@@ -243,6 +308,5 @@ const MaintenancePage = () => {
     </>
   );
 };
-
 
 export default MaintenancePage;
