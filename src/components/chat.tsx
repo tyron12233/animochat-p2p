@@ -541,7 +541,7 @@ export default function Chat({
                 initial={{ y: "100%" }}
                 animate={{ y: "0" }}
                 exit={{ y: "100%" }}
-                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-24 pt-4"
+                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-2 pt-4"
               >
                 <button
                   id="new-messages-button"
@@ -556,7 +556,7 @@ export default function Chat({
                     backgroundColor: theme.buttons.newMessages.background[mode],
                     color: theme.buttons.newMessages.text[mode],
                   }}
-                  className="px-4 py-2 rounded-full shadow-md flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-colors"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
