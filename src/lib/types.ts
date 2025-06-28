@@ -7,7 +7,7 @@ export type Screen = 'intro' | 'matchmaking' | 'chat';
 
 
 
-export type Status = 'initializing' | 'ready' | 'connecting' | 'connected' | 'disconnected' | 'error' | 'finding_match' | 'waiting_for_match';
+export type Status = 'initializing' | 'ready' | 'connecting' | 'reconnecting' | 'connected' | 'disconnected' | 'error' | 'finding_match' | 'waiting_for_match';
 
 export interface ChatMessage {
     text: string;

@@ -1,5 +1,3 @@
-// App.tsx
-
 "use client";
 
 import BackgroundElements from "../components/ui/background-elements";
@@ -9,6 +7,8 @@ import Chat from "../components/chat";
 import { useAnimochatV2 } from "../hooks/useAnimochat";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, Variants } from "framer-motion";
+import Link from 'next/link';
+import { Server } from 'lucide-react';
 
 export default function Home() {
   const {
@@ -154,9 +154,6 @@ export default function Home() {
             {screen !== 'chat' && <BackgroundElements />}
 
             <div className="flex-grow flex flex-col justify-center items-center">
-                {/* AnimatePresence handles the animation of components when they are mounted or unmounted.
-                  mode="wait" ensures that the exiting animation finishes before the new one begins, preventing layout overlaps.
-                */}
                 <AnimatePresence mode="wait">
                   {renderScreen()}
                 </AnimatePresence>
@@ -175,6 +172,14 @@ export default function Home() {
                         Your User ID: {userId}
                         </p>
                     )}
+                    <div className="mt-4">
+                        <Link href="/status" passHref>
+                            <Button variant="ghost" className="text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                                <Server className="h-4 w-4 mr-2" />
+                                Service Status
+                            </Button>
+                        </Link>
+                    </div>
                 </footer>
             )}
         </main>

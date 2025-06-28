@@ -73,9 +73,13 @@ export const useAnimochatV2 = () => {
     } else {
       setUserId(storedUserId);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
 
     const getExistingSession = async () => {
-      const sessionApi = `${API_BASE_URL}/session/${storedUserId}`;
+      const sessionApi = `${API_BASE_URL}/session/${userId}`;
       try {
         const response = await fetch(sessionApi);
         if (!response.ok) {
@@ -93,21 +97,12 @@ export const useAnimochatV2 = () => {
         }
 
         console.log("Found existing session:", data);
-
         setChatId(data.chatId);
-
-        const wsUrl = `${serverUrl}?userId=${storedUserId}&chatId=${data.chatId}`;
-        console.log(`Connecting to WebSocket server: ${wsUrl}`);
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-
         setTheme(defaultTheme);
         setMode("light");
-
-        setupWebsocketListeners(ws, data.chatId, [], true);
         setScreen("chat");
         setStatus("connecting");
-        console.log(`Reconnected to chat: ${data.chatId}`);
+        await connectToChat(data.chatId, [], true);
       } catch (error) {
         console.error("Error fetching existing session:", error);
         setStatus("error");
@@ -116,13 +111,12 @@ export const useAnimochatV2 = () => {
 
     getExistingSession();
 
-    // Cleanup function to close any open connections when the component unmounts.
     return () => {
       console.log("Cleaning up useAnimochat hook.");
       eventSourceRef.current?.close();
       wsRef.current?.close();
     };
-  }, []);
+  }, [userId]);
 
   // --- Core Data Handling Functions ---
 
@@ -186,7 +180,7 @@ export const useAnimochatV2 = () => {
    * Sends a packet through the WebSocket connection if it is open.
    * @param packet The data packet to send.
    */
-  const sendPacket = useCallback((packet: any) => {
+  const sendPacket = useCallback(async (packet: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(packet));
     } else {
@@ -358,6 +352,11 @@ export const useAnimochatV2 = () => {
   );
 
   const disconnect = useCallback(() => {
+    isDisconnectingRef.current = true;
+    if (reconnectionTimerRef.current) {
+      clearTimeout(reconnectionTimerRef.current);
+    }
+
     const disconnectFromApi = async () => {
       const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
       try {
@@ -386,6 +385,16 @@ export const useAnimochatV2 = () => {
       console.log("Disconnected from matchmaking and chat.");
     });
 
+    const message: SystemMessage = {
+      id: `system_${Date.now()}`,
+      session_id: chatId,
+      created_at: new Date().toISOString(),
+      type: "system",
+      content: "You have disconnected from the chat.",
+      sender: "system",
+    };
+    setMessages((prev) => [...prev, message]);
+
     if (wsRef.current) {
       const disconnectPacket: DisconnectPacket = {
         type: "disconnect",
@@ -405,6 +414,268 @@ export const useAnimochatV2 = () => {
   }, [userId]);
 
   // --- Matchmaking and Connection Logic ---
+
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const RECONNECT_DELAY_MS = 4000;
+  const isDisconnectingRef = useRef<boolean>(false);
+  const reconnectionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectionAttemptsRef = useRef<number>(0);
+
+  const connectToChat = useCallback(
+    async (
+      chatIdToConnect: string,
+      interests: string[] = [],
+      isReconnecting = false
+    ) => {
+      if (!userId) {
+        console.error("User ID not set, cannot connect to chat.");
+        return;
+      }
+
+      console.log(
+        `Attempting to connect to chat: ${chatIdToConnect}. Reconnecting: ${isReconnecting}`
+      );
+      isDisconnectingRef.current = false;
+      if (reconnectionTimerRef.current) {
+        clearTimeout(reconnectionTimerRef.current);
+      }
+
+      const setupWebsocketListeners = (ws: WebSocket) => {
+        ws.onopen = () => {
+          console.log("WebSocket connection established.");
+          setStatus("connected");
+          reconnectionAttemptsRef.current = 0; // Reset attempts on success
+
+          let message: string;
+          if (isReconnecting) {
+            message = "Reconnected to the chat successfully.";
+          } else {
+            message = `You matched with a stranger on ${interests.join(
+              ", "
+            )}! Say hi!`;
+          }
+
+          const welcomeMessage: SystemMessage = {
+            id: `system_${Date.now()}`,
+            session_id: chatIdToConnect,
+            created_at: new Date().toISOString(),
+            type: "system",
+            content: message,
+            sender: "system",
+          };
+          setMessages((prev) => (isReconnecting ? prev : [welcomeMessage]));
+          if (isReconnecting) {
+            setMessages((prev) => [...prev, welcomeMessage]);
+          }
+        };
+
+        ws.onmessage = async (e: MessageEvent<any>) => {
+          const rawPacket = e.data;
+          let jsonPacket: any;
+          if (rawPacket instanceof Blob) {
+            jsonPacket = JSON.parse(await rawPacket.text());
+          } else {
+            jsonPacket = JSON.parse(rawPacket);
+          }
+
+          const packet = jsonPacket;
+
+          if (packet.sender === userId) return;
+
+          switch (jsonPacket.type) {
+            case "change_theme":
+              const { mode, theme } = jsonPacket.content;
+              setMode(mode);
+              setTheme(theme);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: `Theme changed to ${theme.name} in ${mode} mode.`,
+                  sender: "system",
+                },
+              ]);
+              break;
+            case "offline":
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content:
+                    jsonPacket.content !== userId
+                      ? `Your partner has went offline.`
+                      : "You are currently offline.",
+                  sender: "system",
+                },
+              ]);
+              break;
+            case "disconnect":
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: "The other user has disconnected.",
+                  sender: "system",
+                },
+              ]);
+              ws.close();
+              wsRef.current = null;
+              eventSourceRef.current?.close();
+              setChatId("");
+              setStatus("disconnected");
+              break;
+            case "STATUS":
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: packet.message,
+                  sender: "system",
+                },
+              ]);
+              break;
+            case "message":
+              setMessages((prev) => [...prev, jsonPacket.content]);
+              break;
+            case "reaction":
+              const { message_id, emoji, user_id } = jsonPacket.content;
+              handleReaction(message_id, emoji, user_id);
+              break;
+            case "typing":
+              setStrangerTyping(jsonPacket.content as boolean);
+              break;
+            case "edit_message":
+              const {
+                message_id: editId,
+                new_content,
+                user_id: editorId,
+              } = jsonPacket.content;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === editId && msg.sender === editorId
+                    ? { ...msg, content: new_content, edited: true }
+                    : msg
+                )
+              );
+              break;
+            default:
+              console.warn("Unknown packet type received:", jsonPacket.type);
+          }
+        };
+
+        ws.onclose = () => {
+          console.log("WebSocket connection closed.");
+          if (isDisconnectingRef.current) {
+            console.log("Intentional disconnect, not reconnecting.");
+            return;
+          }
+
+          wsRef.current = null;
+          setStatus("reconnecting");
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `system_${Date.now()}`,
+              session_id: chatIdToConnect,
+              created_at: new Date().toISOString(),
+              type: "system",
+              content: "Connection lost. Attempting to reconnect...",
+              sender: "system",
+            },
+          ]);
+
+          if (reconnectionAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectionAttemptsRef.current++;
+            console.log(
+              `Scheduling reconnection attempt #${reconnectionAttemptsRef.current}`
+            );
+            reconnectionTimerRef.current = setTimeout(() => {
+              connectToChat(chatIdToConnect, [], true);
+            }, RECONNECT_DELAY_MS * reconnectionAttemptsRef.current);
+          } else {
+            console.error("Max reconnection attempts reached. Giving up.");
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `system_${Date.now()}`,
+                session_id: chatIdToConnect,
+                created_at: new Date().toISOString(),
+                type: "system",
+                content:
+                  "Could not reconnect to the server. Please find a new match.",
+                sender: "system",
+              },
+            ]);
+            setStatus("error");
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.error("WebSocket error:", err);
+          setStatus("error");
+        };
+      };
+
+      try {
+        const sessionApi = `${API_BASE_URL}/session/${userId}`;
+        const response = await fetch(sessionApi);
+        if (!response.ok) {
+          throw new Error(`Session fetch failed: ${response.statusText}`);
+        }
+        const data = await response.json();
+
+        if (
+          !data.chatId ||
+          !data.serverUrl ||
+          data.chatId !== chatIdToConnect
+        ) {
+          throw new Error("Invalid session data for reconnection.");
+        }
+
+        const wsUrl = `${data.serverUrl}?userId=${userId}&chatId=${data.chatId}`;
+        console.log(`Connecting to WebSocket server: ${wsUrl}`);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+        setupWebsocketListeners(ws);
+      } catch (error) {
+        console.error("Failed to establish connection:", error);
+        wsRef.current?.close(); // Ensure any partial connection is closed.
+        // Trigger the onclose logic to handle retries
+        if (wsRef.current) {
+          wsRef.current.onclose?.(new CloseEvent("close"));
+        } else {
+          // If the websocket was never even created, manually trigger reconnect logic
+          if (reconnectionAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            reconnectionAttemptsRef.current++;
+            reconnectionTimerRef.current = setTimeout(() => {
+              connectToChat(chatIdToConnect, [], true);
+            }, RECONNECT_DELAY_MS * reconnectionAttemptsRef.current);
+          }
+        }
+      }
+    },
+    [
+      userId,
+      handleReaction,
+      setTheme,
+      setMode,
+      sendPacket,
+      setMessages,
+      setStatus,
+    ]
+  );
 
   const startMatchmaking = useCallback(
     (interests: string[]) => {
@@ -433,26 +704,11 @@ export const useAnimochatV2 = () => {
         console.log("Matchmaking update:", data);
 
         if (data.state === "MATCHED" && data.chatId) {
-          console.log(
-            `Match found with user ${data.matchedUserId}! ChatID: ${data.chatId}`
-          );
-          setStatus("connecting");
           es.close();
           setChatId(data.chatId);
-
-          const WEBSOCKET_URL = data.chatServerUrl;
-
-          // --- INITIATE WEBSOCKET CONNECTION ---
-          const wsUrl = `${WEBSOCKET_URL}?userId=${userId}&chatId=${data.chatId}`;
-          console.log(`Connecting to WebSocket server: ${wsUrl}`);
-          const ws = new WebSocket(wsUrl);
-          wsRef.current = ws;
-
-          const interests = data.interest?.split(",") || [];
-
-          setupWebsocketListeners(ws, data.chatId, interests, false);
+          setStatus("connecting");
+          connectToChat(data.chatId, data.interest?.split(",") || []);
         } else if (data.state === "WAITING") {
-          console.log("Waiting for a match...");
           setStatus("waiting_for_match");
         }
       };
@@ -463,186 +719,34 @@ export const useAnimochatV2 = () => {
         es.close();
       };
     },
-    [userId]
+    [userId, connectToChat]
   );
 
-  const setupWebsocketListeners = useCallback(
-    (
-      ws: WebSocket,
-      chatId: string,
-      interests: string[] = [],
-      reconnecting = false
-    ) => {
-      ws.onopen = () => {
-        console.log("WebSocket connection established.");
-        setStatus("connected");
+  const simulateDisconnect = useCallback(() => {
+    if (wsRef.current) {
+      console.log("--- SIMULATING DISCONNECT ---");
+      // This will trigger the onclose event handler, which in turn
+      // will fire the reconnection logic since isDisconnectingRef is false.
+      wsRef.current.close();
+    } else {
+      console.warn(
+        "--- SIMULATE DISCONNECT: No active WebSocket connection. ---"
+      );
+    }
+  }, []);
 
-        let message = `You matched with a stranger on ${interests.join(
-          ", "
-        )}! Say hi!`;
-        if (reconnecting) {
-          message = `Reconnected to chat with a stranger. Previous messages may not be visible yet.`;
-        }
+  useEffect(() => {
+    // @ts-ignore
+    window.simulateDisconnect = simulateDisconnect;
+    console.log(
+      "Disconnection test function available in console: `window.simulateDisconnect()`"
+    );
 
-        const welcomeMessage: SystemMessage = {
-          id: `system_${Date.now()}`,
-          session_id: chatId,
-          created_at: new Date().toISOString(),
-          type: "system",
-          content: message,
-          sender: "system",
-        };
-        setMessages([welcomeMessage]);
-      };
-
-      ws.onmessage = async (e: MessageEvent<any>) => {
-        const rawPacket = e.data;
-
-        let jsonPacket: any;
-        if (rawPacket instanceof Blob) {
-          const text = await rawPacket.text();
-          jsonPacket = JSON.parse(text);
-        } else if (typeof rawPacket === "string") {
-          jsonPacket = JSON.parse(rawPacket);
-        } else {
-          jsonPacket = rawPacket;
-        }
-
-        const packet = jsonPacket;
-
-        console.log("Received packet:", jsonPacket);
-
-        // Ignore messages sent by ourselves. The server relays everything.
-        if (packet.sender === userId) return;
-        console.log("Packet sender: ", packet.sender);
-        console.log("Current user ID: ", userId);
-
-        switch (packet.type) {
-          case "change_theme":
-            console.log("Received change theme packet from server.");
-            const { mode, theme } = packet.content;
-            setMode(mode);
-            setTheme(theme);
-            const themeMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: `Theme changed to ${theme.name} in ${mode} mode.`,
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, themeMessage]);
-            break;
-          case "offline":
-            console.log("Received offline packet from server.");
-
-            const isPartnerOffline = packet.content !== userId;
-            const message = isPartnerOffline
-              ? `Your partner has went offline.`
-              : "You are currently offline.";
-
-            const offlineMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: message,
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, offlineMessage]);
-            break;
-          case "disconnect":
-            console.log("Received disconnect packet from server.");
-            setStatus("disconnected");
-            const disconnectMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: "The other user has disconnected.",
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, disconnectMessage]);
-
-            ws.close();
-            wsRef.current = null;
-            eventSourceRef.current?.close();
-            eventSourceRef.current = null;
-            setChatId("");
-
-            break;
-          case "STATUS":
-            const statusMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: packet.message,
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, statusMessage]);
-            break;
-          case "message":
-            setMessages((prev) => [...prev, packet.content]);
-            break;
-          case "reaction":
-            const { message_id, emoji, user_id } = packet.content;
-            handleReaction(message_id, emoji, user_id);
-            break;
-          case "typing":
-            if (packet.sender === userId) return;
-            setStrangerTyping(packet.content as boolean);
-            break;
-          case "edit_message":
-            const {
-              message_id: editId,
-              new_content,
-              user_id: editorId,
-            } = packet.content;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === editId && msg.sender === editorId
-                  ? { ...msg, content: new_content, edited: true }
-                  : msg
-              )
-            );
-            break;
-
-          default:
-            console.warn("Unknown packet type received:", packet.type);
-            const unknownMessage: SystemMessage = {
-              id: `system_${Date.now()}`,
-              session_id: chatId,
-              created_at: new Date().toISOString(),
-              type: "system",
-              content: `Unknown packet type received: ${packet.type} there is probably a new version of the site available. Please refresh the page.`,
-              sender: "system",
-            };
-            setMessages((prev) => [...prev, unknownMessage]);
-        }
-      };
-
-      ws.onclose = () => {
-        console.log("WebSocket connection closed.");
-        setStatus("disconnected");
-        const disconnectMessage: SystemMessage = {
-          id: `system_${Date.now()}`,
-          session_id: chatId,
-          created_at: new Date().toISOString(),
-          type: "system",
-          content: "The connection has been closed.",
-          sender: "system",
-        };
-        setMessages((prev) => [...prev, disconnectMessage]);
-      };
-
-      ws.onerror = (err) => {
-        console.error("WebSocket error:", err);
-        setStatus("error");
-      };
-    },
-    [userId, chatId, handleReaction]
-  );
+    return () => {
+      // @ts-ignore
+      delete window.simulateDisconnect;
+    };
+  }, [simulateDisconnect]);
 
   return {
     screen,
