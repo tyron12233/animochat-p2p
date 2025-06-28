@@ -476,7 +476,8 @@ export const useAnimochatV2 = () => {
     async (
       chatIdToConnect: string,
       interests: string[] = [],
-      isReconnecting = false
+      isReconnecting = false,
+      showRandomStrangerMessage = false
     ) => {
       if (!userId) {
         console.error("User ID not set, cannot connect to chat.");
@@ -497,17 +498,23 @@ export const useAnimochatV2 = () => {
           setStatus("connected");
           reconnectionAttemptsRef.current = 0; // Reset attempts on success
 
+          // Compose the welcome or reconnection message for the chat.
           let message: string;
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
+          } else if (showRandomStrangerMessage) {
+            message =
+              "We couldn't find a match with your interests, so you matched with a random stranger. Say hi!";
+          } else if (interests.length > 0) {
+            const formattedInterests = interests
+              .map((interest) => interest.trim())
+              .filter(Boolean)
+              .join(", ");
+            message = formattedInterests
+              ? `You matched with a stranger on ${formattedInterests}! Say hi!`
+              : "You matched with a random stranger! Say hi!";
           } else {
-            if (interests.length > 0) {
-              message = `You matched with a stranger on ${interests.join(
-              ", "
-            )}! Say hi!`;
-            } else {
-              message = "You matched with a random stranger! Say hi!";
-            }
+            message = "You matched with a random stranger! Say hi!";
           }
 
           const welcomeMessage: SystemMessage = {
@@ -772,7 +779,7 @@ export const useAnimochatV2 = () => {
           setMode("light");
           setTheme(defaultTheme);
 
-          let interest = [];
+          let interest: string[] = [];
 
           if (!data.interest || data.interest === "") {
             console.log("No interests provided, using default.");
@@ -781,7 +788,19 @@ export const useAnimochatV2 = () => {
             console.log("Interests for this match:", interest);
           }
 
-          connectToChat(data.chatId, interest);
+          let showRandomStrangerMessage = false;
+          // if we specified interests, but we matched with no interests,
+          // then we should show a message that we matched with a random stranger.
+          if (interest.length !== interests.length) {
+            showRandomStrangerMessage = true;
+          }
+
+          connectToChat(
+            data.chatId,
+            interest,
+            false,
+            showRandomStrangerMessage
+          );
         } else if (data.state === "WAITING") {
           setStatus("waiting_for_match");
         }
