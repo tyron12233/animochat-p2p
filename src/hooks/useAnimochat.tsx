@@ -190,15 +190,40 @@ export const useAnimochatV2 = () => {
 
   // --- User Actions ---
 
-  const onCancelMatchmaking = () => {
-    console.log("Cancelling matchmaking...");
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    setStatus("ready");
-    setScreen("matchmaking");
-    setChatId("");
+  const onCancelMatchmaking = (interests: string[]) => {
+    const cancelApi = () => {
+      const url = `${API_BASE_URL}/cancel_matchmaking`;
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, interests: interests }),
+      });
+    };
+
+    cancelApi()
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `Failed to cancel matchmaking: ${response.statusText}`
+          );
+        }
+        console.log("Matchmaking cancelled successfully.");
+
+        console.log("Cancelling matchmaking...");
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
+        setStatus("ready");
+        setScreen("matchmaking");
+        setChatId("");
+      })
+      .catch((error) => {
+        console.error("Error cancelling matchmaking:", error);
+        setStatus("finding_match");
+      });
   };
 
   const onChangeTheme = (mode: "light" | "dark", theme: ChatThemeV2) => {
@@ -533,7 +558,7 @@ export const useAnimochatV2 = () => {
                 clearTimeout(reconnectionTimerRef.current);
               }
               reconnectionAttemptsRef.current = 0;
-              
+
               wsRef.current = null;
               eventSourceRef.current?.close();
               setChatId("");

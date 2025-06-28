@@ -64,7 +64,9 @@ export default function Home() {
                 }}
                 onEditMessage={editMessage}
                 onStartTyping={onStartTyping}
-                cancelMatchmaking={onCancelMatchmaking}
+                cancelMatchmaking={() => {
+                  onCancelMatchmaking(Array.from(interests))
+                }}
                 isStrangerTyping={isStrangerTyping}
                 onReact={onReact}
                 onChangeTheme={onChangeTheme}
