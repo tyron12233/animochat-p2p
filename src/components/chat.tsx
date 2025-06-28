@@ -392,6 +392,14 @@ export default function Chat({
               borderColor: theme.buttons.secondary.border?.[mode] || "transparent",
             }}
             className="rounded-full mr-2 p-1">
+            <Button onClick={goBack} 
+            variant={"outline"}
+            style={{
+              background: theme.buttons.secondary.background[mode],
+              color: theme.buttons.secondary.text[mode],
+              borderColor: theme.buttons.secondary.border?.[mode] || "transparent",
+            }}
+            className="rounded-full mr-2 p-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -482,6 +490,7 @@ export default function Chat({
               }}
             >
               New Chat
+            </Button>
             </Button>
           )}
         </div>
