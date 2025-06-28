@@ -79,9 +79,9 @@ export const useAnimochatV2 = () => {
   useEffect(() => {
     if (!userId) return;
 
-    const syncMessages = async (chatId: string) => {
+    const syncMessages = async (chatServer: string, chatId: string) => {
       ///sync/:chatId
-      const syncApi = `${API_BASE_URL}/sync/${chatId}`;
+      const syncApi = `${chatServer}/sync/${chatId}`;
       try {
         const response = await fetch(syncApi);
         if (!response.ok) {
@@ -125,7 +125,7 @@ export const useAnimochatV2 = () => {
 
         // first get
 
-        const messages = await syncMessages(chatId);
+        const messages = await syncMessages(serverUrl, chatId);
         setMessages(messages);
 
         await connectToChat(data.chatId, [], true);
