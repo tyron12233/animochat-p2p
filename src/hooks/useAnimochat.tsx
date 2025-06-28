@@ -764,6 +764,9 @@ export const useAnimochatV2 = () => {
           es.close();
           setChatId(data.chatId);
           setStatus("connecting");
+
+          setMode("light");
+          setTheme(defaultTheme);
           connectToChat(data.chatId, data.interest?.split(",") || []);
         } else if (data.state === "WAITING") {
           setStatus("waiting_for_match");
