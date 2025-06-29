@@ -20,6 +20,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
         status,
         onStartTyping,
         onChangeTheme,
+        editMessage,
     } = useAnimochatV2(userId);
 
 
@@ -48,10 +49,15 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
                 endChat={() => {}}
                 onStartTyping={onStartTyping}
                 userId={userId}
-                cancelMatchmaking={() => {}}
-                onEditMessage={() => {}}
-                onChangeTheme={() => {}}
-                newChat={() => {}}
+                cancelMatchmaking={() => {
+                    onLeave();
+                    disconnect(true);
+                }}
+                onEditMessage={editMessage}
+                onChangeTheme={onChangeTheme}
+                newChat={() => {
+                    // NO-OP
+                }}
                 isStrangerTyping={isStrangerTyping}
                 status={status}
             />
