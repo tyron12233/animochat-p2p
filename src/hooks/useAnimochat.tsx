@@ -48,8 +48,9 @@ type ChangeThemePacket = Packet<
 // This packet is used when the user is offline or not connected.
 // the content is a string (the user id of the user who when offline).
 type OfflinePacket = Packet<string, "offline">;
+type UserJoinedPacket = Packet<string, "user_joined">;
 
-export const useAnimochatV2 = (userId: string) => {
+export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   const { setTheme, setMode } = useChatTheme();
 
   // --- State Management ---
@@ -88,12 +89,14 @@ export const useAnimochatV2 = (userId: string) => {
     };
 
     setChatId(data.chatId);
-    
-    syncMessages(data.chatServerUrl, data.chatId).then((messages) => {
-      setMessages(messages);
-    }).then(() => {
-      connectToChat(data.chatServerUrl, data.chatId, [], true)
-    });
+
+    syncMessages(data.chatServerUrl, data.chatId)
+      .then((messages) => {
+        setMessages(messages);
+      })
+      .then(() => {
+        connectToChat(data.chatServerUrl, data.chatId, [], true);
+      });
   }
 
   // --- Core Data Handling Functions ---
@@ -354,67 +357,72 @@ export const useAnimochatV2 = (userId: string) => {
     [userId, chatId, sendPacket]
   );
 
-  const disconnect = useCallback(() => {
-    isDisconnectingRef.current = true;
-    if (reconnectionTimerRef.current) {
-      clearTimeout(reconnectionTimerRef.current);
-    }
-
-    const disconnectFromApi = async () => {
-      const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
-      try {
-        const response = await fetch(disconnectApi, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }),
-        });
-
-        if (!response.ok) {
-          console.error(
-            "Failed to disconnect from session:",
-            response.statusText
-          );
-        } else {
-          console.log("Successfully disconnected from session.");
-        }
-      } catch (error) {
-        console.error("Error disconnecting from session:", error);
+  const disconnect = useCallback(
+    (isGroupChat: boolean = false) => {
+      isDisconnectingRef.current = true;
+      if (reconnectionTimerRef.current) {
+        clearTimeout(reconnectionTimerRef.current);
       }
-    };
 
-    disconnectFromApi().then(() => {
-      console.log("Disconnected from matchmaking and chat.");
-    });
+      const disconnectFromApi = async () => {
+        const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
+        try {
+          const response = await fetch(disconnectApi, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId }),
+          });
 
-    const message: SystemMessage = {
-      id: `system_${Date.now()}`,
-      session_id: chatId,
-      created_at: new Date().toISOString(),
-      type: "system",
-      content: "You have disconnected from the chat.",
-      sender: "system",
-    };
-    setMessages((prev) => [...prev, message]);
-
-    if (wsRef.current) {
-      const disconnectPacket: DisconnectPacket = {
-        type: "disconnect",
-        content: null,
-        sender: userId,
+          if (!response.ok) {
+            console.error(
+              "Failed to disconnect from session:",
+              response.statusText
+            );
+          } else {
+            console.log("Successfully disconnected from session.");
+          }
+        } catch (error) {
+          console.error("Error disconnecting from session:", error);
+        }
       };
-      wsRef.current.send(JSON.stringify(disconnectPacket));
-    }
 
-    wsRef.current?.close();
-    wsRef.current = null;
-    eventSourceRef.current?.close();
-    eventSourceRef.current = null;
+      if (!isGroupChat) {
+        disconnectFromApi().then(() => {
+          console.log("Disconnected from matchmaking and chat.");
+        });
+      }
 
-    setStatus("disconnected");
-    setChatId("");
-  }, [userId]);
+      const message: SystemMessage = {
+        id: `system_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        type: "system",
+        content: "You have disconnected from the chat.",
+        sender: "system",
+      };
+      setMessages((prev) => [...prev, message]);
+
+      if (wsRef.current && !isGroupChat) {
+        const disconnectPacket: DisconnectPacket = {
+          type: "disconnect",
+          content: null,
+          sender: userId,
+        };
+        wsRef.current.send(JSON.stringify(disconnectPacket));
+      }
+
+      wsRef.current?.close();
+      wsRef.current = null;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+
+      setStatus("disconnected");
+      setChatId("");
+    },
+    [userId]
+  );
 
   // --- Matchmaking and Connection Logic ---
 
@@ -478,9 +486,12 @@ export const useAnimochatV2 = (userId: string) => {
             content: message,
             sender: "system",
           };
-          setMessages((prev) => (isReconnecting ? prev : [welcomeMessage]));
-          if (isReconnecting) {
-            setMessages((prev) => [...prev, welcomeMessage]);
+
+          if (!isGroupChat) {
+            setMessages((prev) => (isReconnecting ? prev : [welcomeMessage]));
+            if (isReconnecting) {
+              setMessages((prev) => [...prev, welcomeMessage]);
+            }
           }
         };
 

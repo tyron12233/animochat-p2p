@@ -13,12 +13,13 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
     const {
         connectToExistingSession,
         messages,
+        disconnect,
         isStrangerTyping,
         sendMessage,
         onReact,
         status,
-        onStartTyping
-
+        onStartTyping,
+        onChangeTheme,
     } = useAnimochatV2(userId);
 
 
@@ -35,10 +36,15 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
     return (
         <>
             <Chat
+                name={room.name}
+                groupChat={true}
                 messages={messages}
                 sendMessage={sendMessage}
                 onReact={onReact}
-                goBack={() => {}}
+                goBack={() => {
+                    onLeave();
+                    disconnect(true);
+                }}
                 endChat={() => {}}
                 onStartTyping={onStartTyping}
                 userId={userId}

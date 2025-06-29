@@ -23,6 +23,8 @@ import ThemePickerDialog from "./theme-picker";
 import { auroraGlowTheme, cosmicLatteTheme, defaultTheme, prideCelebrationTheme, sunsetBlissTheme, tyronsTheme } from "../lib/default-chat-themes";
 
 interface ChatProps {
+  name: string;
+  groupChat: boolean;
   messages: Message[];
   sendMessage: (text: string, replyingToId: string | undefined) => void;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
@@ -85,6 +87,8 @@ const DynamicGlobalStyles = ({
 );
 
 export default function Chat({
+  name="",
+  groupChat = false,
   messages,
   goBack,
   sendMessage,
@@ -185,6 +189,8 @@ export default function Chat({
 
 
   useEffect(() => {
+    if (groupChat) return;
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       console.log("Escape key pressed");
@@ -405,7 +411,7 @@ export default function Chat({
           background: theme.general.background[mode],
           backdropFilter: `blur(${theme.general.backdropBlur})`,
           boxShadow: theme.general.shadow,
-          borderRadius: "var(--chat-border-radius, 2rem)", // Use CSS var for sm breakpoint
+          borderRadius: "var(--chat-border-radius, 2rem)", 
         }}
         className="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden"
       >
@@ -416,7 +422,7 @@ export default function Chat({
           }}
           className="p-4 border-b flex items-center shrink-0"
         >
-          {status !== "connected" && (
+          {(status !== "connected" || groupChat) && (
             <Button onClick={goBack} 
             variant={"outline"}
             style={{
@@ -446,7 +452,7 @@ export default function Chat({
               style={{ color: theme.header.statusLabel[mode] }}
               className="text-xs font-medium"
             >
-              Status
+              {groupChat ? name : "Status"}
             </p>
             <p
               style={{ color: theme.header.statusValue[mode] }}
@@ -471,7 +477,7 @@ export default function Chat({
             <Palette />
           </Button>
 
-          {status === "connected" && (
+          {!groupChat && status === "connected" && (
             <Button
               onClick={() =>
                 confirmedEnd
@@ -505,7 +511,7 @@ export default function Chat({
               {confirmedEnd ? "Confirm?" : "End Chat"}
             </Button>
           )}
-          {status !== "connected" && (
+          {(!groupChat && status !== "connected") && (
             <Button
               id="new-chat-button"
               onClick={newChat}
@@ -648,7 +654,7 @@ export default function Chat({
                         ? "Replying to"
                         : "Editing"}
                     </span>
-                    <Button
+                    <button
                       type="button"
                       className="ml-auto"
                       aria-label="Cancel"
@@ -665,7 +671,7 @@ export default function Chat({
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
-                    </Button>
+                    </button>
                   </div>
                   <div
                     style={{
