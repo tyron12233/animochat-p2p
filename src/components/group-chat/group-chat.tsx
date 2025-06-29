@@ -14,7 +14,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
         connectToExistingSession,
         messages,
         disconnect,
-        isStrangerTyping,
+        typingUsers,
         sendMessage,
         onReact,
         status,
@@ -58,7 +58,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
                 newChat={() => {
                     // NO-OP
                 }}
-                isStrangerTyping={isStrangerTyping}
+                typingUsers={typingUsers}
                 status={status}
             />
         </>

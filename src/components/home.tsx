@@ -40,7 +40,7 @@ export default function Home({
     onStartTyping,
     handleGetStarted,
     connectToExistingSession,
-    isStrangerTyping,
+    typingUsers,
   } = useAnimochatV2(userId);
 
   useEffect(() => {
@@ -76,13 +76,16 @@ export default function Home({
             className="h-full w-full flex items-center justify-center sm:p-4"
           >
             <Chat
+              groupChat={false}
+              name=""
+              key="chat"
               goBack={() => {
                 handleGetStarted();
               }}
               onEditMessage={editMessage}
               onStartTyping={onStartTyping}
               cancelMatchmaking={onCancelMatchmaking}
-              isStrangerTyping={isStrangerTyping}
+              typingUsers={typingUsers}
               onReact={onReact}
               onChangeTheme={onChangeTheme}
               messages={messages}

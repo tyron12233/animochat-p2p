@@ -31,7 +31,7 @@ interface ChatProps {
   onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   cancelMatchmaking?: () => void;
-  isStrangerTyping: boolean;
+  typingUsers: string[]
   onStartTyping: () => void;
   goBack: () => void;
   endChat: () => void;
@@ -95,7 +95,7 @@ export default function Chat({
   onStartTyping,
   cancelMatchmaking = () => {},
   onEditMessage,
-  isStrangerTyping,
+  typingUsers,
   onChangeTheme,
   endChat,
   newChat,
@@ -243,10 +243,11 @@ export default function Chat({
   }, [actualMessages, user.id]);
 
   useEffect(() => {
-    if (isAtBottom.current && isStrangerTyping) {
+    const isSomeoneTyping = typingUsers.length > 0;
+    if (isAtBottom.current && isSomeoneTyping) {
       scrollerRef.current?.scrollToIndex(actualMessages.length);
     }
-  }, [isStrangerTyping]);
+  }, [typingUsers]);
 
   useEffect(() => {
     if (bottomMessagePreviewState) {
@@ -573,8 +574,9 @@ export default function Chat({
           >
             {actualMessages.map((msg, index) => renderMessage(msg, index))}
             <AnimateChangeInHeight>
-              {isStrangerTyping && (
+              {typingUsers.length > 0 && (
                 <TypingIndicator
+                typingUsers={typingUsers}
                   key="typing-indicator"
                   theme={theme}
                   mode={mode}

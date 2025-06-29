@@ -58,7 +58,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   const [status, setStatus] = useState<Status>("initializing");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatId, setChatId] = useState<string>("");
-  const [isStrangerTyping, setStrangerTyping] = useState<boolean>(false);
+
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   // --- Refs for managing connections and state ---
   const wsRef = useRef<WebSocket | null>(null);
@@ -463,6 +464,9 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
           let message: string;
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
+            if (isGroupChat) {
+              message = "Connected to chat room."
+            }
           } else if (showRandomStrangerMessage) {
             message =
               "We couldn't find a match with your interests, so you matched with a random stranger. Say hi!";
@@ -586,7 +590,17 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               handleReaction(message_id, emoji, user_id);
               break;
             case "typing":
-              setStrangerTyping(jsonPacket.content as boolean);
+              const isTyping = jsonPacket.content as boolean;
+              const typingUserId = jsonPacket.sender;
+              setTypingUsers((prev) => {
+                const isAlreadyTyping = prev.includes(typingUserId);
+                if (isTyping) {
+                  return isAlreadyTyping ? prev : [...prev, typingUserId];
+                } else {
+                  // Remove user from the list
+                  return prev.filter((id) => id !== typingUserId);
+                }
+              });
               break;
             case "edit_message":
               const {
@@ -796,7 +810,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     status,
     messages,
     userId,
-    isStrangerTyping,
+    typingUsers,
     handleGetStarted: () => setScreen("matchmaking"),
     connectToExistingSession,
     startMatchmaking,
