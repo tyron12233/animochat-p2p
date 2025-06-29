@@ -11,6 +11,7 @@ export const SWIPE_THRESHOLD = 50;
 export const TAP_THRESHOLD = 5;
 
 export interface MessageProps {
+  name: string | null;
   message: Message;
   animate?: boolean;
   user: User;
@@ -28,6 +29,7 @@ export interface MessageProps {
 }
 
 export function SwipeableMessage({
+  name = null,
   message,
   user,
   onSwipe,
@@ -64,6 +66,7 @@ export function SwipeableMessage({
         key="parent-message-bubble flex flex-col"
       >
         <MessageBubble
+          name={name}
           onLinkClick={onLinkClick}
           animate={animate}
           key={message.id + "-bubble"}

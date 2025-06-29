@@ -29,6 +29,14 @@ type Packet<T, K extends string> = {
   sender: string;
 };
 
+export type ChangeNicknamePacket = Packet<
+  {
+    userId: string;
+    newNickname: string;
+  },
+  "change_nickname"
+>;
+
 export interface Participant {
   userId: string;
   nickname: string;
@@ -181,6 +189,21 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   }, []);
 
   // --- User Actions ---
+
+  const onChangeNickname = (nickname: string) => {
+    if (nickname.length === 0 ) return;
+
+    const packet: ChangeNicknamePacket = {
+      type: "change_nickname",
+      content: {
+        newNickname: nickname,
+        userId: userId
+      },
+      sender: userId
+    }
+
+    sendPacket(packet)
+  }
 
   const onDeleteMessage = useCallback(
     (messageId: string) => {
@@ -551,6 +574,19 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                 )
               );
               break;
+            case "change_nickname":
+              const { userId: changedUserId, newNickname } =
+                jsonPacket.content as ChangeNicknamePacket["content"];
+
+              setParticipants((prev) =>
+                prev.map((participant) =>
+                  participant.userId === changedUserId
+                    ? { ...participant, nickname: newNickname }
+                    : participant
+                )
+              );
+
+              break;
             case "change_theme":
               const { mode, theme } = jsonPacket.content;
               setMode(mode);
@@ -577,7 +613,9 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                   type: "system",
                   content:
                     jsonPacket.content !== userId
-                      ? (isGroupChat ? "A participant has left the chat." : "") 
+                      ? isGroupChat
+                        ? "A participant has left the chat."
+                        : ""
                       : "You are currently offline.",
                   sender: "system",
                 },
@@ -608,7 +646,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               setStatus("disconnected");
               break;
             case "participants_sync":
-              console.log("SYNCING PARTICIPANTS", packet.content)
+              console.log("SYNCING PARTICIPANTS", packet.content);
               setParticipants(packet.content);
               break;
             case "participant_joined":
@@ -887,6 +925,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     disconnect,
     onReact,
     onChangeTheme,
+    onChangeNickname,
     editMessage,
     onStartTyping,
   };

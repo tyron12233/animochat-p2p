@@ -54,7 +54,7 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
         </AnimatePresence>
 
         {/* This is the primary set of dots, always visible when someone is typing. */}
-        <div className="flex my-2 mx-2">
+        <div className="flex my-1 mx-1 ">
           <div
             className="h-2 w-2 rounded-full animate-bounce [animation-delay:-0.3s]"
             style={dotStyle}

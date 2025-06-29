@@ -88,18 +88,8 @@ export default function ChatMessageItem({
         </div>
       )}
 
-      {name && (
-        <p
-          className="ml-6 mt-2 text-xs mb-1"
-          style={{
-            color: theme.message.systemMessage.text[mode],
-          }}
-        >
-          {name}
-        </p>
-      )}
-
       <SwipeableMessage
+        name={name}
         advertisementMessageId={advertisementMessageId}
         key={message.id + "_message"}
         message={message}

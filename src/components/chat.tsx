@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabase";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { Button } from "@/components/ui/button";
-import { Palette } from "lucide-react";
+import { Palette, Pencil } from "lucide-react";
 import ThemePickerDialog from "./theme-picker";
 import {
   auroraGlowTheme,
@@ -29,9 +29,10 @@ import {
   tyronsTheme,
 } from "../lib/default-chat-themes";
 import { Participant } from "../hooks/useAnimochat";
+import EditNicknameDialog from './group-chat/edit-nickname-dialog'
 
 interface ChatProps {
-  participants: Participant[],
+  participants: Participant[];
   name: string;
   groupChat: boolean;
   messages: Message[];
@@ -41,6 +42,7 @@ interface ChatProps {
   onDeleteMessage?: (messageId: string) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   cancelMatchmaking?: () => void;
+  onEditNickname?: (nickname: string) => void;
   typingUsers: string[];
   onStartTyping: () => void;
   goBack: () => void;
@@ -111,6 +113,7 @@ export default function Chat({
   endChat,
   newChat,
   onDeleteMessage,
+  onEditNickname,
   onReact,
   userId: peerId,
   status,
@@ -118,7 +121,17 @@ export default function Chat({
   const user: User = { id: peerId };
   const { theme, mode } = useChatTheme();
 
+  const [currentNickname, setCurrentNickname] = useState<string>("Unknown");
+
+  useEffect(() => {
+    const nickname = participants.find((p) => p.userId === user.id)?.nickname;
+    if (nickname) {
+      setCurrentNickname(nickname);
+    }
+  }, [participants]);
+
   const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [isEditNicknameDialogOpen, setIsEditNicknameDialogOpen] = useState(false);
 
   // Supabase notification logic remains unchanged
   useEffect(() => {
@@ -310,6 +323,10 @@ export default function Chat({
     }
   };
 
+  const handleSaveNickname = (newNickname: string) => {
+    onEditNickname?.(newNickname);
+  };
+
   const renderMessage = (msg: Message, index: number) => {
     const isSystem = msg.sender === "system" || msg.type === "system";
 
@@ -328,6 +345,7 @@ export default function Chat({
         </div>
       );
     }
+    
 
    
 
@@ -387,6 +405,12 @@ export default function Chat({
           onChangeTheme?.(mode, theme);
         }}
         activeMode={mode}
+      />
+      <EditNicknameDialog
+        isOpen={isEditNicknameDialogOpen}
+        onClose={() => setIsEditNicknameDialogOpen(false)}
+        onSave={handleSaveNickname}
+        currentNickname={currentNickname}
       />
       <EmojiOverlay
         open={emojiMenuState.open}
@@ -490,6 +514,22 @@ export default function Chat({
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </p>
           </div>
+
+          {groupChat && (
+            <Button
+              onClick={() => setIsEditNicknameDialogOpen(true)}
+              variant={"outline"}
+              className="mr-2 rounded-full"
+              style={{
+                background: theme.buttons.secondary.background[mode],
+                color: theme.buttons.secondary.text[mode],
+                borderColor:
+                  theme.buttons.secondary.border?.[mode] || "transparent",
+              }}
+            >
+              <Pencil size={16} />
+            </Button>
+          )}
 
           {/* Icon Button For Theme Picker */}
           <Button
@@ -757,7 +797,7 @@ export default function Chat({
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
-                viewBox="0 0 24 24"
+                viewBox="0 0 24"
                 fill="currentColor"
                 stroke="currentColor"
                 strokeWidth="2"

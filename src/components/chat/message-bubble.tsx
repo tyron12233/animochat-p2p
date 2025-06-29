@@ -65,6 +65,7 @@ function getRoundedCorners(isUserMessage: boolean, hasPrevious: boolean, hasNext
 }
 
 export interface MessageBubbleProps {
+  name: string | null; 
   message: any;
   user: User;
   hovered: boolean;
@@ -80,6 +81,7 @@ export interface MessageBubbleProps {
 }
 
 export default function MessageBubble({
+  name=null,
   message,
   user,
   hovered,
@@ -189,6 +191,7 @@ export default function MessageBubble({
         className={`max-w-[75%] mb-0.5 flex flex-col ${isUserMessage ? "items-end" : "items-start"} ${sending ? "opacity-50" : ""}`}
       >
         {edited && <p className="text-[0.70rem] px-2" style={{ color: theme.secondaryText[mode] }}>Edited</p>}
+        {name && <p className="text-[0.70rem] px-2" style={{ color: theme.secondaryText[mode] }}>{name}</p>}
 
         {message.replyingTo && (
           <ReplyIndicator message={message.replyingTo} isUserMessage={isUserMessage} theme={theme} mode={mode} />

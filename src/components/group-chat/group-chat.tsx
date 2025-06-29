@@ -18,6 +18,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
         typingUsers,
         sendMessage,
         participants,
+        onChangeNickname,
         onReact,
         status,
         onStartTyping,
@@ -43,6 +44,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
                 name={room.name}
                 groupChat={true}
                 messages={messages}
+                onEditNickname={onChangeNickname}
                 sendMessage={sendMessage}
                 onReact={onReact}
                 goBack={() => {
