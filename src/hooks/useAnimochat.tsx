@@ -641,6 +641,19 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               ]);
               break;
             case "offline":
+              const offlineUserId = jsonPacket.content as string;
+              // find the participant with this userId
+              const offlineParticipant = participants.find(
+                (p) => p.userId === offlineUserId
+              );
+              if (!offlineParticipant) {
+                console.warn(
+                  `Offline packet received for unknown user: ${offlineUserId}`
+                );
+                return;
+              }
+
+              // Create a system message indicating the user is offline
               setMessages((prev) => [
                 ...prev,
                 {
@@ -648,15 +661,12 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                   session_id: chatIdToConnect,
                   created_at: new Date().toISOString(),
                   type: "system",
-                  content:
-                    jsonPacket.content !== userId
-                      ? isGroupChat
-                        ? "A participant has left the chat."
-                        : ""
-                      : "You are currently offline.",
+                  content: `${offlineParticipant.nickname ?? "A participant"} has left the chat.`,
                   sender: "system",
-                },
+                }
               ]);
+
+              
               break;
             case "disconnect":
               setMessages((prev) => [
