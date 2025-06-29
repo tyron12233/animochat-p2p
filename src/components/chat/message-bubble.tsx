@@ -195,7 +195,8 @@ export default function MessageBubble({
         )}
 
         {(message.type === null || message.type === undefined || message.type === "text" || message.type === "deleted") && (
-          <TextMessage
+          <div>
+            <TextMessage
             message={message}
             user={user}
             theme={theme}
@@ -205,6 +206,7 @@ export default function MessageBubble({
             isLargeEmojiMessage={isLargeEmojiMessage}
             onLinkClick={onLinkClick}
           />
+          </div>
         )}
 
         {message.type === "image" && (

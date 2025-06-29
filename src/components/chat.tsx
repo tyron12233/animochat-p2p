@@ -20,9 +20,18 @@ import { ChatThemeV2 } from "../lib/chat-theme";
 import { Button } from "@/components/ui/button";
 import { Palette } from "lucide-react";
 import ThemePickerDialog from "./theme-picker";
-import { auroraGlowTheme, cosmicLatteTheme, defaultTheme, prideCelebrationTheme, sunsetBlissTheme, tyronsTheme } from "../lib/default-chat-themes";
+import {
+  auroraGlowTheme,
+  cosmicLatteTheme,
+  defaultTheme,
+  prideCelebrationTheme,
+  sunsetBlissTheme,
+  tyronsTheme,
+} from "../lib/default-chat-themes";
+import { Participant } from "../hooks/useAnimochat";
 
 interface ChatProps {
+  participants: Participant[],
   name: string;
   groupChat: boolean;
   messages: Message[];
@@ -31,7 +40,7 @@ interface ChatProps {
   onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   cancelMatchmaking?: () => void;
-  typingUsers: string[]
+  typingUsers: string[];
   onStartTyping: () => void;
   goBack: () => void;
   endChat: () => void;
@@ -87,7 +96,8 @@ const DynamicGlobalStyles = ({
 );
 
 export default function Chat({
-  name="",
+  participants = [],
+  name = "",
   groupChat = false,
   messages,
   goBack,
@@ -187,7 +197,6 @@ export default function Chat({
     }
   };
 
-
   useEffect(() => {
     if (groupChat) return;
 
@@ -252,7 +261,9 @@ export default function Chat({
   useEffect(() => {
     if (bottomMessagePreviewState) {
       // focus chat input
-      const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+      const chatInput = document.getElementById(
+        "chat-input"
+      ) as HTMLInputElement;
       if (chatInput) {
         chatInput.focus();
       }
@@ -265,7 +276,7 @@ export default function Chat({
       chatInput.value = "";
       setCurrentMessage("");
     }
-  }, [bottomMessagePreviewState])
+  }, [bottomMessagePreviewState]);
 
   useEffect(() => {
     const scroller = document.querySelector(
@@ -316,35 +327,38 @@ export default function Chat({
       );
     }
 
+   
+
     return (
       <AnimateChangeInHeight key={msg.id + "listener"}>
         <ChatMessageItem
-          key={index}
-          index={index}
-          message={msg}
-          user={user}
-          isLast={index === 0}
-          onSwipe={(messageId) => {
-            const message = messages.find((m) => m.id === messageId);
-            if (!message) return;
-            setBottomMessagePreviewState({
-              message,
-              type: "replying",
-              title: "Replying",
-              description: message.content,
-            });
-          }}
-          onStartedSwipe={() => {}}
-          onEndedSwipe={() => {}}
-          onReact={onReact}
-          onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
-          onResendMessage={() => {}}
-          isEmojiMenuOpen={isEmojiMenuOpen}
-          theme={theme}
-          mode={mode}
-          animate={true}
-          secondVisibleElement={null}
-        />
+            participants={participants}
+            key={index}
+            index={index}
+            message={msg}
+            user={user}
+            isLast={index === 0}
+            onSwipe={(messageId) => {
+              const message = messages.find((m) => m.id === messageId);
+              if (!message) return;
+              setBottomMessagePreviewState({
+                message,
+                type: "replying",
+                title: "Replying",
+                description: message.content,
+              });
+            }}
+            onStartedSwipe={() => {}}
+            onEndedSwipe={() => {}}
+            onReact={onReact}
+            onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
+            onResendMessage={() => {}}
+            isEmojiMenuOpen={isEmojiMenuOpen}
+            theme={theme}
+            mode={mode}
+            animate={true}
+            secondVisibleElement={null}
+          />
       </AnimateChangeInHeight>
     );
   };
@@ -357,7 +371,15 @@ export default function Chat({
       <ThemePickerDialog
         isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
-        themes={[defaultTheme, tyronsTheme, prideCelebrationTheme, bumbleTheme, cosmicLatteTheme, sunsetBlissTheme, auroraGlowTheme]}
+        themes={[
+          defaultTheme,
+          tyronsTheme,
+          prideCelebrationTheme,
+          bumbleTheme,
+          cosmicLatteTheme,
+          sunsetBlissTheme,
+          auroraGlowTheme,
+        ]}
         activeTheme={theme}
         setActiveThemeAndMode={(theme, mode) => {
           onChangeTheme?.(mode, theme);
@@ -412,7 +434,7 @@ export default function Chat({
           background: theme.general.background[mode],
           backdropFilter: `blur(${theme.general.backdropBlur})`,
           boxShadow: theme.general.shadow,
-          borderRadius: "var(--chat-border-radius, 2rem)", 
+          borderRadius: "var(--chat-border-radius, 2rem)",
         }}
         className="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden"
       >
@@ -424,14 +446,17 @@ export default function Chat({
           className="p-4 border-b flex items-center shrink-0"
         >
           {(status !== "connected" || groupChat) && (
-            <Button onClick={goBack} 
-            variant={"outline"}
-            style={{
-              background: theme.buttons.secondary.background[mode],
-              color: theme.buttons.secondary.text[mode],
-              borderColor: theme.buttons.secondary.border?.[mode] || "transparent",
-            }}
-            className="rounded-full mr-2 p-1">
+            <Button
+              onClick={goBack}
+              variant={"outline"}
+              style={{
+                background: theme.buttons.secondary.background[mode],
+                color: theme.buttons.secondary.text[mode],
+                borderColor:
+                  theme.buttons.secondary.border?.[mode] || "transparent",
+              }}
+              className="rounded-full mr-2 p-1"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -508,11 +533,11 @@ export default function Chat({
                   : {}),
               }}
             >
-               <span className="hidden sm:inline">(Esc)</span>
+              <span className="hidden sm:inline">(Esc)</span>
               {confirmedEnd ? "Confirm?" : "End Chat"}
             </Button>
           )}
-          {(!groupChat && status !== "connected") && (
+          {!groupChat && status !== "connected" && (
             <Button
               id="new-chat-button"
               onClick={newChat}
@@ -576,7 +601,7 @@ export default function Chat({
             <AnimateChangeInHeight>
               {typingUsers.length > 0 && (
                 <TypingIndicator
-                typingUsers={typingUsers}
+                  typingUsers={typingUsers}
                   key="typing-indicator"
                   theme={theme}
                   mode={mode}
@@ -630,62 +655,61 @@ export default function Chat({
           </AnimatePresence>
         </div>
 
-       <AnimateChangeInHeight>
-            <motion.div
-                key="bottom-message-preview"
-                style={{
-                  paddingBottom: bottomMessagePreviewState ? "2rem" : 0,
-                  overflow: "hidden",
-                  visibility: bottomMessagePreviewState ? "visible" : "hidden",
-                  height: bottomMessagePreviewState ? "auto" : 0,
-                  backgroundColor:
-                    theme.overlays.replyingPreview.background[mode],
-                  borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
-                }}
-                className="flex items-start gap-2 px-3 py-2 relative"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      style={{
-                        color: theme.overlays.replyingPreview.title[mode],
-                      }}
-                      className="text-xs font-semibold"
-                    >
-                      {bottomMessagePreviewState?.type === "replying"
-                        ? "Replying to"
-                        : "Editing"}
-                    </span>
-                    <button
-                      type="button"
-                      className="ml-auto"
-                      aria-label="Cancel"
-                      onClick={() => setBottomMessagePreviewState(null)}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke={theme.overlays.replyingPreview.closeIcon[mode]}
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div
-                    style={{
-                      color: theme.overlays.replyingPreview.description[mode],
-                    }}
-                    className="text-xs truncate max-w-xs"
+        <AnimateChangeInHeight>
+          <motion.div
+            key="bottom-message-preview"
+            style={{
+              paddingBottom: bottomMessagePreviewState ? "2rem" : 0,
+              overflow: "hidden",
+              visibility: bottomMessagePreviewState ? "visible" : "hidden",
+              height: bottomMessagePreviewState ? "auto" : 0,
+              backgroundColor: theme.overlays.replyingPreview.background[mode],
+              borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
+            }}
+            className="flex items-start gap-2 px-3 py-2 relative"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  style={{
+                    color: theme.overlays.replyingPreview.title[mode],
+                  }}
+                  className="text-xs font-semibold"
+                >
+                  {bottomMessagePreviewState?.type === "replying"
+                    ? "Replying to"
+                    : "Editing"}
+                </span>
+                <button
+                  type="button"
+                  className="ml-auto"
+                  aria-label="Cancel"
+                  onClick={() => setBottomMessagePreviewState(null)}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke={theme.overlays.replyingPreview.closeIcon[mode]}
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
                   >
-                    {bottomMessagePreviewState?.description}
-                  </div>
-                </div>
-              </motion.div>
-          </AnimateChangeInHeight>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div
+                style={{
+                  color: theme.overlays.replyingPreview.description[mode],
+                }}
+                className="text-xs truncate max-w-xs"
+              >
+                {bottomMessagePreviewState?.description}
+              </div>
+            </div>
+          </motion.div>
+        </AnimateChangeInHeight>
 
         <div
           style={{

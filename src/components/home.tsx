@@ -36,6 +36,7 @@ export default function Home({
     editMessage,
     sendMessage,
     onReact,
+    participants,
     onCancelMatchmaking,
     onStartTyping,
     handleGetStarted,
@@ -76,6 +77,7 @@ export default function Home({
             className="h-full w-full flex items-center justify-center sm:p-4"
           >
             <Chat
+              participants={participants}
               groupChat={false}
               name=""
               key="chat"

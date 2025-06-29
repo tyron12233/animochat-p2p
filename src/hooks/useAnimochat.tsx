@@ -29,6 +29,14 @@ type Packet<T, K extends string> = {
   sender: string;
 };
 
+export interface Participant {
+  userId: string;
+  nickname: string;
+}
+
+export type ParticipantsSyncPacket = Packet<Participant[], "participants_sync">;
+export type ParticipantJoinedPacket = Packet<Participant, "user_joined">;
+
 type MessagePacket = Packet<UserMessage, "message">;
 type ReactionPacket = Packet<Reaction, "reaction">;
 type TypingPacket = Packet<boolean, "typing">;
@@ -60,6 +68,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   const [chatId, setChatId] = useState<string>("");
 
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   // --- Refs for managing connections and state ---
   const wsRef = useRef<WebSocket | null>(null);
@@ -465,7 +474,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
             if (isGroupChat) {
-              message = "Connected to chat room."
+              message = "Connected to chat room.";
             }
           } else if (showRandomStrangerMessage) {
             message =
@@ -568,6 +577,34 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               eventSourceRef.current?.close();
               setChatId("");
               setStatus("disconnected");
+              break;
+            case "participants_sync":
+              console.log("SYNCING PARTICIPANTS", packet.content)
+              setParticipants(packet.content);
+              break;
+            case "participant_joined":
+              if (!isGroupChat) return;
+
+              const participantJoinedPacket: ParticipantJoinedPacket = packet;
+
+              const newParticipant = participantJoinedPacket.content;
+              setParticipants((prev) => {
+                // Only add if not already present
+                if (prev.some((p) => p.userId === newParticipant.userId))
+                  return prev;
+                return [...prev, newParticipant];
+              });
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: `${newParticipant.nickname} joined the chat.`,
+                  sender: "system",
+                },
+              ]);
               break;
             case "STATUS":
               setMessages((prev) => [
@@ -811,6 +848,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     messages,
     userId,
     typingUsers,
+    participants,
     handleGetStarted: () => setScreen("matchmaking"),
     connectToExistingSession,
     startMatchmaking,

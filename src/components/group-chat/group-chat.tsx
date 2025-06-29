@@ -16,12 +16,13 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
         disconnect,
         typingUsers,
         sendMessage,
+        participants,
         onReact,
         status,
         onStartTyping,
         onChangeTheme,
         editMessage,
-    } = useAnimochatV2(userId);
+    } = useAnimochatV2(userId, true);
 
 
     useEffect(() => {
@@ -37,6 +38,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
     return (
         <>
             <Chat
+                participants={participants}
                 name={room.name}
                 groupChat={true}
                 messages={messages}

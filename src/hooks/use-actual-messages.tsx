@@ -89,6 +89,9 @@ export function useActualMessages(messages: Message[]): Message[] {
         // 1. Initial grouping based on sender continuity
         current.hasPrevious = !!previous && previous.sender === current.sender;
         current.hasNext = !!next && next.sender === current.sender;
+        
+        // let showName = current.hasPrevious && previous.sender !== current.sender;
+        current.showName = previous && previous.sender !== current.sender;
 
         // --- Adjust grouping based on various break conditions ---
 
