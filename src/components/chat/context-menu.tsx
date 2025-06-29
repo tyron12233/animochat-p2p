@@ -2,10 +2,11 @@
 import { motion } from "motion/react";
 import { Copy, Delete, Edit, Reply, Trash } from "lucide-react";
 import { createRef, useLayoutEffect, useState, useEffect, useRef } from "react";
-import { ChatTheme } from "@/src/lib/types";
+import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 interface ContextMenuProps {
-  theme: ChatTheme;
+  theme: ChatThemeV2;
+  mode: "light" | "dark";
   anchor: HTMLDivElement;
   onReply: () => void;
   onCopy: () => void;
@@ -16,6 +17,7 @@ interface ContextMenuProps {
 
 export default function ContextMenu({
   theme,
+  mode,
   anchor,
   onReply,
   onCopy,
@@ -137,7 +139,7 @@ export default function ContextMenu({
       className="absolute flex flex-col rounded-3xl w-[200px] overflow-clip"
       style={{
         background:
-          theme?.chatBackground || "linear-gradient(180deg, #ffffff, #ffffff)",
+          theme.general.background[mode] || "linear-gradient(180deg, #ffffff, #ffffff)",
         top: position.top,
         left: position.left,
       }}

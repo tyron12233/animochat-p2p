@@ -1,22 +1,10 @@
 
-import { RefObject, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
-import {
-  LongPressEventType,
-  LongPressResult,
-  LongPressTouchHandlers,
-  useLongPress,
-} from "use-long-press";
-import { SmileIcon } from "lucide-react";
+import { RefObject, useEffect, useState } from "react";
 import "./swipeable-message.css";
 import "./chat-message-item.css";
 
-import { getTextColor } from "@/src/lib/color-utils";
-import Linkify from "react-linkify";
 import MessageBubble from "./message-bubble";
-import { SwipeIcon } from "./swipe-icon";
-import { ChatTheme, DEFAULT_THEME, Message, User } from "@/src/lib/types";
-import { defaultTheme } from "@/src/lib/default-chat-themes";
+import { Message, User } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 export const SWIPE_THRESHOLD = 50;

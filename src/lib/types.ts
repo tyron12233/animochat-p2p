@@ -92,6 +92,7 @@ export type AnyPacket =
   | TypingPacket
   | EditMessagePacket;
 
+  
 
 export interface ChatTheme {
   /** A unique identifier for the theme */

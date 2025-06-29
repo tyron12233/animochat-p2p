@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import EmojiMenu from "./emoji-menu";
 import ContextMenu from "./context-menu";
 import { DEFAULT_THEME, Message, User, UserMessage } from "@/src/lib/types";
+import { defaultTheme } from "@/src/lib/default-chat-themes";
 
 interface EmojiOverlayProps {
   open: boolean;
@@ -72,7 +73,8 @@ export const EmojiOverlay: React.FC<EmojiOverlayProps> = ({
               onDelete={() => onDelete(message.id)}
               onClose={onClose}
               key="context-menu"
-              theme={DEFAULT_THEME}
+              theme={defaultTheme}
+              mode={"light"}
               anchor={messageDiv}
             />
           </div>

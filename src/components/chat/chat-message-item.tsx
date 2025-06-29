@@ -2,7 +2,7 @@
 import { format } from "date-fns";
 import { SwipeableMessage } from "./swipeable-message";
 import { RefObject } from "react";
-import { User, Message, ChatTheme } from "@/src/lib/types";
+import { User, Message } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { defaultTheme } from "@/src/lib/default-chat-themes";
 
