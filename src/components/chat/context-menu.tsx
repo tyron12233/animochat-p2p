@@ -34,6 +34,12 @@ export default function ContextMenu({
   ) !== null;
 
   const items = [
+    { icon: <Copy className="h-4 w-4" />, text: "Copy sender", onClick: () => {
+      const senderId = messageBuble.getAttribute("data-sender-id");
+      if (senderId) {
+        navigator.clipboard.writeText(senderId);
+      }
+      }},
     { icon: <Reply className="h-4 w-4" />, text: "Reply", onClick: onReply },
     { icon: <Copy className="h-4 w-4" />, text: "Copy", onClick: onCopy },
     ...(isUserMessage && !isImageMessage

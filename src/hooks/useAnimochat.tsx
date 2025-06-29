@@ -191,19 +191,30 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   // --- User Actions ---
 
   const onChangeNickname = (nickname: string) => {
-    if (nickname.length === 0 ) return;
+    if (nickname.length === 0) return;
 
     const packet: ChangeNicknamePacket = {
       type: "change_nickname",
       content: {
         newNickname: nickname,
-        userId: userId
+        userId: userId,
       },
-      sender: userId
-    }
+      sender: userId,
+    };
 
-    sendPacket(packet)
-  }
+    sendPacket(packet);
+
+    const systemMessage: SystemMessage = {
+      id: `system_${Date.now()}`,
+      session_id: chatId,
+      created_at: new Date().toISOString(),
+      type: "system",
+      content: `You changed your nickname to ${nickname}.`,
+      sender: "system",
+    };
+
+    setMessages((prev) => [...prev, systemMessage]);
+  };
 
   const onDeleteMessage = useCallback(
     (messageId: string) => {
@@ -578,13 +589,39 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               const { userId: changedUserId, newNickname } =
                 jsonPacket.content as ChangeNicknamePacket["content"];
 
+                // before updating the nickname,
+                // create a system message that will
+                // be displayed in the chat {old username} changed their nickname to {new nickname}
+              const oldNickname = participants.find(
+                (p) => p.userId === changedUserId
+              )?.nickname;
+
+              if (!oldNickname) {
+                console.warn(
+                  `Nickname change received for unknown user: ${changedUserId}`
+                );
+                return;
+              }
+
               setParticipants((prev) =>
-                prev.map((participant) =>
-                  participant.userId === changedUserId
-                    ? { ...participant, nickname: newNickname }
-                    : participant
+                prev.map((p) =>
+                  p.userId === changedUserId
+                    ? { ...p, nickname: newNickname }
+                    : p
                 )
               );
+
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: `system_${Date.now()}`,
+                  session_id: chatIdToConnect,
+                  created_at: new Date().toISOString(),
+                  type: "system",
+                  content: `${oldNickname} changed their nickname to ${newNickname}.`,
+                  sender: "system",
+                },
+              ]);
 
               break;
             case "change_theme":

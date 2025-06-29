@@ -49,7 +49,7 @@ interface ChatServer {
 
 export interface ChatRoom {
   id: string;
-  participants: string[];
+  participants: number;
   max_participants: number;
   name: string;
   serverUrl: string;
@@ -166,9 +166,9 @@ const RoomCard = ({ room, onJoin }: { room: ChatRoom; onJoin: () => void }) => {
             <h3 className="text-xl font-bold text-gray-900 truncate mb-2">{room.name}</h3>
             <div className="flex items-center text-gray-600 text-sm">
                 <Users size={16} className="mr-2 flex-shrink-0" />
-                <span className="font-medium">{room.participants.length} / {room.max_participants}</span>
+                <span className="font-medium">{room.participants} / {room.max_participants}</span>
                  <span className="mx-2">·</span>
-                <span className="text-gray-500">{room.participants.length < room.max_participants * 0.5 ? "Quiet" : room.participants.length < room.max_participants * 0.8 ? "Active" : "Popular"}</span>
+                <span className="text-gray-500">{room.participants < room.max_participants * 0.5 ? "Quiet" : room.participants < room.max_participants * 0.8 ? "Active" : "Popular"}</span>
             </div>
           </div>
           <div className="mt-6">

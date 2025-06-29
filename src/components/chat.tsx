@@ -24,6 +24,7 @@ import {
   auroraGlowTheme,
   cosmicLatteTheme,
   defaultTheme,
+  monochromeTheme,
   prideCelebrationTheme,
   sunsetBlissTheme,
   tyronsTheme,
@@ -393,6 +394,7 @@ export default function Chat({
         onClose={() => setIsThemePickerOpen(false)}
         themes={[
           defaultTheme,
+          monochromeTheme,
           tyronsTheme,
           prideCelebrationTheme,
           bumbleTheme,

@@ -174,6 +174,7 @@ export default function MessageBubble({
       <motion.div
         key={message.id + "-bubble"}
         id="message-bubble"
+        data-sender-id={message.sender}
         dragSnapToOrigin
         dragTransition={{ bounceDamping: 13 }}
         drag="x"

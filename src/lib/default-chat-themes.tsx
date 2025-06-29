@@ -637,8 +637,151 @@ export const defaultTheme: ChatThemeV2 = {
   },
 };
 
+export const monochromeTheme: ChatThemeV2 = {
+  name: "Monochrome Theme",
+  typography: {
+    fontFamily: "inherit",
+    baseFontSize: "16px",
+  },
+  accent: {
+    main: { light: "#525252", dark: "#e5e5e5" }, // Neutral 600, Neutral 200
+    faded: {
+      light: "rgba(82, 82, 82, 0.15)",
+      dark: "rgba(229, 229, 229, 0.15)",
+    },
+  },
+  secondaryText: { light: "#a3a3a3", dark: "#a3a3a3" }, // Neutral 400
+  errorText: { light: "#f87171", dark: "#ef4444" }, // Kept red for accessibility
+  linkColor: { light: "#404040", dark: "#fafafa" }, // Neutral 700, Neutral 50
+  announcement: {
+    background: { light: "#fafafa", dark: "#262626" }, // Neutral 50, Neutral 800
+    text: { light: "#525252", dark: "#d4d4d4" }, // Neutral 600, Neutral 300
+    border: { light: "#e5e5e5", dark: "#404040" }, // Neutral 200, Neutral 700
+  },
+  animations: {
+    typingIndicatorDots: {
+      dark: "#d4d4d4", // Neutral 300
+      light: "#737373", // Neutral 500
+    },
+  },
+  messageList: {
+    scrollbarThumb: { light: "#d4d4d4", dark: "#525252" }, // Neutral 300, Neutral 600
+    scrollbarTrack: { light: "#fafafa", dark: "#171717" }, // Neutral 50, Neutral 900
+  },
+  overlays: {
+    emojiMenu: {
+      background: { light: "#ffffff", dark: "#171717" }, // White, Neutral 900
+      shadow:
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    },
+    replyingPreview: {
+      background: { light: "#e5e5e5", dark: "#262626" }, // Neutral 200, Neutral 800
+      border: { light: "#a3a3a3", dark: "#525252" }, // Neutral 400, Neutral 600
+      closeIcon: {
+        light: "#a3a3a3",
+        dark: "#a3a3a3",
+      },
+      description: {
+        light: "#404040",
+        dark: "#d4d4d4",
+      },
+      title: {
+        light: "#171717",
+        dark: "#fafafa",
+      },
+    },
+  },
+  general: {
+    background: { light: "#ffffff", dark: "#171717" }, // White, Neutral 900
+    backdropBlur: "1.5rem",
+    shadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+    borderRadius: "2rem",
+  },
+  header: {
+    background: {
+      light: "rgba(255, 255, 255, 0.6)",
+      dark: "rgba(23, 23, 23, 0.6)", // Neutral 900 with opacity
+    },
+    border: {
+      light: "rgba(229, 229, 229, 0.8)", // Neutral 200 with opacity
+      dark: "rgba(64, 64, 64, 0.8)", // Neutral 700 with opacity
+    },
+    statusLabel: { light: "#a3a3a3", dark: "#a3a3a3" }, // Neutral 400
+    statusValue: { light: "#404040", dark: "#e5e5e5" }, // Neutral 700, Neutral 200
+  },
+  message: {
+    myMessage: {
+      background: { light: "#262626", dark: "#e5e5e5" }, // Neutral 800, Neutral 200
+      text: { light: "#ffffff", dark: "#171717" }, // White, Neutral 900
+      isAnimated: false,
+    },
+    strangerMessage: {
+      background: { light: "#e5e5e5", dark: "#262626" }, // Neutral 200, Neutral 800
+      text: { light: "#171717", dark: "#e5e5e5" }, // Neutral 900, Neutral 200
+      isAnimated: false,
+    },
+    systemMessage: {
+      background: { light: "#fafafa", dark: "#262626" }, // Neutral 50, Neutral 800
+      text: { light: "#a3a3a3", dark: "#a3a3a3" }, // Neutral 400
+    },
+    deletedMessage: {
+      text: { light: "#a3a3a3", dark: "#737373" }, // Neutral 400, Neutral 500
+    },
+    imageOverlay: {
+      background: { light: "rgba(0, 0, 0, 0.4)", dark: "rgba(0, 0, 0, 0.4)" },
+      text: { light: "#ffffff", dark: "#ffffff" },
+    },
+  },
+  inputArea: {
+    background: {
+      light: "rgba(255, 255, 255, 0.6)",
+      dark: "rgba(23, 23, 23, 0.6)",
+    },
+    border: {
+      light: "rgba(229, 229, 229, 0.8)",
+      dark: "rgba(64, 64, 64, 0.8)",
+    },
+    inputBackground: { light: "#ffffff", dark: "rgba(64, 64, 64, 0.5)" },
+    inputText: { light: "#262626", dark: "#e5e5e5" },
+    placeholderText: { light: "#a3a3a3", dark: "#737373" },
+    focusRing: { light: "#525252", dark: "#a3a3a3" },
+  },
+  buttons: {
+    primary: {
+      background: { light: "#262626", dark: "#fafafa" }, // Neutral 800, Neutral 50
+      text: { light: "#ffffff", dark: "#171717" }, // White, Neutral 900
+      hoverBackground: { light: "#404040", dark: "#e5e5e5" }, // Neutral 700, Neutral 200
+    },
+    secondary: {
+      background: { light: "#ffffff", dark: "#262626" }, // White, Neutral 800
+      text: { light: "#404040", dark: "#e5e5e5" }, // Neutral 700, Neutral 200
+      hoverBackground: { light: "#fafafa", dark: "#404040" }, // Neutral 50, Neutral 700
+      border: { light: "#e5e5e5", dark: "#404040" }, // Neutral 200, Neutral 700
+    },
+    destructive: {
+      background: { light: "#fca5a5", dark: "#ef4444" },
+      text: { light: "#7f1d1d", dark: "#ffffff" },
+      hoverBackground: { light: "#f87171", dark: "#dc2626" },
+      border: { light: "#fca5a5", dark: "#ef4444" },
+    },
+    newMessages: {
+      background: { light: "#fb923c", dark: "#fdba74" }, // Kept orange for visibility
+      text: { light: "#ffffff", dark: "#431407" },
+      hoverBackground: { light: "#f97316", dark: "#fb923c" },
+    },
+  },
+  reactions: {
+    bubble: {
+      background: { light: "#e5e5e5", dark: "#404040" }, // Neutral 200, Neutral 700
+      border: { light: "#ffffff", dark: "#171717" }, // White, Neutral 900
+      text: { light: "#404040", dark: "#e5e5e5" }, // Neutral 700, Neutral 200
+    },
+  },
+};
+
+
 export const tyronsTheme: ChatThemeV2 = {
-  name: "Tyron's Theme",
+  name: "Tyron's Theme (flowery)",
   typography: {
     fontFamily: "inherit",
     baseFontSize: "16px",
