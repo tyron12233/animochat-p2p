@@ -98,9 +98,11 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
         }
 
         // will return a message sync packet
-        const packet: MessagesSyncPacket = await response.json();
+        const responseJson = await response.json();
 
-        return packet.content;
+
+
+        return responseJson;
       } catch (error) {
         console.error("Error syncing messages:", error);
         return [];
@@ -110,8 +112,15 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     setChatId(data.chatId);
 
     syncMessages(data.chatServerUrl, data.chatId)
-      .then((messages) => {
-        setMessages(messages);
+      .then((json) => {
+        setMessages(json.messages || []);
+        setParticipants(json.participants || []);
+        setTheme(json.theme || defaultTheme);
+        setMode(json.mode || "light");
+      }).catch(() => {
+        setStatus("error");
+        console.error("Failed to sync messages or participants.");
+        return [];
       })
       .then(() => {
         connectToChat(data.chatServerUrl, data.chatId, [], true);
@@ -626,7 +635,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
               break;
             case "change_theme":
-              const { mode, theme } = jsonPacket.content;
+              const { mode, theme } = (jsonPacket as ChangeThemePacket).content;
+              console.log("Changing theme to:", theme.name, "Mode:", mode);
               setMode(mode);
               setTheme(theme);
               setMessages((prev) => [
