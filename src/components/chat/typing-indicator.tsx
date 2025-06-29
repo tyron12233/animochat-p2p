@@ -47,7 +47,9 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
       >
         <AnimatePresence>
           {typingUsers.length > 1 && (
-          <div className="mx-2">{typingUsers.length}</div>
+          <div className="mx-2" style={{
+            color: theme.message.strangerMessage.text[mode],
+          }}>{typingUsers.length}</div>
         )}
         </AnimatePresence>
 

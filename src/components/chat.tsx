@@ -156,7 +156,7 @@ export default function Chat({
     };
   }, []);
 
-  const actualMessages = useActualMessages(messages);
+  const actualMessages = useActualMessages(messages, groupChat);
 
   // VIRTUAL CHAT EFFECTS (logic unchanged)
   const scrollerRef = useRef<VListHandle>(null);
