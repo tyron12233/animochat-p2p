@@ -14,6 +14,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
         connectToExistingSession,
         messages,
         disconnect,
+        onDeleteMessage,
         typingUsers,
         sendMessage,
         participants,
@@ -48,6 +49,7 @@ export default function GroupChat({room, onLeave}: GrouupChatProps) {
                     onLeave();
                     disconnect(true);
                 }}
+                onDeleteMessage={onDeleteMessage}
                 endChat={() => {}}
                 onStartTyping={onStartTyping}
                 userId={userId}

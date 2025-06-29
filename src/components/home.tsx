@@ -37,6 +37,7 @@ export default function Home({
     sendMessage,
     onReact,
     participants,
+    onDeleteMessage,
     onCancelMatchmaking,
     onStartTyping,
     handleGetStarted,
@@ -84,6 +85,7 @@ export default function Home({
               goBack={() => {
                 handleGetStarted();
               }}
+              onDeleteMessage={onDeleteMessage}
               onEditMessage={editMessage}
               onStartTyping={onStartTyping}
               cancelMatchmaking={onCancelMatchmaking}

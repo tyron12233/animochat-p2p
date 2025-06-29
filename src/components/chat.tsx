@@ -38,6 +38,7 @@ interface ChatProps {
   sendMessage: (text: string, replyingToId: string | undefined) => void;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
   onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
+  onDeleteMessage?: (messageId: string) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   cancelMatchmaking?: () => void;
   typingUsers: string[];
@@ -109,6 +110,7 @@ export default function Chat({
   onChangeTheme,
   endChat,
   newChat,
+  onDeleteMessage,
   onReact,
   userId: peerId,
   status,
@@ -422,6 +424,7 @@ export default function Chat({
         onDelete={(messageId) => {
           console.log(`Delete message with ID: ${messageId}`);
           onOpenEmojiMenu(null);
+          onDeleteMessage?.(messageId);
         }}
         onClose={() => onOpenEmojiMenu(null)}
       />

@@ -37,6 +37,7 @@ export interface Participant {
 export type ParticipantsSyncPacket = Packet<Participant[], "participants_sync">;
 export type ParticipantJoinedPacket = Packet<Participant, "user_joined">;
 
+type DeleteMessagePacket = Packet<string, "message_delete">;
 type MessagePacket = Packet<UserMessage, "message">;
 type ReactionPacket = Packet<Reaction, "reaction">;
 type TypingPacket = Packet<boolean, "typing">;
@@ -180,6 +181,23 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
   }, []);
 
   // --- User Actions ---
+
+  const onDeleteMessage = useCallback(
+    (messageId: string) => {
+      if (!userId || !chatId) return;
+
+      // Optimistically update the UI to remove the message.
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+      const packet: DeleteMessagePacket = {
+        type: "message_delete",
+        content: messageId,
+        sender: userId,
+      };
+      sendPacket(packet);
+    },
+    [userId, chatId, sendPacket]
+  );
 
   const onCancelMatchmaking = () => {
     const cancelApi = () => {
@@ -522,6 +540,17 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
           if (packet.sender === userId) return;
 
           switch (jsonPacket.type) {
+            case "message_delete":
+              const messageIdToDelete = jsonPacket.content as string;
+              // set type of message with id messageIdToDelete to "deleted"
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === messageIdToDelete
+                    ? { ...msg, type: "deleted" }
+                    : msg
+                )
+              );
+              break;
             case "change_theme":
               const { mode, theme } = jsonPacket.content;
               setMode(mode);
@@ -853,6 +882,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     connectToExistingSession,
     startMatchmaking,
     onCancelMatchmaking,
+    onDeleteMessage,
     sendMessage,
     disconnect,
     onReact,
