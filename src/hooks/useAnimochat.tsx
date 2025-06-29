@@ -592,7 +592,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                 // before updating the nickname,
                 // create a system message that will
                 // be displayed in the chat {old username} changed their nickname to {new nickname}
-              const oldNickname = participants.find(
+              let oldNickname = participants.find(
                 (p) => p.userId === changedUserId
               )?.nickname;
 
@@ -600,7 +600,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                 console.warn(
                   `Nickname change received for unknown user: ${changedUserId}`
                 );
-                return;
+
+                oldNickname = "A participant";
               }
 
               setParticipants((prev) =>
