@@ -34,7 +34,7 @@ interface ChatProps {
   goBack: () => void;
   endChat: () => void;
   newChat?: () => void;
-  peerId: string;
+  userId: string;
   status: string;
 }
 
@@ -96,7 +96,7 @@ export default function Chat({
   endChat,
   newChat,
   onReact,
-  peerId,
+  userId: peerId,
   status,
 }: ChatProps) {
   const user: User = { id: peerId };

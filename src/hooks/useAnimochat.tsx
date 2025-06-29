@@ -15,10 +15,11 @@ import { v4 as uuidv4 } from "uuid";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { defaultTheme } from "../lib/default-chat-themes";
+import { ChatSessionData } from "./use-chat-session";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
-const API_BASE_URL = "https://animochat-turn-server.onrender.com";
+export const API_BASE_URL = "https://animochat-turn-server.onrender.com";
 
 // --- Packet Types for WebSocket Communication ---
 // These define the structure of messages sent over the WebSocket connection.
@@ -48,14 +49,13 @@ type ChangeThemePacket = Packet<
 // the content is a string (the user id of the user who when offline).
 type OfflinePacket = Packet<string, "offline">;
 
-export const useAnimochatV2 = () => {
+export const useAnimochatV2 = (userId: string) => {
   const { setTheme, setMode } = useChatTheme();
 
   // --- State Management ---
   const [screen, setScreen] = useState<Screen>("intro");
   const [status, setStatus] = useState<Status>("initializing");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [userId, setUserId] = useState<string>("");
   const [chatId, setChatId] = useState<string>("");
   const [isStrangerTyping, setStrangerTyping] = useState<boolean>(false);
 
@@ -64,20 +64,9 @@ export const useAnimochatV2 = () => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const isTypingRef = useRef<boolean>(false);
 
-  // --- Initial setup: Generate a unique ID for the user ---
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("animochat_user_id");
-    if (!storedUserId) {
-      const newUserId = uuidv4();
-      localStorage.setItem("animochat_user_id", newUserId);
-      setUserId(newUserId);
-    } else {
-      setUserId(storedUserId);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
+  function connectToExistingSession(data: ChatSessionData) {
+    setStatus("connecting");
+    setScreen("chat");
 
     const syncMessages = async (chatServer: string, chatId: string) => {
       ///sync/:chatId
@@ -98,51 +87,14 @@ export const useAnimochatV2 = () => {
       }
     };
 
-    const getExistingSession = async () => {
-      const sessionApi = `${API_BASE_URL}/session/${userId}`;
-      try {
-        const response = await fetch(sessionApi);
-        if (!response.ok) {
-          // If the session API returns an error, then there's probably no existing session.
-          setStatus("ready");
-          return;
-        }
-
-        const data = await response.json();
-        const { chatId, serverUrl, participants } = data;
-        if (!chatId || !serverUrl) {
-          console.log("No existing session found.");
-          setStatus("ready");
-          return;
-        }
-
-        console.log("Found existing session:", data);
-        setChatId(data.chatId);
-        setTheme(defaultTheme);
-        setMode("light");
-        setScreen("chat");
-        setStatus("connecting");
-
-        // first get
-
-        const messages = await syncMessages(serverUrl, chatId);
-        setMessages(messages);
-
-        await connectToChat(data.chatId, [], true);
-      } catch (error) {
-        console.error("Error fetching existing session:", error);
-        setStatus("error");
-      }
-    };
-
-    getExistingSession();
-
-    return () => {
-      console.log("Cleaning up useAnimochat hook.");
-      eventSourceRef.current?.close();
-      wsRef.current?.close();
-    };
-  }, [userId]);
+    setChatId(data.chatId);
+    
+    syncMessages(data.chatServerUrl, data.chatId).then((messages) => {
+      setMessages(messages);
+    }).then(() => {
+      connectToChat(data.chatServerUrl, data.chatId, [], true)
+    });
+  }
 
   // --- Core Data Handling Functions ---
 
@@ -474,6 +426,7 @@ export const useAnimochatV2 = () => {
 
   const connectToChat = useCallback(
     async (
+      chatServerUrl: string,
       chatIdToConnect: string,
       interests: string[] = [],
       isReconnecting = false,
@@ -670,7 +623,7 @@ export const useAnimochatV2 = () => {
               `Scheduling reconnection attempt #${reconnectionAttemptsRef.current}`
             );
             reconnectionTimerRef.current = setTimeout(() => {
-              connectToChat(chatIdToConnect, [], true);
+              connectToChat(chatServerUrl, chatIdToConnect, [], true);
             }, RECONNECT_DELAY_MS * reconnectionAttemptsRef.current);
           } else {
             console.error("Max reconnection attempts reached. Giving up.");
@@ -697,22 +650,7 @@ export const useAnimochatV2 = () => {
       };
 
       try {
-        const sessionApi = `${API_BASE_URL}/session/${userId}`;
-        const response = await fetch(sessionApi);
-        if (!response.ok) {
-          throw new Error(`Session fetch failed: ${response.statusText}`);
-        }
-        const data = await response.json();
-
-        if (
-          !data.chatId ||
-          !data.serverUrl ||
-          data.chatId !== chatIdToConnect
-        ) {
-          throw new Error("Invalid session data for reconnection.");
-        }
-
-        const wsUrl = `${data.serverUrl}?userId=${userId}&chatId=${data.chatId}`;
+        const wsUrl = `${chatServerUrl}?userId=${userId}&chatId=${chatIdToConnect}`;
         console.log(`Connecting to WebSocket server: ${wsUrl}`);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -728,7 +666,7 @@ export const useAnimochatV2 = () => {
           if (reconnectionAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
             reconnectionAttemptsRef.current++;
             reconnectionTimerRef.current = setTimeout(() => {
-              connectToChat(chatIdToConnect, [], true);
+              connectToChat(chatServerUrl, chatIdToConnect, [], true);
             }, RECONNECT_DELAY_MS * reconnectionAttemptsRef.current);
           }
         }
@@ -796,6 +734,7 @@ export const useAnimochatV2 = () => {
           }
 
           connectToChat(
+            data.chatServerUrl,
             data.chatId,
             interest,
             false,
@@ -848,6 +787,7 @@ export const useAnimochatV2 = () => {
     userId,
     isStrangerTyping,
     handleGetStarted: () => setScreen("matchmaking"),
+    connectToExistingSession,
     startMatchmaking,
     onCancelMatchmaking,
     sendMessage,

@@ -1,19 +1,33 @@
 "use client";
 
 import BackgroundElements from "../components/ui/background-elements";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InterestSelector from "../components/interests-selector";
-import Chat from "../components/chat"; 
+import Chat from "../components/chat";
 import { useAnimochatV2 } from "../hooks/useAnimochat";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import Link from 'next/link';
-import { Server } from 'lucide-react';
+import Link from "next/link";
+import { Server } from "lucide-react";
+import useUserId from "../hooks/use-user-id";
+import useChatSession, {
+  ChatSessionData,
+  ChatSessionStatus,
+} from "../hooks/use-chat-session";
 
-export default function Home() {
+interface HomeProps {
+  userId: string;
+  chatSessionData: ChatSessionData | null;
+  chatSessionStatus: ChatSessionStatus;
+}
+
+export default function Home({
+  userId,
+  chatSessionData,
+  chatSessionStatus,
+}: HomeProps) {
   const {
     screen,
-    userId,
     status,
     messages,
     startMatchmaking,
@@ -25,8 +39,15 @@ export default function Home() {
     onCancelMatchmaking,
     onStartTyping,
     handleGetStarted,
+    connectToExistingSession,
     isStrangerTyping,
-  } = useAnimochatV2();
+  } = useAnimochatV2(userId);
+
+  useEffect(() => {
+    if (chatSessionStatus === "existing_session" && chatSessionData) {
+      connectToExistingSession(chatSessionData);
+    }
+  }, [chatSessionStatus]);
 
   const isConnecting = false;
 
@@ -35,7 +56,7 @@ export default function Home() {
   const handleFindMatch = (interestsToMatch: Set<string>) => {
     startMatchmaking(Array.from(interestsToMatch));
   };
-  
+
   // Animation properties for page transitions
   // This defines how a screen will enter and exit the view.
   const pageTransition = {
@@ -49,36 +70,36 @@ export default function Home() {
     switch (screen) {
       case "chat":
         return (
-           <motion.div 
-              key="chat"
-              {...pageTransition}
-              className="h-full w-full flex items-center justify-center sm:p-4"
-            >
-              <Chat
-                goBack={() => {
-                    handleGetStarted();
-                }}
-                onEditMessage={editMessage}
-                onStartTyping={onStartTyping}
-                cancelMatchmaking={onCancelMatchmaking}
-                isStrangerTyping={isStrangerTyping}
-                onReact={onReact}
-                onChangeTheme={onChangeTheme}
-                messages={messages}
-                sendMessage={sendMessage}
-                newChat={() => {
-                  handleFindMatch(interests);
-                }}
-                endChat={disconnect}
-                peerId={userId}
-                status={status}
-              />
+          <motion.div
+            key="chat"
+            {...pageTransition}
+            className="h-full w-full flex items-center justify-center sm:p-4"
+          >
+            <Chat
+              goBack={() => {
+                handleGetStarted();
+              }}
+              onEditMessage={editMessage}
+              onStartTyping={onStartTyping}
+              cancelMatchmaking={onCancelMatchmaking}
+              isStrangerTyping={isStrangerTyping}
+              onReact={onReact}
+              onChangeTheme={onChangeTheme}
+              messages={messages}
+              sendMessage={sendMessage}
+              newChat={() => {
+                handleFindMatch(interests);
+              }}
+              endChat={disconnect}
+              userId={userId}
+              status={status}
+            />
           </motion.div>
         );
 
       case "matchmaking":
         return (
-          <motion.div 
+          <motion.div
             key="matchmaking"
             {...pageTransition}
             className="w-full h-full flex flex-col justify-center items-center"
@@ -106,7 +127,7 @@ export default function Home() {
       case "intro":
       default:
         return (
-          <motion.div 
+          <motion.div
             key="intro"
             {...pageTransition}
             className="w-full h-full flex flex-col justify-center items-center"
@@ -123,11 +144,14 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            
+
             <div className="max-w-md mx-auto text-sm space-y-6 text-center">
-                <div className="text-red-700 bg-red-50 p-4 rounded-2xl border border-red-200 font-medium">
-                    <p>This is a test version of AnimoChat. Not all features are implemented, and you may encounter bugs.</p>
-                </div>
+              <div className="text-red-700 bg-red-50 p-4 rounded-2xl border border-red-200 font-medium">
+                <p>
+                  This is a test version of AnimoChat. Not all features are
+                  implemented, and you may encounter bugs.
+                </p>
+              </div>
             </div>
 
             <div className="text-center mt-12">
@@ -146,39 +170,44 @@ export default function Home() {
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
-        <main className={`container h-full mx-auto flex flex-col ${screen === 'chat' ? 'p-0' : 'px-4 py-8 md:py-16'}`}>
-            {screen !== 'chat' && <BackgroundElements />}
+      <main
+        className={`container h-full mx-auto flex flex-col ${
+          screen === "chat" ? "p-0" : "px-4 py-8 md:py-16"
+        }`}
+      >
+        {screen !== "chat" && <BackgroundElements />}
 
-            <div className="flex-grow flex flex-col justify-center items-center">
-                <AnimatePresence mode="wait">
-                  {renderScreen()}
-                </AnimatePresence>
-            </div>
+        <div className="flex-grow flex flex-col justify-center items-center">
+          <AnimatePresence mode="wait">{renderScreen()}</AnimatePresence>
+        </div>
 
-            {screen !== 'chat' && (
-                <footer className="text-xs text-gray-500 text-center py-4 shrink-0">
-                    <h3 className="py-4">
-                        Created by developers from{" "}
-                        <span className="text-green-700 font-semibold">
-                        De La Salle Lipa
-                        </span>
-                    </h3>
-                    {userId && (
-                        <p className="font-mono text-gray-400 text-[10px] mt-2">
-                        Your User ID: {userId}
-                        </p>
-                    )}
-                    <div className="mt-4">
-                        <Link href="/status" passHref>
-                            <Button variant="ghost" className="text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700">
-                                <Server className="h-4 w-4 mr-2" />
-                                Service Status
-                            </Button>
-                        </Link>
-                    </div>
-                </footer>
+        {screen !== "chat" && (
+          <footer className="text-xs text-gray-500 text-center py-4 shrink-0">
+            <h3 className="py-4">
+              Created by developers from{" "}
+              <span className="text-green-700 font-semibold">
+                De La Salle Lipa
+              </span>
+            </h3>
+            {userId && (
+              <p className="font-mono text-gray-400 text-[10px] mt-2">
+                Your User ID: {userId}
+              </p>
             )}
-        </main>
+            <div className="mt-4">
+              <Link href="/status" passHref>
+                <Button
+                  variant="ghost"
+                  className="text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                >
+                  <Server className="h-4 w-4 mr-2" />
+                  Service Status
+                </Button>
+              </Link>
+            </div>
+          </footer>
+        )}
+      </main>
     </div>
   );
 }

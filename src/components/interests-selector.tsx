@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, MessageSquarePlus, ChevronDown } from "lucide-react";
+import { X, MessageSquarePlus, ChevronDown, Users } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence, Variants, delay } from "framer-motion"; // Import motion and AnimatePresence
@@ -11,6 +11,7 @@ import { AnimateChangeInHeight } from "../lib/animate-height-change";
 import { PopularInterest } from "../lib/types";
 import { FeedbackDialog } from "./feedback-dialog";
 import { LoadingSpinner } from "./loading-spinner";
+import Link from "next/link";
 
 
 
@@ -249,7 +250,21 @@ export default function InterestSelector({
             "Find Match"
           )}
         </Button>
+
+         <div className="mt-4">
+          <Link href="/chat-rooms" passHref>
+            <Button
+            variant={"outline"}
+              className="w-full rounded-full py-6 text-base flex items-center justify-center"
+            >
+              <Users size={20} className="mr-2" />
+              Experimental Chat Rooms
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      
 
       <div className="text-center mt-6">
         <Button

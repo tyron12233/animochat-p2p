@@ -5,10 +5,14 @@
 import Home from "../components/home";
 import MaintenancePage from "../components/maintenance";
 import { ChatThemeProvider } from "../context/theme-context";
+import useChatSession from "../hooks/use-chat-session";
 import { useMaintenanceStatus } from "../hooks/use-maintenance-status";
+import useUserId from "../hooks/use-user-id";
 
 export default function App() {
+    const userId = useUserId();
   const { isMaintenanceMode, isLoading, error } = useMaintenanceStatus();
+  const { chatSessionData, chatSessionStatus } = useChatSession(userId);
 
   if (isLoading) {
     return (
@@ -26,7 +30,11 @@ export default function App() {
   return (
     <>
       <ChatThemeProvider>
-          <Home />
+        <Home
+          userId={userId}
+          chatSessionData={chatSessionData}
+          chatSessionStatus={chatSessionStatus}
+        />
       </ChatThemeProvider>
     </>
   );
