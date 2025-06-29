@@ -370,10 +370,10 @@ export default function ChatRooms() {
                             className="pl-9 pr-3 py-2 h-10 w-40 sm:w-56 rounded-full bg-gray-500/10 border-transparent focus:bg-white focus:ring-2 focus:ring-green-500"
                         />
                     </div>
-                    <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg hover:shadow-green-500/30 transition-all duration-300">
+                    {/* <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg hover:shadow-green-500/30 transition-all duration-300">
                         <PlusCircle size={20} className="mr-0 sm:mr-2" />
                         <span className="hidden sm:inline">Create</span>
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
           </header>

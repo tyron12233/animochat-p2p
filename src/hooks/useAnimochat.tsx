@@ -577,7 +577,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                   type: "system",
                   content:
                     jsonPacket.content !== userId
-                      ? (isGroupChat ? "A participant has left the chat." : `Your partner has went offline.`) 
+                      ? (isGroupChat ? "A participant has left the chat." : "") 
                       : "You are currently offline.",
                   sender: "system",
                 },
