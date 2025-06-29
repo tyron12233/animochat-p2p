@@ -95,6 +95,7 @@ const ThemePreview = ({
     return (
       <AnimateChangeInHeight key={msg.id + "listener"}>
         <ChatMessageItem
+          participants={[]}
           key={index}
           index={index}
           message={msg}

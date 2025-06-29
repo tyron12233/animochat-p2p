@@ -5,7 +5,7 @@ import { Message, UserMessage } from "../lib/types";
 // Define the time threshold (e.g., 5 minutes) in milliseconds
 const TIME_THRESHOLD_MS = 5 * 60 * 1000;
 
-export function useActualMessages(messages: Message[]): Message[] {
+export function useActualMessages(messages: Message[], isGroupChat = false): Message[] {
   const [actualMessages, setActualMessages] = useState<Message[]>([]);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export function useActualMessages(messages: Message[]): Message[] {
         current.hasNext = !!next && next.sender === current.sender;
         
         // let showName = current.hasPrevious && previous.sender !== current.sender;
-        current.showName = previous && previous.sender !== current.sender;
+        current.showName = isGroupChat && previous && previous.sender !== current.sender;
 
         // --- Adjust grouping based on various break conditions ---
 
