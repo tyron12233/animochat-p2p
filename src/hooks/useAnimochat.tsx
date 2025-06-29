@@ -113,7 +113,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
     syncMessages(data.chatServerUrl, data.chatId)
       .then((json) => {
-        setMessages(json.messages || []);
+        setMessages(json.messages.content || []);
         setParticipants(json.participants || []);
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
