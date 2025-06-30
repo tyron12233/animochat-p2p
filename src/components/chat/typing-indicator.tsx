@@ -4,12 +4,14 @@ import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface TypingIndicatorProps {
+  ref?: React.Ref<HTMLDivElement>;
   typingUsers: string[];
   theme: ChatThemeV2;
   mode: "light" | "dark";
 }
 
 export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
+  ref,
   typingUsers,
   theme,
   mode,
@@ -34,6 +36,7 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
 
   return (
     <motion.div
+      ref={ref}
       key="typing-motiondiv"
       className="flex justify-start"
       initial={{ opacity: 0, y: 10 }}

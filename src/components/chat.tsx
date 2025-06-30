@@ -174,6 +174,7 @@ export default function Chat({
   const actualMessages = useActualMessages(messages, groupChat);
 
   // VIRTUAL CHAT EFFECTS (logic unchanged)
+  const typingIndicatorRef = useRef<HTMLDivElement | null>(null)
   const scrollerRef = useRef<VListHandle>(null);
   const [isSwiping, setIsSwiping] = useState(false);
   const prevMessagesLength = useRef(actualMessages.length);
@@ -271,11 +272,10 @@ export default function Chat({
   useEffect(() => {
     const isSomeoneTyping = typingUsers.length > 0;
     if (isAtBottom.current && isSomeoneTyping) {
-      console.log("dsaasdasdasd")
-      scrollerRef.current?.scrollToIndex(actualMessages.length, {
-        align: "end",
+      scrollerRef?.current?.scrollToIndex(actualMessages.length, {
         smooth: true,
-      });
+        align: 'end'
+      })
     }
   }, [typingUsers, actualMessages]);
 
