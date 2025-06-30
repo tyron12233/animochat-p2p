@@ -6,12 +6,12 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-
+import Cookies from 'js-cookie'; // Import the library
 
 export interface AuthUser {
   id: string;
   email?: string;
-  role: 'authenticated' | 'anonymous' | 'admin'; // Add other roles as needed
+  role: 'authenticated' | 'anonymous' | 'admin';
   is_anonymous: boolean;
 }
 
@@ -44,7 +44,7 @@ interface AuthProviderProps {
 }
 
 const AUTH_API_BASE_URL = 'https://animochat-auth-server.onrender.com/api/auth';
-const SESSION_STORAGE_KEY = 'supabase.auth.session';
+const SESSION_COOKIE_KEY = 'supabase.auth.session'; // Changed variable name for clarity
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -52,9 +52,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Validates a token against the /validate endpoint, sets user state, and stores the session.
-   */
   const validateAndSetUser = useCallback(async (currentSession: AuthSession) => {
     try {
       const response = await fetch(`${AUTH_API_BASE_URL}/validate`, {
@@ -70,27 +67,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!response.ok || !data.valid) {
         throw new Error(data.message || 'Token validation failed.');
       }
-      
-      // On successful validation, set state and persist session
+
       setUser(data.user);
       setSession(currentSession);
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentSession));
+      // Set the session in a cookie
+      Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(currentSession), {
+        secure: true, // Only send over HTTPS
+        sameSite: 'strict', // For better security
+        expires: 7, // Cookie expires in 7 days
+      });
       setError(null);
 
     } catch (err: any) {
-      // If validation fails, clear everything
       setError(err.message);
       setUser(null);
       setSession(null);
-      localStorage.removeItem(SESSION_STORAGE_KEY);
-      // We will fall back to anonymous login in the initial load effect
-      throw err; // Re-throw to be caught by the initialization logic
+      // Remove the cookie if validation fails
+      Cookies.remove(SESSION_COOKIE_KEY);
+      throw err;
     }
   }, []);
 
-  /**
-   * Handles anonymous login.
-   */
   const loginAnonymously = useCallback(async () => {
     setError(null);
     try {
@@ -104,28 +101,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err.message);
       setUser(null);
       setSession(null);
-      localStorage.removeItem(SESSION_STORAGE_KEY);
+      Cookies.remove(SESSION_COOKIE_KEY);
     }
   }, [validateAndSetUser]);
   
-  /**
-   * On component mount, check for a stored session. If none, log in anonymously.
-   */
   useEffect(() => {
     const initializeAuth = async () => {
       setIsLoading(true);
-      const storedSessionJSON = localStorage.getItem(SESSION_STORAGE_KEY);
+      // Get the session from the cookie
+      const storedSessionJSON = Cookies.get(SESSION_COOKIE_KEY);
       
       if (storedSessionJSON) {
         try {
           const storedSession = JSON.parse(storedSessionJSON);
           await validateAndSetUser(storedSession);
         } catch (error) {
-          // If the stored token is invalid/expired, log in anonymously
           await loginAnonymously();
         }
       } else {
-        // No session stored, so get a new anonymous one
         await loginAnonymously();
       }
       setIsLoading(false);
@@ -134,10 +127,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [validateAndSetUser, loginAnonymously]);
 
-
-  /**
-   * Handles login for registered users (including admins).
-   */
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
@@ -154,20 +143,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(err.message);
       setUser(null);
       setSession(null);
-      localStorage.removeItem(SESSION_STORAGE_KEY);
+      Cookies.remove(SESSION_COOKIE_KEY);
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Logs the user out and creates a new anonymous session.
-   */
   const logout = () => {
     setIsLoading(true);
     setUser(null);
     setSession(null);
-    localStorage.removeItem(SESSION_STORAGE_KEY);
+    // Remove the session cookie
+    Cookies.remove(SESSION_COOKIE_KEY);
     loginAnonymously().finally(() => setIsLoading(false));
   };
 
@@ -175,7 +162,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

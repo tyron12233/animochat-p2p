@@ -643,7 +643,8 @@ export default function Chat({
             reverse
           >
             {actualMessages.map((msg, index) => renderMessage(msg, index))}
-            <AnimateChangeInHeight>
+            <div className="overflow-hidden">
+              <AnimateChangeInHeight>
               {typingUsers.length > 0 && (
                 <TypingIndicator
                   typingUsers={typingUsers}
@@ -653,6 +654,7 @@ export default function Chat({
                 />
               )}
             </AnimateChangeInHeight>
+            </div>
           </VList>
 
           <AnimatePresence>

@@ -1,43 +1,44 @@
-// components/chat-rooms.tsx
-
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import type React from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft,
   Users,
   WifiOff,
   ServerCrash,
   PlusCircle,
   X,
-  Sparkles,
   Search,
+  MessageCircle,
+  Zap,
+  Coffee,
+  Flame,
+  Crown,
+  ChevronRight,
+  Hash,
+  Circle,
 } from "lucide-react";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "@/src/components/group-chat/group-chat";
 import { ChatThemeProvider } from "@/src/context/theme-context";
 import { AuthProvider, useAuth } from "@/src/context/auth-context";
 
-// --- START: In-component LoadingSpinner ---
+// --- START: Enhanced Components ---
+
 const LoadingSpinner = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={`animate-spin ${className}`}
-  >
-    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-  </svg>
+  <motion.div
+    animate={{ rotate: 360 }}
+    transition={{
+      duration: 1,
+      repeat: Number.POSITIVE_INFINITY,
+      ease: "linear",
+    }}
+    className={`w-4 h-4 border-2 border-green-200 border-t-green-500 rounded-full ${className}`}
+  />
 );
-// --- END: In-component LoadingSpinner ---
 
 // --- TYPE DEFINITIONS ---
 interface ChatServer {
@@ -60,9 +61,7 @@ export interface ChatRoom {
 const DISCOVERY_SERVICE_URL =
   "https://animochat-service-discovery.onrender.com/discover/chat-service/1.0.0/all";
 
-// --- START: REFACTORED AND NEW SUB-COMPONENTS ---
-
-// Enhanced Modal with the green and white aesthetic
+// Compact Modal
 const CreateRoomModal = ({
   isOpen,
   onClose,
@@ -81,7 +80,7 @@ const CreateRoomModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const maxP = parseInt(maxParticipants, 10);
+    const maxP = Number.parseInt(maxParticipants, 10);
     if (name.trim() && !isNaN(maxP) && maxP > 1) {
       onSubmit(name.trim(), maxP);
     }
@@ -94,49 +93,65 @@ const CreateRoomModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, y: 30, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: 30, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white/80 backdrop-blur-lg border border-gray-200/50 rounded-2xl shadow-2xl w-full max-w-md"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="bg-white rounded-xl shadow-xl w-full max-w-sm border border-green-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 sm:p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Sparkles className="text-green-500" />
-                  Create a New Room
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  New Room
                 </h2>
-                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full text-gray-500 hover:bg-gray-500/10">
-                  <X size={20} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8"
+                >
+                  <X size={16} />
                 </Button>
               </div>
-              <form onSubmit={handleSubmit} className="space-y-6">
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
-                  placeholder="Room Name"
+                  placeholder="Room name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="py-6 px-4 bg-white/50 border-gray-300 rounded-lg focus:ring-green-500"
+                  className="h-10 border-green-200 focus:ring-green-500"
                   required
                   maxLength={50}
                 />
+
                 <Input
                   type="number"
-                  placeholder="Max Participants"
+                  placeholder="Max participants"
                   value={maxParticipants}
                   onChange={(e) => setMaxParticipants(e.target.value)}
-                  className="py-6 px-4 bg-white/50 border-gray-300 rounded-lg focus:ring-green-500"
+                  className="h-10 border-green-200 focus:ring-green-500"
                   required
                   min="2"
                   max="100"
                 />
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button type="submit" className="w-full py-6 bg-green-600 hover:bg-green-700 font-bold text-base text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-green-500/30" disabled={isCreating}>
-                  {isCreating ? <LoadingSpinner /> : "Create Room"}
+
+                {error && (
+                  <p className="text-red-500 text-sm bg-red-50 p-2 rounded">
+                    {error}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-10 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={isCreating}
+                >
+                  {isCreating ? <LoadingSpinner /> : "Create"}
                 </Button>
               </form>
             </div>
@@ -147,45 +162,100 @@ const CreateRoomModal = ({
   );
 };
 
-// RoomCard component with green accents
-const RoomCard = ({ room, onJoin }: { room: ChatRoom; onJoin: () => void }) => {
+// Compact Room List Item
+const RoomListItem = ({
+  room,
+  onJoin,
+}: {
+  room: ChatRoom;
+  onJoin: () => void;
+}) => {
+  const occupancyRate = room.participants / room.max_participants;
+  const activityLevel =
+    occupancyRate < 0.3
+      ? { label: "Quiet", icon: Coffee, color: "text-blue-500 bg-blue-50" }
+      : occupancyRate < 0.6
+      ? { label: "Active", icon: Zap, color: "text-green-500 bg-green-50" }
+      : occupancyRate < 0.8
+      ? { label: "Buzzing", icon: Flame, color: "text-orange-500 bg-orange-50" }
+      : {
+          label: "Popular",
+          icon: Crown,
+          color: "text-purple-500 bg-purple-50",
+        };
+
   return (
     <motion.div
-        layout
-        variants={{
-            hidden: { y: 30, opacity: 0, scale: 0.95 },
-            visible: { y: 0, opacity: 1, scale: 1, transition: { type: "spring", stiffness: 250, damping: 35 } },
-            exit: { y: -30, opacity: 0, scale: 0.95 }
-        }}
-        whileHover={{ scale: 1.03, y: -5 }}
-        className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer flex flex-col border border-gray-200/30"
-        onClick={onJoin}
-      >
-        <div className="bg-green-500 h-2 w-full" />
-        <div className="p-6 flex-grow flex flex-col justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 truncate mb-2">{room.name}</h3>
-            <div className="flex items-center text-gray-600 text-sm">
-                <Users size={16} className="mr-2 flex-shrink-0" />
-                <span className="font-medium">{room.participants} / {room.max_participants}</span>
-                 <span className="mx-2">·</span>
-                <span className="text-gray-500">{room.participants < room.max_participants * 0.5 ? "Quiet" : room.participants < room.max_participants * 0.8 ? "Active" : "Popular"}</span>
-            </div>
-          </div>
-          <div className="mt-6">
-              <div className="flex items-center justify-end text-sm font-semibold text-green-600">
-                Join Room
-                <motion.span initial={{x:0}} whileHover={{x:4}} className="ml-1 transition-transform">
-                    →
-                </motion.span>
-              </div>
+      layout
+      variants={{
+        hidden: { opacity: 0, x: -20 },
+        visible: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: 20 },
+      }}
+      whileHover={{ backgroundColor: "rgba(16, 185, 129, 0.02)" }}
+      className="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-green-50/30 cursor-pointer transition-colors group"
+      onClick={onJoin}
+    >
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="flex-shrink-0">
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <Hash size={16} className="text-green-600" />
           </div>
         </div>
-      </motion.div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-medium text-gray-900 truncate">{room.name}</h3>
+            <div
+              className={`px-2 py-0.5 rounded-full text-xs font-medium ${activityLevel.color}`}
+            >
+              <div className="flex items-center gap-1">
+                <activityLevel.icon size={10} />
+                {activityLevel.label}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-1">
+              <Users size={12} />
+              <span>
+                {room.participants}/{room.max_participants}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <div className="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                <motion.div
+                  className="h-full bg-green-500 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${occupancyRate * 100}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <span className="text-xs">
+                {Math.round(occupancyRate * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Circle size={6} className="text-green-500 fill-current" />
+          <span className="text-xs text-gray-500">Online</span>
+        </div>
+        <ChevronRight
+          size={16}
+          className="text-gray-400 group-hover:text-green-500 transition-colors"
+        />
+      </div>
+    </motion.div>
   );
 };
 
-// FeedbackState component
+// Compact FeedbackState
 const FeedbackState = ({
   icon: Icon,
   title,
@@ -195,13 +265,18 @@ const FeedbackState = ({
   title: string;
   message: string;
 }) => (
-  <div className="flex flex-col items-center justify-center text-center text-gray-500 bg-white/30 p-12 rounded-2xl backdrop-blur-sm">
-    <Icon size={48} className="mb-4 text-gray-400" />
-    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-    <p className="text-sm mt-2 max-w-sm">{message}</p>
-  </div>
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col items-center justify-center text-center py-16 px-8"
+  >
+    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+      <Icon size={24} className="text-gray-400" />
+    </div>
+    <h3 className="text-lg font-medium text-gray-800 mb-2">{title}</h3>
+    <p className="text-gray-500 text-sm max-w-sm">{message}</p>
+  </motion.div>
 );
-
 
 export default function Page() {
   return (
@@ -210,9 +285,8 @@ export default function Page() {
         <ChatRooms />
       </AuthComponent>
     </AuthProvider>
-  )
+  );
 }
-
 
 function AuthComponent({ children }: { children: React.ReactNode }) {
   const { error, isLoading } = useAuth();
@@ -220,7 +294,10 @@ function AuthComponent({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500 text-lg">Loading user data...</p>
+        <div className="text-center">
+          <LoadingSpinner className="mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -229,9 +306,11 @@ function AuthComponent({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <ErrorIcon />
-          <h1 className="text-2xl font-bold text-red-600">Error</h1>
-          <p className="text-gray-500 mt-2">{error}</p>
+          <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <ServerCrash className="text-red-600" size={24} />
+          </div>
+          <h1 className="text-lg font-medium text-red-600 mb-2">Error</h1>
+          <p className="text-gray-600 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -239,26 +318,6 @@ function AuthComponent({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-function ErrorIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-12 w-12 text-red-500"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
 
 // --- MAIN COMPONENT ---
 function ChatRooms() {
@@ -280,23 +339,35 @@ function ChatRooms() {
     setError(null);
     try {
       const serverResponse = await fetch(DISCOVERY_SERVICE_URL);
-      if (!serverResponse.ok) throw new Error(`Discovery service failed (Status: ${serverResponse.status})`);
+      if (!serverResponse.ok)
+        throw new Error(
+          `Discovery service failed (Status: ${serverResponse.status})`
+        );
+
       const servers: ChatServer[] = await serverResponse.json();
       const runningServers = servers.filter((s) => s.status === "RUNNING");
       setChatServers(runningServers);
 
-      if (runningServers.length === 0) throw new Error("No active chat servers found to host rooms.");
+      if (runningServers.length === 0)
+        throw new Error("No active chat servers found to host rooms.");
 
       const roomPromises = runningServers.map(async (server) => {
         try {
-          // if server url ends with /
-          const baseUrl = server.url.endsWith("/") ? server.url.slice(0, -1) : server.url;
+          const baseUrl = server.url.endsWith("/")
+            ? server.url.slice(0, -1)
+            : server.url;
           const roomsResponse = await fetch(`${baseUrl}/rooms`);
           if (!roomsResponse.ok) return [];
           const roomsData = await roomsResponse.json();
-          return roomsData.map((room: Omit<ChatRoom, "serverUrl">) => ({ ...room, serverUrl: server.url }));
-        } catch { return []; }
+          return roomsData.map((room: Omit<ChatRoom, "serverUrl">) => ({
+            ...room,
+            serverUrl: server.url,
+          }));
+        } catch {
+          return [];
+        }
       });
+
       const results = await Promise.all(roomPromises);
       const allRooms = results.flat();
       setAllChatRooms(allRooms);
@@ -315,34 +386,42 @@ function ChatRooms() {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-        const filtered = allChatRooms.filter(room => room.name.toLowerCase().includes(searchQuery.toLowerCase()));
-        setFilteredChatRooms(filtered);
+      const filtered = allChatRooms.filter((room) =>
+        room.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredChatRooms(filtered);
     }, 200);
+
     return () => clearTimeout(handler);
   }, [searchQuery, allChatRooms]);
 
   const handleCreateRoom = async (name: string, maxParticipants: number) => {
     setIsCreatingRoom(true);
     setCreateRoomError(null);
+
     const server = chatServers[0];
     if (!server) {
       setCreateRoomError("No available chat server.");
       setIsCreatingRoom(false);
       return;
     }
+
     try {
-       const baseUrl = server.url.endsWith("/") ? server.url.slice(0, -1) : server.url;
+      const baseUrl = server.url.endsWith("/")
+        ? server.url.slice(0, -1)
+        : server.url;
       const response = await fetch(`${baseUrl}/create-room`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, maxParticipants }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to create room.");
       }
+
       setIsModalOpen(false);
-      // Reset form state is handled inside the modal now
       await fetchChatRooms();
     } catch (e) {
       if (e instanceof Error) setCreateRoomError(e.message);
@@ -352,94 +431,144 @@ function ChatRooms() {
     }
   };
 
-
   const renderRoomList = () => {
     if (isLoading) {
       return (
-          <div className="flex items-center justify-center pt-20">
-              <LoadingSpinner className="text-green-500" />
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <LoadingSpinner />
+            <span className="text-gray-600">Loading rooms...</span>
           </div>
+        </div>
       );
     }
 
     if (error) {
-      return <FeedbackState icon={ServerCrash} title="Could Not Load Rooms" message={error} />;
+      return (
+        <FeedbackState
+          icon={ServerCrash}
+          title="Could Not Load Rooms"
+          message={error}
+        />
+      );
     }
 
     if (allChatRooms.length === 0) {
-      return <FeedbackState icon={WifiOff} title="No Rooms Available" message="There are currently no public chat rooms. Why not start one?" />;
+      return (
+        <FeedbackState
+          icon={WifiOff}
+          title="No Rooms Available"
+          message="There are currently no public chat rooms. Create one to get started!"
+        />
+      );
     }
-    
+
     if (filteredChatRooms.length === 0 && searchQuery) {
-        return <FeedbackState icon={Search} title="No Rooms Found" message={`Your search for "${searchQuery}" did not match any rooms.`} />;
+      return (
+        <FeedbackState
+          icon={Search}
+          title="No Rooms Found"
+          message={`No rooms match "${searchQuery}". Try a different search term.`}
+        />
+      );
     }
 
     return (
-      <AnimatePresence>
-        <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={{
-                visible: { transition: { staggerChildren: 0.07 } }
-            }}
-        >
-          {filteredChatRooms.map((room) => (
-            <RoomCard key={room.id} room={room} onJoin={() => setSelectedRoom(room)} />
-          ))}
-        </motion.div>
-      </AnimatePresence>
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.05,
+            },
+          },
+        }}
+        className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+      >
+        {filteredChatRooms.map((room) => (
+          <RoomListItem
+            key={room.id}
+            room={room}
+            onJoin={() => setSelectedRoom(room)}
+          />
+        ))}
+      </motion.div>
     );
   };
-  
+
   if (selectedRoom) {
-      return (
-          <div className="h-[100dvh] overflow-clip">
-              <ChatThemeProvider>
-                  <GroupChat room={selectedRoom} onLeave={() => setSelectedRoom(null)} />
-              </ChatThemeProvider>
-          </div>
-      );
+    return (
+      <div className="h-[100dvh] overflow-clip">
+        <ChatThemeProvider>
+          <GroupChat
+            room={selectedRoom}
+            onLeave={() => setSelectedRoom(null)}
+          />
+        </ChatThemeProvider>
+      </div>
+    );
   }
 
   return (
     <>
-      <CreateRoomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleCreateRoom} isCreating={isCreatingRoom} error={createRoomError} />
-      
-      {/* Background */}
-      <div className="fixed inset-0 -z-10 h-full w-full bg-white">
-        <div className="fixed inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        <div className="fixed bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_500px_at_50%_200px,#10b98122,transparent)]"></div>
-      </div>
-      
-      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-        <div className="max-w-screen-xl mx-auto">
-          {/* Header */}
-          <header className="sticky top-6 z-40 bg-white/70 backdrop-blur-lg p-4 rounded-2xl shadow-lg shadow-gray-500/5 border border-gray-200/50 mb-8">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <h1 className="text-3xl font-bold text-gray-800">
-                    Public Chat Rooms
-                </h1>
-                <div className="flex items-center gap-2 sm:gap-4">
-                    <div className="relative">
-                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                        <Input 
-                            placeholder="Search rooms..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-3 py-2 h-10 w-40 sm:w-56 rounded-full bg-gray-500/10 border-transparent focus:bg-white focus:ring-2 focus:ring-green-500"
-                        />
-                    </div>
-                    {/* <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg hover:shadow-green-500/30 transition-all duration-300">
-                        <PlusCircle size={20} className="mr-0 sm:mr-2" />
-                        <span className="hidden sm:inline">Create</span>
-                    </Button> */}
-                </div>
-            </div>
-          </header>
+      <CreateRoomModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateRoom}
+        isCreating={isCreatingRoom}
+        error={createRoomError}
+      />
 
-          <main>{renderRoomList()}</main>
+      {/* Simple Background */}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto p-6">
+          {/* Compact Header */}
+          {/* --- RESPONSIVE HEADER --- */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            {/* Left Side: Title and Room Count */}
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                <MessageCircle className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Chat Rooms</h1>
+                <p className="text-sm text-gray-500">
+                  {allChatRooms.length} rooms available
+                </p>
+              </div>
+            </div>
+
+            {/* Right Side: Search and Create Button */}
+            <div className="flex items-center gap-2">
+              {/* Search Input */}
+              <div className="relative flex-grow">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+                <Input
+                  placeholder="Search rooms..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 h-10 w-full md:w-48 border-gray-300 focus:ring-green-500 focus:border-green-500 rounded-lg"
+                />
+              </div>
+
+              {/* Create New Room Button */}
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white h-10 w-10 md:w-auto md:px-4 flex-shrink-0"
+              >
+                <PlusCircle size={20} className="md:mr-2" />
+                <span className="hidden md:inline">New Room</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Room List */}
+          <AnimatePresence mode="wait">{renderRoomList()}</AnimatePresence>
         </div>
       </div>
     </>
