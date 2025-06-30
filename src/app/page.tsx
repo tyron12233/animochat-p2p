@@ -42,12 +42,10 @@ function ChatSession() {
   const { chatSessionData, chatSessionStatus } = useChatSession(user!.id);
 
   return (
-    <AnimatePresence mode="wait">
-      <Home
+    <Home
         chatSessionData={chatSessionData}
         chatSessionStatus={chatSessionStatus}
       />
-    </AnimatePresence>
   );
 }
 

@@ -217,65 +217,27 @@ export default function Page() {
 function AuthComponent({ children }: { children: React.ReactNode }) {
   const { error, isLoading, user } = useAuth();
 
-  return (
-    <div className="min-h-screen">
-      <AnimatePresence mode="wait">
-        {isLoading && (
-          <motion.div
-            key="auth-loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="min-h-screen flex flex-col items-center justify-center bg-white"
-          >
-            <div className="w-16 h-16 border-4 border-green-600 border-t-transparent border-dashed rounded-full animate-spin"></div>
-            <p className="mt-4 text-green-700 font-semibold text-lg">
-              Authenticating...
-            </p>
-          </motion.div>
-        )}
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500 text-lg">Loading user data...</p>
+      </div>
+    );
+  }
 
-        {error && (
-          <motion.div
-            key="auth-error"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="min-h-screen flex flex-col items-center justify-center bg-white p-4"
-          >
-            <ErrorIcon />
-            <p className="mt-4 text-red-600 font-semibold text-xl">
-              Authentication Failed
-            </p>
-            <p className="mt-2 text-gray-500 text-center max-w-md">
-              {(error as any)?.message ||
-                "An unknown error occurred. Please try again later."}
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-6 px-6 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition-colors"
-            >
-              Try Again
-            </button>
-          </motion.div>
-        )}
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <ErrorIcon />
+          <h1 className="text-2xl font-bold text-red-600">Error</h1>
+          <p className="text-gray-500 mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-        {user && (
-          <motion.div
-            key="auth-success"
-            className="h-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, ease: "easeInOut" }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return <>{children}</>;
 }
 
 function ErrorIcon() {
@@ -433,11 +395,9 @@ function ChatRooms() {
   
   if (selectedRoom) {
       return (
-          <div className="w-full h-full">
-              <ChatThemeProvider>
+          <ChatThemeProvider>
                   <GroupChat room={selectedRoom} onLeave={() => setSelectedRoom(null)} />
               </ChatThemeProvider>
-          </div>
       );
   }
 
