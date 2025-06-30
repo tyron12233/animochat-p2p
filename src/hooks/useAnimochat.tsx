@@ -432,20 +432,24 @@ export const useAnimochatV2 = (
         content,
         replyingTo: replyingToId,
         sender: userId,
-        role: session?.role
+        role: user.role
       } as any;
+
+      
 
       const packet: MessagePacket = {
         type: "message",
         content: message,
         sender: userId,
       };
+
+      console.log("sending packet", packet)
       sendPacket(packet);
 
       // Add the message to the local state immediately.
       setMessages((prev) => [...prev, message]);
     },
-    [userId, chatId, sendPacket]
+    [userId, chatId, sendPacket, session]
   );
 
   const disconnect = useCallback(
