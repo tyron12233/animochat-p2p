@@ -133,12 +133,12 @@ const OnlineUsers = ({
   const visibleUsers = eligibleUsers.slice(0, maxVisibleUsers);
   const hiddenUsersCount = eligibleUsers.length - maxVisibleUsers;
 
-  console.log("Online Users:", eligibleUsers);
   return (
     <AnimatePresence>
       {eligibleUsers.length > 0 && (
         <div
           className="flex items-center space-x-2 p-3 rounded-full border transition-all"
+          onClick={onOverflowClick}
           style={{
             background: theme.general.background[mode],
             borderColor: theme.buttons.secondary?.border?.[mode] ?? "",

@@ -137,6 +137,9 @@ export const useAnimochatV2 = (
       .then((json) => {
         setMessages(json.messages.content || []);
         setParticipants(json.onlineParticipants || []);
+
+        console.log("online participants", json.onlineParticipants); 
+
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
       })
@@ -233,6 +236,13 @@ export const useAnimochatV2 = (
       },
       sender: userId,
     };
+
+    // Optimistically update the local state to reflect the nickname change.
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.userId === userId ? { ...p, nickname } : p
+      )
+    );
 
     sendPacket(packet);
 
@@ -765,7 +775,10 @@ export const useAnimochatV2 = (
                   };
                   return updatedParticipants;
                 }
-                return [...prev, newParticipant];
+                return [...prev, {
+                  ...newParticipant,
+                  status: "online",
+                }];
               });
               setMessages((prev) => [
                 ...prev,
