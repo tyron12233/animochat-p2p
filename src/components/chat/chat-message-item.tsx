@@ -72,7 +72,7 @@ export default function ChatMessageItem({
       data-is-message="true"
       data-message-id={message.id}
       key={"parent_message_" + message.id}
-      className="max-w-full w-full select-none"
+      className="max-w-full w-full select-none overflow-x-clip"
     >
       {message.showTime && (
         <div key={message.id + "_time"} className="flex justify-center py-4">

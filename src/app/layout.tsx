@@ -13,14 +13,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AnimoChat Test",
-  description: "Peer-to-peer chat app using AnimoChat",
+  title: "AnimoChat",
+  description: "Anonymous chat platforms with group chat features.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "contain"
 }
 
 export default function RootLayout({

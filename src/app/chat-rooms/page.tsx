@@ -395,9 +395,11 @@ function ChatRooms() {
   
   if (selectedRoom) {
       return (
-          <ChatThemeProvider>
+          <div className="h-[100dvh] bg-black">
+              <ChatThemeProvider>
                   <GroupChat room={selectedRoom} onLeave={() => setSelectedRoom(null)} />
               </ChatThemeProvider>
+          </div>
       );
   }
 

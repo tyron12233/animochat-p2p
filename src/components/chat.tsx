@@ -465,7 +465,7 @@ export default function Chat({
           boxShadow: theme.general.shadow,
           borderRadius: "var(--chat-border-radius, 2rem)",
         }}
-        className="w-full max-w-md mx-auto h-[100dvh] flex flex-col overflow-hidden"
+        className="w-full max-w-md mx-auto h-[100dvh] flex flex-col"
       >
         <div
           style={{

@@ -61,7 +61,7 @@ export default function ReactionBubble({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="flex justify-end"
+      className="flex justify-end px-2"
     >
       <div
         className="self-end text-xs relative rounded-full mt-auto border-2 p-1.5 -top-2"

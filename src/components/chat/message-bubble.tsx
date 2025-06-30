@@ -413,10 +413,12 @@ function BlurredImageMessage({
 }
 
 function AdminCssInjecion({
+  className,
   isUserMessage,
   hasNext,
   hasPrevious
 }: {
+  className: string,
   isUserMessage: boolean;
   hasPrevious: boolean;
   hasNext: boolean;
@@ -461,7 +463,7 @@ function AdminCssInjecion({
     <style>
       {`
 
-.messageBubbleClass {
+.${className} {
     position: relative;
 }
 
@@ -471,7 +473,7 @@ function AdminCssInjecion({
   inherits: false;
 }
 
-.messageBubbleClass::after, .messageBubbleClass::before {
+.${className}::after, .${className}::before {
     content: '';
     position: absolute;
     height: 100%;
@@ -482,7 +484,7 @@ function AdminCssInjecion({
      animation: 3s spin linear infinite;
 }
 
-.messageBubbleClass::before{
+.${className}::before{
   filter: blur(1.5rem);
   opacity: 0.15;
   overflow: visible;
@@ -526,10 +528,12 @@ function TextMessage({
     : theme.message.strangerMessage;
 
   const isAdmin = (message as any)?.role === "admin";
+  const className = message.id + "_admin_styles";
 
   return (
     <>
       {isAdmin && <AdminCssInjecion
+        className={className}
         isUserMessage={isUserMessage}
         hasPrevious={(message as any)?.hasPrevious ?? false}
         hasNext={(message as any)?.hasNext ?? false}
