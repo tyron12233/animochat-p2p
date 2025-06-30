@@ -12,6 +12,7 @@ import { PopularInterest } from "../lib/types";
 import { FeedbackDialog } from "./feedback-dialog";
 import { LoadingSpinner } from "./loading-spinner";
 import Link from "next/link";
+import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
 
 
@@ -62,7 +63,7 @@ export default function InterestSelector({
   const [error, setError] = useState<string | null>(null);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
-  const API_BASE_URL = "https://animochat-turn-server.onrender.com";
+  const API_BASE_URL = API_MATCHMAKING_BASE_URL;
 
   // Animation variants for staggering the popular topics
   const popularTopicsContainerVariants = {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { defaultTheme } from "../lib/default-chat-themes";
 import { MessagesSyncPacket } from "../lib/types";
-import { API_BASE_URL } from "./useAnimochat";
+import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
 export type ChatSessionStatus = "loading" | "existing_session" | "no_session";
 export type ChatSessionData = {
@@ -19,7 +19,7 @@ export default function useChatSession(userId: string) {
     if (!userId || userId.length === 0) return;
 
     const getExistingSession = async () => {
-      const sessionApi = `${API_BASE_URL}/session/${userId}`;
+      const sessionApi = `${API_MATCHMAKING_BASE_URL}/session/${userId}`;
       try {
         const response = await fetch(sessionApi);
         if (!response.ok) {

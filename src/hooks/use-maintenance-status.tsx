@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
 /**
  * A custom hook that fetches the maintenance status from the server.
@@ -15,7 +16,7 @@ export const useMaintenanceStatus = () => {
       try {
         // Assuming the API is on the same domain.
         // Replace '/maintenance' with the full URL if it's hosted elsewhere.
-        const response = await fetch('http://animochat-matchmaking-server-prod.ap-southeast-1.elasticbeanstalk.com/maintenance');
+        const response = await fetch(`${API_MATCHMAKING_BASE_URL}/maintenance`);
         
         // The endpoint returns 503 for maintenance mode
         if (response.status === 503) {

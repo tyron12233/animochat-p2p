@@ -16,10 +16,11 @@ import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { defaultTheme } from "../lib/default-chat-themes";
 import { ChatSessionData } from "./use-chat-session";
+import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
-export const API_BASE_URL = "http://animochat-matchmaking-server-prod.ap-southeast-1.elasticbeanstalk.com/";
+const API_BASE_URL = API_MATCHMAKING_BASE_URL;
 
 // --- Packet Types for WebSocket Communication ---
 // These define the structure of messages sent over the WebSocket connection.
