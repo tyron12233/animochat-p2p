@@ -333,6 +333,7 @@ function ChatRooms() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [createRoomError, setCreateRoomError] = useState<string | null>(null);
+  const { user, session } = useAuth();
 
   const fetchChatRooms = async () => {
     setIsLoading(true);
@@ -412,7 +413,9 @@ function ChatRooms() {
         : server.url;
       const response = await fetch(`${baseUrl}/create-room`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+         },
         body: JSON.stringify({ name, maxParticipants }),
       });
 
