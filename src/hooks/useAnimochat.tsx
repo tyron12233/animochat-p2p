@@ -91,6 +91,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
     const syncMessages = async (chatServer: string, chatId: string) => {
       ///sync/:chatId
+      let baseUrl = chatServer.endsWith("/") ? chatServer.slice(0, -1) : chatServer;
       const syncApi = `${chatServer}/sync/${chatId}`;
       try {
         const response = await fetch(syncApi);
@@ -512,6 +513,12 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
       isReconnecting = false,
       showRandomStrangerMessage = false
     ) => {
+      // check trailing /
+      if (chatServerUrl.endsWith("/")) {
+        chatServerUrl = chatServerUrl.slice(0, -1);
+      }
+
+
       if (!userId) {
         console.error("User ID not set, cannot connect to chat.");
         return;
