@@ -127,6 +127,16 @@ export default function Chat({
   const [currentNickname, setCurrentNickname] = useState<string>("Unknown");
 
   useEffect(() => {
+    if (!participants || participants.length === 0) return;
+
+    // Find the participant that matches the current user ID
+    const currentUser = participants.find((p) => p.userId === user.id);
+    if (currentUser) {
+      setCurrentNickname(currentUser.nickname || "Unknown");
+    }
+  }, [participants])
+
+  useEffect(() => {
     const nickname = participants.find((p) => p.userId === user.id)?.nickname;
     if (nickname) {
       setCurrentNickname(nickname);
