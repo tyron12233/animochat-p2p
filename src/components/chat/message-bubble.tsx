@@ -199,8 +199,7 @@ export default function MessageBubble({
         )}
 
         {(message.type === null || message.type === undefined || message.type === "text" || message.type === "deleted") && (
-          <div>
-            <TextMessage
+          <TextMessage
             message={message}
             user={user}
             theme={theme}
@@ -210,7 +209,6 @@ export default function MessageBubble({
             isLargeEmojiMessage={isLargeEmojiMessage}
             onLinkClick={onLinkClick}
           />
-          </div>
         )}
 
         {message.type === "image" && (
@@ -291,7 +289,7 @@ function TextMessage({ message, user, theme, mode, isUserMessage, roundedCorners
   const isDeleted = message.type === "deleted";
   const bubbleTheme = isUserMessage ? theme.message.myMessage : theme.message.strangerMessage;
 
-
+  const isAdmin = (message as any)?.role === "admin"
 
   return (
     <>
@@ -305,7 +303,7 @@ function TextMessage({ message, user, theme, mode, isUserMessage, roundedCorners
           </div>
         </>
       ) : (
-        <div className="flex flex-col">
+        <div className={`flex flex-col p-[1px] justify-center items-center ${isAdmin ? "messageBubbleClass" : ""}`}>
           <div className="relative group">
             <div
               className={`${roundedCorners} animate-gradient-x`}
@@ -313,7 +311,6 @@ function TextMessage({ message, user, theme, mode, isUserMessage, roundedCorners
                 background: bubbleTheme.background[mode],
                 backgroundSize: "200% 100%",
                 color: bubbleTheme.text[mode],
-                // animate gradient background x
               }}
             />
             <div

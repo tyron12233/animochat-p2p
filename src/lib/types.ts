@@ -55,6 +55,7 @@ export interface UserMessage extends BaseMessage {
   sender: string; // peerId
   replyingTo?: string;
   reactions?: Reaction[];
+  role?: string;
 }
 
 export type Message = UserMessage | SystemMessage;

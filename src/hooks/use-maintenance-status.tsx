@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
@@ -44,7 +46,7 @@ export const useMaintenanceStatus = () => {
     };
 
     checkMaintenanceStatus();
-  }, []); // Empty dependency array ensures this runs only once on mount.
+  }, []); 
 
   return { isMaintenanceMode, isLoading, error };
 }

@@ -9,14 +9,14 @@ import type {
   Status,
   SystemMessage,
   UserMessage,
-  MessagesSyncPacket,
 } from "../lib/types";
-import { v4 as uuidv4 } from "uuid";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { defaultTheme } from "../lib/default-chat-themes";
 import { ChatSessionData } from "./use-chat-session";
 import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
+import { AuthUser, AuthSession } from "../context/auth-context";
+import { useWhatChanged } from "./use-what-changed";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
@@ -68,7 +68,12 @@ type ChangeThemePacket = Packet<
 type OfflinePacket = Packet<string, "offline">;
 type UserJoinedPacket = Packet<string, "user_joined">;
 
-export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
+export const useAnimochatV2 = (
+  session: AuthSession,
+  user: AuthUser,
+  isGroupChat = false
+) => {
+  const userId = user.id;
   const { setTheme, setMode } = useChatTheme();
 
   // --- State Management ---
@@ -91,18 +96,24 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
     const syncMessages = async (chatServer: string, chatId: string) => {
       ///sync/:chatId
-      let baseUrl = chatServer.endsWith("/") ? chatServer.slice(0, -1) : chatServer;
+      let baseUrl = chatServer.endsWith("/")
+        ? chatServer.slice(0, -1)
+        : chatServer;
       const syncApi = `${baseUrl}/sync/${chatId}`;
       try {
-        const response = await fetch(syncApi);
+        const headers: HeadersInit = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        const response = await fetch(syncApi, {
+          headers,
+        });
         if (!response.ok) {
           throw new Error(`Failed to sync messages: ${response.statusText}`);
         }
 
         // will return a message sync packet
         const responseJson = await response.json();
-
-
 
         return responseJson;
       } catch (error) {
@@ -119,7 +130,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
         setParticipants(json.participants || []);
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
-      }).catch(() => {
+      })
+      .catch(() => {
         setStatus("error");
         console.error("Failed to sync messages or participants.");
         return [];
@@ -246,12 +258,17 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
   const onCancelMatchmaking = () => {
     const cancelApi = () => {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const url = `${API_BASE_URL}/cancel_matchmaking`;
       return fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify({ userId: userId }),
       });
     };
@@ -415,7 +432,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
         content,
         replyingTo: replyingToId,
         sender: userId,
-      };
+        role: session?.role
+      } as any;
 
       const packet: MessagePacket = {
         type: "message",
@@ -440,11 +458,16 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
       const disconnectFromApi = async () => {
         const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
         try {
+          const headers: HeadersInit = {
+            "Content-Type": "application/json",
+          };
+          if (session?.access_token) {
+            headers["Authorization"] = `Bearer ${session.access_token}`;
+          }
+
           const response = await fetch(disconnectApi, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers,
             body: JSON.stringify({ userId }),
           });
 
@@ -513,11 +536,14 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
       isReconnecting = false,
       showRandomStrangerMessage = false
     ) => {
+      if (wsRef.current) {
+        return;
+      }
+
       // check trailing /
       if (chatServerUrl.endsWith("/")) {
         chatServerUrl = chatServerUrl.slice(0, -1);
       }
-
 
       if (!userId) {
         console.error("User ID not set, cannot connect to chat.");
@@ -588,7 +614,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
 
           const packet = jsonPacket;
 
-          if (packet.sender === userId) return;
+          if (packet.sender === user.id) return;
 
           switch (jsonPacket.type) {
             case "message_delete":
@@ -606,9 +632,9 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
               const { userId: changedUserId, newNickname } =
                 jsonPacket.content as ChangeNicknamePacket["content"];
 
-                // before updating the nickname,
-                // create a system message that will
-                // be displayed in the chat {old username} changed their nickname to {new nickname}
+              // before updating the nickname,
+              // create a system message that will
+              // be displayed in the chat {old username} changed their nickname to {new nickname}
               let oldNickname = participants.find(
                 (p) => p.userId === changedUserId
               )?.nickname;
@@ -680,12 +706,13 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
                   session_id: chatIdToConnect,
                   created_at: new Date().toISOString(),
                   type: "system",
-                  content: `${offlineParticipant.nickname ?? "A participant"} has left the chat.`,
+                  content: `${
+                    offlineParticipant.nickname ?? "A participant"
+                  } has left the chat.`,
                   sender: "system",
-                }
+                },
               ]);
 
-              
               break;
             case "disconnect":
               setMessages((prev) => [
@@ -791,8 +818,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
           }
         };
 
-        ws.onclose = () => {
-          console.log("WebSocket connection closed.");
+        ws.onclose = (e) => {
+          console.log("WebSocket connection closed.", e);
           if (isDisconnectingRef.current) {
             console.log("Intentional disconnect, not reconnecting.");
             return;
@@ -845,8 +872,8 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
       };
 
       try {
-        const wsUrl = `${chatServerUrl}?userId=${userId}&chatId=${chatIdToConnect}`;
-        console.log(`Connecting to WebSocket server: ${wsUrl}`);
+        const wsUrl = `${chatServerUrl}?userId=${user.id}&chatId=${chatIdToConnect}`;
+        console.trace(`Connecting to WebSocket server: ${wsUrl}`);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         setupWebsocketListeners(ws);
@@ -868,7 +895,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
       }
     },
     [
-      userId,
+      user,
       handleReaction,
       setTheme,
       setMode,

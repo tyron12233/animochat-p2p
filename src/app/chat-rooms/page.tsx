@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import GroupChat from "@/src/components/group-chat/group-chat";
 import { ChatThemeProvider } from "@/src/context/theme-context";
+import { AuthProvider, useAuth } from "@/src/context/auth-context";
 
 // --- START: In-component LoadingSpinner ---
 const LoadingSpinner = ({ className }: { className?: string }) => (
@@ -202,8 +203,103 @@ const FeedbackState = ({
 );
 
 
+export default function Page() {
+  return (
+    <AuthProvider>
+      <AuthComponent>
+        <ChatRooms />
+      </AuthComponent>
+    </AuthProvider>
+  )
+}
+
+
+function AuthComponent({ children }: { children: React.ReactNode }) {
+  const { error, isLoading, user } = useAuth();
+
+  return (
+    <div className="min-h-screen">
+      <AnimatePresence mode="wait">
+        {isLoading && (
+          <motion.div
+            key="auth-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="min-h-screen flex flex-col items-center justify-center bg-white"
+          >
+            <div className="w-16 h-16 border-4 border-green-600 border-t-transparent border-dashed rounded-full animate-spin"></div>
+            <p className="mt-4 text-green-700 font-semibold text-lg">
+              Authenticating...
+            </p>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div
+            key="auth-error"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="min-h-screen flex flex-col items-center justify-center bg-white p-4"
+          >
+            <ErrorIcon />
+            <p className="mt-4 text-red-600 font-semibold text-xl">
+              Authentication Failed
+            </p>
+            <p className="mt-2 text-gray-500 text-center max-w-md">
+              {(error as any)?.message ||
+                "An unknown error occurred. Please try again later."}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 px-6 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition-colors"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        )}
+
+        {user && (
+          <motion.div
+            key="auth-success"
+            className="h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-12 w-12 text-red-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+
 // --- MAIN COMPONENT ---
-export default function ChatRooms() {
+function ChatRooms() {
   const [chatServers, setChatServers] = useState<ChatServer[]>([]);
   const [allChatRooms, setAllChatRooms] = useState<ChatRoom[]>([]);
   const [filteredChatRooms, setFilteredChatRooms] = useState<ChatRoom[]>([]);

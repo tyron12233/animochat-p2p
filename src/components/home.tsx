@@ -8,24 +8,30 @@ import { useAnimochatV2 } from "../hooks/useAnimochat";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import Link from "next/link";
-import { Server } from "lucide-react";
+import { Server, Shield } from "lucide-react";
 import useUserId from "../hooks/use-user-id";
 import useChatSession, {
   ChatSessionData,
   ChatSessionStatus,
 } from "../hooks/use-chat-session";
+import { useAuth } from "../context/auth-context";
 
 interface HomeProps {
-  userId: string;
   chatSessionData: ChatSessionData | null;
   chatSessionStatus: ChatSessionStatus;
 }
 
 export default function Home({
-  userId,
   chatSessionData,
   chatSessionStatus,
 }: HomeProps) {
+  const { user, session, login, logout } = useAuth();
+
+  // State for the admin login dialog
+  const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+
   const {
     screen,
     status,
@@ -43,7 +49,7 @@ export default function Home({
     handleGetStarted,
     connectToExistingSession,
     typingUsers,
-  } = useAnimochatV2(userId);
+  } = useAnimochatV2(session!, user!);
 
   useEffect(() => {
     if (chatSessionStatus === "existing_session" && chatSessionData) {
@@ -55,12 +61,29 @@ export default function Home({
 
   const [interests, setInterests] = useState<Set<string>>(new Set());
 
+  
+
   const handleFindMatch = (interestsToMatch: Set<string>) => {
     startMatchmaking(Array.from(interestsToMatch));
   };
 
+  // Handler for the admin login form submission
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real application, you would have proper authentication logic here.
+    console.log("Admin Login Attempt:", {
+      username: adminUsername,
+      password: adminPassword,
+    });
+
+    login(adminUsername, adminPassword);
+
+    setLoginDialogOpen(false);
+    setAdminUsername("");
+    setAdminPassword("");
+  };
+
   // Animation properties for page transitions
-  // This defines how a screen will enter and exit the view.
   const pageTransition = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -98,7 +121,7 @@ export default function Home({
                 handleFindMatch(interests);
               }}
               endChat={disconnect}
-              userId={userId}
+              userId={user!.id}
               status={status}
             />
           </motion.div>
@@ -176,7 +199,7 @@ export default function Home({
   };
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden">
+    <div className="h-full overflow-y-auto overflow-x-hidden relative">
       <main
         className={`container h-full mx-auto flex flex-col ${
           screen === "chat" ? "p-0" : "px-4 py-8 md:py-16"
@@ -196,9 +219,9 @@ export default function Home({
                 De La Salle Lipa
               </span>
             </h3>
-            {userId && (
+            {user?.id && (
               <p className="font-mono text-gray-400 text-[10px] mt-2">
-                Your User ID: {userId}
+                Your User ID: {user.id}
               </p>
             )}
             <div className="mt-4">
@@ -215,6 +238,97 @@ export default function Home({
           </footer>
         )}
       </main>
+
+      {/* Hidden Admin Login Button */}
+      <div
+        className="absolute bottom-2 right-2 h-6 w-6 cursor-pointer"
+        onClick={() => setLoginDialogOpen(true)}
+        title="Admin Login"
+      />
+
+      {/* Admin Login Dialog */}
+      <AnimatePresence>
+        {isLoginDialogOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setLoginDialogOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md"
+              onClick={(e) => e.stopPropagation()} // Prevents dialog from closing when clicking inside
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="bg-green-100 p-3 rounded-full mb-4">
+                    <Shield className="h-8 w-8 text-green-700" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  Administrator Access
+                </h2>
+                <p className="text-gray-500 mb-6">Please enter your credentials to continue.</p>
+              </div>
+              <form onSubmit={handleAdminLogin}>
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="admin-username"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Username
+                    </label>
+                    <input
+                      id="admin-username"
+                      type="text"
+                      value={adminUsername}
+                      onChange={(e) => setAdminUsername(e.target.value)}
+                      className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                      placeholder="Enter username"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="admin-password"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="admin-password"
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                </div>
+                <div className="mt-8 flex justify-end space-x-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setLoginDialogOpen(false)}
+                    className="px-6 py-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2"
+                  >
+                    Login
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

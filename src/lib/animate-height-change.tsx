@@ -29,7 +29,7 @@ export const AnimateChangeInHeight: React.FC<AnimateChangeInHeightProps> = ({ ch
     }, [])
 
     return (
-        <motion.div className={classNames(className, 'overflow-hidden')} style={{ height }} animate={{ height }} transition={{ duration: 0.14 }}>
+        <motion.div className={classNames(className, 'overflow-visible')} style={{ height }} animate={{ height }} transition={{ duration: 0.14 }}>
             <div ref={containerRef}>{children}</div>
         </motion.div>
     )

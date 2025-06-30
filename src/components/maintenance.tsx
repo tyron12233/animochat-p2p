@@ -1,28 +1,10 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { Server } from "lucide-react";
+import { Server, Wrench } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
-// --- Placeholder Icons & Components ---
-// These are simple placeholders for dependencies in your FeedbackDialog.
-// Replace them with your actual icon library (e.g., lucide-react).
-
-const Wrench = ({ className = "" }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-  </svg>
-);
 
 const X = ({ size = 24, className = "" }) => (
   <svg
@@ -255,7 +237,7 @@ const MaintenancePage = () => {
         }
       `}</style>
 
-      <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center text-center p-4 font-sans overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-4 font-sans overflow-hidden">
         <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
           {/* The wrench icon now has a custom animation class */}
           <div className="mx-auto bg-green-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6 animate-wrench">

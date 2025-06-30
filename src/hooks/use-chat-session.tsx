@@ -1,6 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { defaultTheme } from "../lib/default-chat-themes";
-import { MessagesSyncPacket } from "../lib/types";
 import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
 export type ChatSessionStatus = "loading" | "existing_session" | "no_session";
@@ -49,12 +50,6 @@ export default function useChatSession(userId: string) {
 
     setChatSessionStatus("loading");
     getExistingSession();
-
-    return () => {
-      //   console.log("Cleaning up useAnimochat hook.");
-      //   eventSourceRef.current?.close();
-      //   wsRef.current?.close();
-    };
   }, [userId]);
 
   return {

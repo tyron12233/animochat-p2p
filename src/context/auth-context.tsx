@@ -7,21 +7,18 @@ import React, {
   ReactNode,
 } from 'react';
 
-// --- 1. DEFINE TYPES ---
-// Based on the Supabase session structure and our microservice responses
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email?: string;
   role: 'authenticated' | 'anonymous' | 'admin'; // Add other roles as needed
   is_anonymous: boolean;
-  // Add any other user properties you expect from the /validate endpoint
 }
 
-interface AuthSession {
+export interface AuthSession {
   access_token: string;
   refresh_token: string;
-  // Add other session properties if needed
+  role?: string;
 }
 
 interface AuthContextType {
