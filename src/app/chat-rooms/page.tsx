@@ -369,7 +369,8 @@ function ChatRooms() {
       return;
     }
     try {
-      const response = await fetch(`${server.url}/create-room`, {
+       const baseUrl = server.url.endsWith("/") ? server.url.slice(0, -1) : server.url;
+      const response = await fetch(`${baseUrl}/create-room`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, maxParticipants }),
