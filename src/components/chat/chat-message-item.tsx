@@ -60,11 +60,10 @@ export default function ChatMessageItem({
   const isAdvertisement = index % 5 === 0;
   const advertisementMessageId = isAdvertisement ? message.id : null;
   const showName =
-    ((message as any)?.showName ?? false) && message.sender !== user.id;
+    ((message as any)?.senderNickname && (message as any)?.showName) && message.sender !== user.id;
   let name = null;
   if (showName) {
-    const participant = participants.find((p) => p.userId === message.sender);
-    name = participant?.nickname || participant?.nickname || null;
+    name = message.senderNickname;
   }
 
   return (

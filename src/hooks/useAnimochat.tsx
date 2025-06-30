@@ -92,7 +92,7 @@ export const useAnimochatV2 = (
       console.log("User data available:", user);
       setUserId(user.id);
     }
-  }, [user])
+  }, [user]);
 
   // --- Refs for managing connections and state ---
   const wsRef = useRef<WebSocket | null>(null);
@@ -136,7 +136,7 @@ export const useAnimochatV2 = (
     syncMessages(data.chatServerUrl, data.chatId)
       .then((json) => {
         setMessages(json.messages.content || []);
-        setParticipants(json.participants || []);
+        setParticipants(json.onlineParticipants || []);
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
       })
@@ -441,10 +441,8 @@ export const useAnimochatV2 = (
         content,
         replyingTo: replyingToId,
         sender: userId,
-        role: user?.role
+        role: user?.role,
       } as any;
-
-      
 
       const packet: MessagePacket = {
         type: "message",
@@ -452,7 +450,7 @@ export const useAnimochatV2 = (
         sender: userId,
       };
 
-      console.log("sending packet", packet)
+      console.log("sending packet", packet);
       sendPacket(packet);
 
       // Add the message to the local state immediately.
@@ -668,16 +666,23 @@ export const useAnimochatV2 = (
                 )
               );
 
+              const systemMessage: SystemMessage = {
+                id: `system_${Date.now()}`,
+                session_id: chatIdToConnect,
+                created_at: new Date().toISOString(),
+                type: "system",
+                content: `${oldNickname} changed their nickname to ${newNickname}.`,
+                sender: "system",
+              };
+
+              // change the nickname of the user in the messages
               setMessages((prev) => [
-                ...prev,
-                {
-                  id: `system_${Date.now()}`,
-                  session_id: chatIdToConnect,
-                  created_at: new Date().toISOString(),
-                  type: "system",
-                  content: `${oldNickname} changed their nickname to ${newNickname}.`,
-                  sender: "system",
-                },
+                ...prev.map((msg) =>
+                  msg.sender === changedUserId
+                    ? { ...msg, senderNickname: newNickname }
+                    : msg
+                ),
+                systemMessage,
               ]);
 
               break;
@@ -704,11 +709,9 @@ export const useAnimochatV2 = (
               // set participant status to "offline"
               setParticipants((prev) =>
                 prev.map((p) =>
-                  p.userId === offlineUserId ? { ...p, status: "offline" }  
-                    : p
+                  p.userId === offlineUserId ? { ...p, status: "offline" } : p
                 )
               );
-            
 
               // Create a system message indicating the user is offline
               // we cannot use participants.find here because the user may not be in the participants list because participants is a state
@@ -741,10 +744,6 @@ export const useAnimochatV2 = (
               setChatId("");
               setStatus("disconnected");
               break;
-            case "participants_sync":
-              console.log("SYNCING PARTICIPANTS", packet.content);
-              setParticipants(packet.content);
-              break;
             case "participant_joined":
               if (!isGroupChat) return;
 
@@ -752,8 +751,8 @@ export const useAnimochatV2 = (
 
               const newParticipant = participantJoinedPacket.content;
 
-               // Only add if not already present, if already present, update status to online
-                setParticipants((prev) => {
+              // Only add if not already present, if already present, update status to online
+              setParticipants((prev) => {
                 const existingParticipantIndex = prev.findIndex(
                   (p) => p.userId === newParticipant.userId
                 );
@@ -767,8 +766,7 @@ export const useAnimochatV2 = (
                   return updatedParticipants;
                 }
                 return [...prev, newParticipant];
-                });
-              ;
+              });
               setMessages((prev) => [
                 ...prev,
                 {
