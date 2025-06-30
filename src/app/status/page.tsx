@@ -286,7 +286,9 @@ export default function StatusPage() {
             // 3. Fetch the status for each service instance concurrently
             const statusPromises = allInstances.map(async (instance) => {
                 try {
-                    const statusResponse = await fetch(`${instance.url}/status`);
+                    // remove trailing slash if it exists
+                    const instanceUrl = instance.url.endsWith('/') ? instance.url.slice(0, -1) : instance.url;
+                    const statusResponse = await fetch(`${instanceUrl}/status`);
                     if (!statusResponse.ok) {
                         throw new Error(`Request failed with status ${statusResponse.status}`);
                     }
