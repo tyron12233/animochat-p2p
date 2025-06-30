@@ -92,7 +92,7 @@ export const useAnimochatV2 = (userId: string, isGroupChat = false) => {
     const syncMessages = async (chatServer: string, chatId: string) => {
       ///sync/:chatId
       let baseUrl = chatServer.endsWith("/") ? chatServer.slice(0, -1) : chatServer;
-      const syncApi = `${chatServer}/sync/${chatId}`;
+      const syncApi = `${baseUrl}/sync/${chatId}`;
       try {
         const response = await fetch(syncApi);
         if (!response.ok) {
