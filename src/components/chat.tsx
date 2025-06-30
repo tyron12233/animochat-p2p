@@ -30,7 +30,7 @@ import {
   tyronsTheme,
 } from "../lib/default-chat-themes";
 import { Participant } from "../hooks/useAnimochat";
-import EditNicknameDialog from './group-chat/edit-nickname-dialog'
+import EditNicknameDialog from "./group-chat/edit-nickname-dialog";
 
 interface ChatProps {
   participants: Participant[];
@@ -132,7 +132,8 @@ export default function Chat({
   }, [participants]);
 
   const [announcement, setAnnouncement] = useState<string | null>(null);
-  const [isEditNicknameDialogOpen, setIsEditNicknameDialogOpen] = useState(false);
+  const [isEditNicknameDialogOpen, setIsEditNicknameDialogOpen] =
+    useState(false);
 
   // Supabase notification logic remains unchanged
   useEffect(() => {
@@ -270,9 +271,13 @@ export default function Chat({
   useEffect(() => {
     const isSomeoneTyping = typingUsers.length > 0;
     if (isAtBottom.current && isSomeoneTyping) {
-      scrollerRef.current?.scrollToIndex(actualMessages.length);
+      console.log("dsaasdasdasd")
+      scrollerRef.current?.scrollToIndex(actualMessages.length, {
+        align: "end",
+        smooth: true,
+      });
     }
-  }, [typingUsers]);
+  }, [typingUsers, actualMessages]);
 
   useEffect(() => {
     if (bottomMessagePreviewState) {
@@ -346,40 +351,37 @@ export default function Chat({
         </div>
       );
     }
-    
-
-   
 
     return (
       <AnimateChangeInHeight key={msg.id + "listener"}>
         <ChatMessageItem
-            participants={participants}
-            key={index}
-            index={index}
-            message={msg}
-            user={user}
-            isLast={index === 0}
-            onSwipe={(messageId) => {
-              const message = messages.find((m) => m.id === messageId);
-              if (!message) return;
-              setBottomMessagePreviewState({
-                message,
-                type: "replying",
-                title: "Replying",
-                description: message.content,
-              });
-            }}
-            onStartedSwipe={() => {}}
-            onEndedSwipe={() => {}}
-            onReact={onReact}
-            onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
-            onResendMessage={() => {}}
-            isEmojiMenuOpen={isEmojiMenuOpen}
-            theme={theme}
-            mode={mode}
-            animate={true}
-            secondVisibleElement={null}
-          />
+          participants={participants}
+          key={index}
+          index={index}
+          message={msg}
+          user={user}
+          isLast={index === 0}
+          onSwipe={(messageId) => {
+            const message = messages.find((m) => m.id === messageId);
+            if (!message) return;
+            setBottomMessagePreviewState({
+              message,
+              type: "replying",
+              title: "Replying",
+              description: message.content,
+            });
+          }}
+          onStartedSwipe={() => {}}
+          onEndedSwipe={() => {}}
+          onReact={onReact}
+          onOpenEmojiMenu={() => onOpenEmojiMenu(msg)}
+          onResendMessage={() => {}}
+          isEmojiMenuOpen={isEmojiMenuOpen}
+          theme={theme}
+          mode={mode}
+          animate={true}
+          secondVisibleElement={null}
+        />
       </AnimateChangeInHeight>
     );
   };
@@ -636,6 +638,7 @@ export default function Chat({
                 scrollerRef.current.scrollSize +
                 scrollerRef.current.viewportSize;
               isAtBottom.current = scrollOffset >= -100;
+        
               if (isAtBottom.current) {
                 setShowNewMessagesButton(false);
               }
@@ -645,15 +648,15 @@ export default function Chat({
             {actualMessages.map((msg, index) => renderMessage(msg, index))}
             <div className="overflow-hidden">
               <AnimateChangeInHeight>
-              {typingUsers.length > 0 && (
-                <TypingIndicator
-                  typingUsers={typingUsers}
-                  key="typing-indicator"
-                  theme={theme}
-                  mode={mode}
-                />
-              )}
-            </AnimateChangeInHeight>
+                {typingUsers.length > 0 && (
+                  <TypingIndicator
+                    typingUsers={typingUsers}
+                    key="typing-indicator"
+                    theme={theme}
+                    mode={mode}
+                  />
+                )}
+              </AnimateChangeInHeight>
             </div>
           </VList>
 

@@ -72,9 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(currentSession);
       // Set the session in a cookie
       Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(currentSession), {
-        secure: true, // Only send over HTTPS
         sameSite: 'strict', // For better security
-        expires: 7, // Cookie expires in 7 days
+        expires: 7
       });
       setError(null);
 
