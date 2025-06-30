@@ -215,7 +215,7 @@ export default function Page() {
 
 
 function AuthComponent({ children }: { children: React.ReactNode }) {
-  const { error, isLoading, user } = useAuth();
+  const { error, isLoading } = useAuth();
 
   if (isLoading) {
     return (

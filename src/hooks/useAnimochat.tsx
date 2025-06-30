@@ -69,12 +69,13 @@ type OfflinePacket = Packet<string, "offline">;
 type UserJoinedPacket = Packet<string, "user_joined">;
 
 export const useAnimochatV2 = (
-  session: AuthSession,
-  user: AuthUser,
+  session: AuthSession | null,
+  user: AuthUser | null,
   isGroupChat = false
 ) => {
-  const userId = user.id;
   const { setTheme, setMode } = useChatTheme();
+
+  const [userId, setUserId] = useState<string>(user?.id ?? "");
 
   // --- State Management ---
   const [screen, setScreen] = useState<Screen>("intro");
@@ -84,6 +85,13 @@ export const useAnimochatV2 = (
 
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      console.log("User data available:", user);
+      setUserId(user.id);
+    }
+  }, [user])
 
   // --- Refs for managing connections and state ---
   const wsRef = useRef<WebSocket | null>(null);
@@ -432,7 +440,7 @@ export const useAnimochatV2 = (
         content,
         replyingTo: replyingToId,
         sender: userId,
-        role: user.role
+        role: user?.role
       } as any;
 
       
@@ -618,7 +626,7 @@ export const useAnimochatV2 = (
 
           const packet = jsonPacket;
 
-          if (packet.sender === user.id) return;
+          if (packet.sender === userId) return;
 
           switch (jsonPacket.type) {
             case "message_delete":
@@ -876,7 +884,7 @@ export const useAnimochatV2 = (
       };
 
       try {
-        const wsUrl = `${chatServerUrl}?userId=${user.id}&chatId=${chatIdToConnect}`;
+        const wsUrl = `${chatServerUrl}?userId=${userId}&chatId=${chatIdToConnect}`;
         console.trace(`Connecting to WebSocket server: ${wsUrl}`);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -900,6 +908,7 @@ export const useAnimochatV2 = (
     },
     [
       user,
+      userId,
       handleReaction,
       setTheme,
       setMode,

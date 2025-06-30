@@ -28,14 +28,17 @@ export default function GroupChat({ room, onLeave }: GrouupChatProps) {
     onStartTyping,
     onChangeTheme,
     editMessage,
-  } = useAnimochatV2(session!, user!, true);
+  } = useAnimochatV2(session, user, true);
 
   useEffect(() => {
+    if (!user || !room) {
+      return;
+    }
     connectToExistingSession({
       chatId: room.id,
       chatServerUrl: room.serverUrl,
     });
-  }, [room]);
+  }, [user, room]);
 
   return (
     <>

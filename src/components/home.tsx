@@ -16,16 +16,9 @@ import useChatSession, {
 } from "../hooks/use-chat-session";
 import { useAuth } from "../context/auth-context";
 
-interface HomeProps {
-  chatSessionData: ChatSessionData | null;
-  chatSessionStatus: ChatSessionStatus;
-}
-
-export default function Home({
-  chatSessionData,
-  chatSessionStatus,
-}: HomeProps) {
-  const { user, session, login, logout } = useAuth();
+export default function Home() {
+  const { user, session, login, logout, isLoading: isAuthLoading} = useAuth();
+  const { chatSessionData, chatSessionStatus } = useChatSession(user);
 
   // State for the admin login dialog
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -148,7 +141,7 @@ export default function Home({
               interests={interests}
               onInterestsChange={setInterests}
               onFindMatch={handleFindMatch}
-              isConnecting={isConnecting}
+              isConnecting={isConnecting || isAuthLoading}
               status={status}
             />
           </motion.div>
@@ -224,6 +217,26 @@ export default function Home({
                 Your User ID: {user.id}
               </p>
             )}
+
+            {user?.role && (
+              <p className="font-mono text-gray-400 text-[10px] mt-2">
+                Your Role: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+              </p>
+            )}
+
+            {/* log out button */}
+            {user?.role === "admin" && (
+              <div className="mt-4">
+                <Button
+                  variant="ghost"
+                  className="text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                  onClick={() => logout()}
+                >
+                  Log Out
+                </Button>
+              </div> 
+            )}
+
             <div className="mt-4">
               <Link href="/status" passHref>
                 <Button
