@@ -19,7 +19,7 @@ import { ChatSessionData } from "./use-chat-session";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
-export const API_BASE_URL = "https://animochat-turn-server.onrender.com";
+export const API_BASE_URL = "http://animochat-matchmaking-server-prod.ap-southeast-1.elasticbeanstalk.com/";
 
 // --- Packet Types for WebSocket Communication ---
 // These define the structure of messages sent over the WebSocket connection.
