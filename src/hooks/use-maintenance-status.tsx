@@ -15,7 +15,7 @@ export const useMaintenanceStatus = () => {
       try {
         // Assuming the API is on the same domain.
         // Replace '/maintenance' with the full URL if it's hosted elsewhere.
-        const response = await fetch('https://animochat-turn-server.onrender.com/maintenance');
+        const response = await fetch('http://animochat-matchmaking-server-prod.ap-southeast-1.elasticbeanstalk.com/maintenance');
         
         // The endpoint returns 503 for maintenance mode
         if (response.status === 503) {
