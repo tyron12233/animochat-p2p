@@ -231,7 +231,9 @@ export default function ChatRooms() {
 
       const roomPromises = runningServers.map(async (server) => {
         try {
-          const roomsResponse = await fetch(`${server.url}/rooms`);
+          // if server url ends with /
+          const baseUrl = server.url.endsWith("/") ? server.url.slice(0, -1) : server.url;
+          const roomsResponse = await fetch(`${baseUrl}/rooms`);
           if (!roomsResponse.ok) return [];
           const roomsData = await roomsResponse.json();
           return roomsData.map((room: Omit<ChatRoom, "serverUrl">) => ({ ...room, serverUrl: server.url }));
