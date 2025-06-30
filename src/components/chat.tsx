@@ -31,6 +31,7 @@ import {
 } from "../lib/default-chat-themes";
 import { Participant } from "../hooks/useAnimochat";
 import EditNicknameDialog from "./group-chat/edit-nickname-dialog";
+import { OnlineUsers, UserListModal } from "./chat/online-users";
 
 interface ChatProps {
   participants: Participant[];
@@ -122,6 +123,7 @@ export default function Chat({
   const user: User = { id: peerId };
   const { theme, mode } = useChatTheme();
 
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [currentNickname, setCurrentNickname] = useState<string>("Unknown");
 
   useEffect(() => {
@@ -174,7 +176,7 @@ export default function Chat({
   const actualMessages = useActualMessages(messages, groupChat);
 
   // VIRTUAL CHAT EFFECTS (logic unchanged)
-  const typingIndicatorRef = useRef<HTMLDivElement | null>(null)
+  const typingIndicatorRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<VListHandle>(null);
   const [isSwiping, setIsSwiping] = useState(false);
   const prevMessagesLength = useRef(actualMessages.length);
@@ -274,8 +276,8 @@ export default function Chat({
     if (isAtBottom.current && isSomeoneTyping) {
       scrollerRef?.current?.scrollToIndex(actualMessages.length, {
         smooth: true,
-        align: 'end'
-      })
+        align: "end",
+      });
     }
   }, [typingUsers, actualMessages]);
 
@@ -391,6 +393,13 @@ export default function Chat({
   return (
     <>
       <DynamicGlobalStyles theme={theme} mode={mode} />
+      <UserListModal
+        theme={theme}
+        mode={mode}
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        users={participants}
+      />
       <ThemePickerDialog
         isOpen={isThemePickerOpen}
         onClose={() => setIsThemePickerOpen(false)}
@@ -598,6 +607,15 @@ export default function Chat({
               New Chat
             </Button>
           )}
+
+          {groupChat && (
+            <OnlineUsers
+              theme={theme}
+              mode={mode}
+              users={participants}
+              onOverflowClick={() => setIsUserModalOpen(true)}
+            />
+          )}
         </div>
 
         {announcement && (
@@ -638,7 +656,7 @@ export default function Chat({
                 scrollerRef.current.scrollSize +
                 scrollerRef.current.viewportSize;
               isAtBottom.current = scrollOffset >= -100;
-        
+
               if (isAtBottom.current) {
                 setShowNewMessagesButton(false);
               }

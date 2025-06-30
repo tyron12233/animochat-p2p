@@ -39,6 +39,7 @@ export type ChangeNicknamePacket = Packet<
 >;
 
 export interface Participant {
+  status: string;
   userId: string;
   nickname: string;
 }
@@ -699,31 +700,21 @@ export const useAnimochatV2 = (
               break;
             case "offline":
               const offlineUserId = jsonPacket.content as string;
-              // find the participant with this userId
-              const offlineParticipant = participants.find(
-                (p) => p.userId === offlineUserId
+
+              // set participant status to "offline"
+              setParticipants((prev) =>
+                prev.map((p) =>
+                  p.userId === offlineUserId ? { ...p, status: "offline" }  
+                    : p
+                )
               );
-              if (!offlineParticipant) {
-                console.warn(
-                  `Offline packet received for unknown user: ${offlineUserId}`
-                );
-                return;
-              }
+            
 
               // Create a system message indicating the user is offline
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: `system_${Date.now()}`,
-                  session_id: chatIdToConnect,
-                  created_at: new Date().toISOString(),
-                  type: "system",
-                  content: `${
-                    offlineParticipant.nickname ?? "A participant"
-                  } has left the chat.`,
-                  sender: "system",
-                },
-              ]);
+              // we cannot use participants.find here because the user may not be in the participants list because participants is a state
+              // we need a way to get the nickname of the user who went offline
+
+              // TODO: fix this (maybe a ref?)
 
               break;
             case "disconnect":
@@ -760,12 +751,24 @@ export const useAnimochatV2 = (
               const participantJoinedPacket: ParticipantJoinedPacket = packet;
 
               const newParticipant = participantJoinedPacket.content;
-              setParticipants((prev) => {
-                // Only add if not already present
-                if (prev.some((p) => p.userId === newParticipant.userId))
-                  return prev;
+
+               // Only add if not already present, if already present, update status to online
+                setParticipants((prev) => {
+                const existingParticipantIndex = prev.findIndex(
+                  (p) => p.userId === newParticipant.userId
+                );
+                if (existingParticipantIndex > -1) {
+                  // Update existing participant's status to online
+                  const updatedParticipants = [...prev];
+                  updatedParticipants[existingParticipantIndex] = {
+                    ...updatedParticipants[existingParticipantIndex],
+                    status: "online",
+                  };
+                  return updatedParticipants;
+                }
                 return [...prev, newParticipant];
-              });
+                });
+              ;
               setMessages((prev) => [
                 ...prev,
                 {
