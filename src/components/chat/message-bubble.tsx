@@ -556,7 +556,7 @@ function TextMessage({
       ) : (
         <div
           className={`flex flex-col p-[1px] justify-center items-center ${
-            isAdmin ? "messageBubbleClass" : ""
+            isAdmin ? className : ""
           }`}
         >
           <div className="relative group">
