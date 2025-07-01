@@ -474,6 +474,10 @@ export const useAnimochatV2 = (
         clearTimeout(reconnectionTimerRef.current);
       }
 
+      if (randomMatchmakingTimeoutRef.current) {
+        clearTimeout(randomMatchmakingTimeoutRef.current);
+      }
+
       const disconnectFromApi = async () => {
         const disconnectApi = `${API_BASE_URL}/session/disconnect?userId=${userId}`;
         try {
@@ -525,7 +529,7 @@ export const useAnimochatV2 = (
           content: null,
           sender: userId,
         };
-        wsRef.current.send(JSON.stringify(disconnectPacket));
+        sendPacket(disconnect);
       }
 
       wsRef.current?.close();
@@ -961,13 +965,14 @@ export const useAnimochatV2 = (
       const es = new EventSource(url);
       eventSourceRef.current = es;
 
-      if (!showRandom) {
+      // only set timeout if we are not showing random matches
+      if (!showRandom && interests.length === 0) {
         randomMatchmakingTimeoutRef.current = setTimeout(() => {
-        console.log("STARTING WILDCARD MATCH");
-        es.close();
-        eventSourceRef.current = null;
-        startMatchmaking([], true);
-      }, 10_000);
+          console.log("STARTING WILDCARD MATCH");
+          es.close();
+          eventSourceRef.current = null;
+          startMatchmaking([], true);
+        }, 10_000);
       }
 
       es.onmessage = (event) => {
@@ -999,7 +1004,10 @@ export const useAnimochatV2 = (
           let showRandomStrangerMessage = false;
           // if we specified interests, but we matched with no interests,
           // then we should show a message that we matched with a random stranger.
-          if ((interest.length !== interests.length && interests.length > 0) || showRandom) {
+          if (
+            (interest.length !== interests.length && interests.length > 0) ||
+            showRandom
+          ) {
             showRandomStrangerMessage = true;
           }
 
