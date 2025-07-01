@@ -138,7 +138,7 @@ export const useAnimochatV2 = (
         setMessages(json.messages.content || []);
         setParticipants(json.onlineParticipants || []);
 
-        console.log("online participants", json.onlineParticipants); 
+        console.log("online participants", json.onlineParticipants);
 
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
@@ -239,9 +239,7 @@ export const useAnimochatV2 = (
 
     // Optimistically update the local state to reflect the nickname change.
     setParticipants((prev) =>
-      prev.map((p) =>
-        p.userId === userId ? { ...p, nickname } : p
-      )
+      prev.map((p) => (p.userId === userId ? { ...p, nickname } : p))
     );
 
     sendPacket(packet);
@@ -775,10 +773,13 @@ export const useAnimochatV2 = (
                   };
                   return updatedParticipants;
                 }
-                return [...prev, {
-                  ...newParticipant,
-                  status: "online",
-                }];
+                return [
+                  ...prev,
+                  {
+                    ...newParticipant,
+                    status: "online",
+                  },
+                ];
               });
               setMessages((prev) => [
                 ...prev,
@@ -932,8 +933,14 @@ export const useAnimochatV2 = (
     ]
   );
 
+  const randomMatchmakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const startMatchmaking = useCallback(
     (interests: string[]) => {
+      if (randomMatchmakingTimeoutRef.current) {
+        clearTimeout(randomMatchmakingTimeoutRef.current);
+      }
+
       console.log("Starting matchmaking with interests:", interests);
 
       if (!userId) {
@@ -954,11 +961,23 @@ export const useAnimochatV2 = (
       const es = new EventSource(url);
       eventSourceRef.current = es;
 
+      randomMatchmakingTimeoutRef.current = setTimeout(() => {
+        console.log("STARTING WILDCARD MATCH");
+        es.close();
+        eventSourceRef.current = null;
+        startMatchmaking([]);
+      }, 10_000);
+
       es.onmessage = (event) => {
         const data: MatchmakingData = JSON.parse(event.data);
         console.log("Matchmaking update:", data);
 
         if (data.state === "MATCHED" && data.chatId) {
+          // remove timeout
+          if (randomMatchmakingTimeoutRef.current) {
+            clearTimeout(randomMatchmakingTimeoutRef.current);
+          }
+
           es.close();
           setChatId(data.chatId);
           setStatus("connecting");
