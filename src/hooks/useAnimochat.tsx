@@ -585,8 +585,6 @@ export const useAnimochatV2 = (
           setStatus("connected");
           reconnectionAttemptsRef.current = 0; // Reset attempts on success
 
-          const isAdmin = user?.role === "admin";
-
           // Compose the welcome or reconnection message for the chat.
           let message: string;
           if (isReconnecting) {
@@ -594,28 +592,20 @@ export const useAnimochatV2 = (
             if (isGroupChat) {
               message = "Connected to chat room.";
             }
-            } else if (showRandomStrangerMessage) {
+          } else if (showRandomStrangerMessage) {
             message =
-              isAdmin
-              ? "We couldn't find a match with your interests, so you matched with a random developer. Say hi!"
-              : "We couldn't find a match with your interests, so you matched with a random stranger. Say hi!";
-            } else if (interests.length > 0) {
+              "We couldn't find a match with your interests, so you matched with a random stranger. Say hi!";
+          } else if (interests.length > 0) {
             const formattedInterests = interests
               .map((interest) => interest.trim())
               .filter(Boolean)
               .join(", ");
             message = formattedInterests
-              ? isAdmin
-              ? `You matched with a developer on ${formattedInterests}! Say hi!`
-              : `You matched with a stranger on ${formattedInterests}! Say hi!`
-              : isAdmin
-              ? "You matched with a random developer! Say hi!"
+              ? `You matched with a stranger on ${formattedInterests}! Say hi!`
               : "You matched with a random stranger! Say hi!";
-            } else {
-            message = isAdmin
-              ? "You matched with a random developer! Say hi!"
-              : "You matched with a random stranger! Say hi!";
-            }
+          } else {
+            message = "You matched with a random stranger! Say hi!";
+          }
 
           const welcomeMessage: SystemMessage = {
             id: `system_${Date.now()}`,
