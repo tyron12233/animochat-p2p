@@ -274,6 +274,10 @@ export const useAnimochatV2 = (
   );
 
   const onCancelMatchmaking = () => {
+    if (randomMatchmakingTimeoutRef.current) {
+      clearTimeout(randomMatchmakingTimeoutRef.current);
+    }
+
     const cancelApi = () => {
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -966,7 +970,7 @@ export const useAnimochatV2 = (
       eventSourceRef.current = es;
 
       // only set timeout if we are not showing random matches
-      if (!showRandom && interests.length === 0) {
+      if (!showRandom && interests.length !== 0) {
         randomMatchmakingTimeoutRef.current = setTimeout(() => {
           console.log("STARTING WILDCARD MATCH");
           es.close();
@@ -1004,8 +1008,13 @@ export const useAnimochatV2 = (
           let showRandomStrangerMessage = false;
           // if we specified interests, but we matched with no interests,
           // then we should show a message that we matched with a random stranger.
+
+          // if no overlap between interests and interest,
+          const hasOverlap = interest.some((i) =>
+            interests.includes(i.trim())
+          );
           if (
-            (interest.length !== interests.length && interests.length > 0) ||
+            !hasOverlap ||
             showRandom
           ) {
             showRandomStrangerMessage = true;
