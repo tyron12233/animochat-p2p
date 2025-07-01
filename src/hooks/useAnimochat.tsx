@@ -936,7 +936,7 @@ export const useAnimochatV2 = (
   const randomMatchmakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const startMatchmaking = useCallback(
-    (interests: string[]) => {
+    (interests: string[], showRandom: boolean = false) => {
       if (randomMatchmakingTimeoutRef.current) {
         clearTimeout(randomMatchmakingTimeoutRef.current);
       }
@@ -961,12 +961,14 @@ export const useAnimochatV2 = (
       const es = new EventSource(url);
       eventSourceRef.current = es;
 
-      randomMatchmakingTimeoutRef.current = setTimeout(() => {
+      if (!showRandom) {
+        randomMatchmakingTimeoutRef.current = setTimeout(() => {
         console.log("STARTING WILDCARD MATCH");
         es.close();
         eventSourceRef.current = null;
-        startMatchmaking([]);
+        startMatchmaking([], true);
       }, 10_000);
+      }
 
       es.onmessage = (event) => {
         const data: MatchmakingData = JSON.parse(event.data);
@@ -997,7 +999,7 @@ export const useAnimochatV2 = (
           let showRandomStrangerMessage = false;
           // if we specified interests, but we matched with no interests,
           // then we should show a message that we matched with a random stranger.
-          if (interest.length !== interests.length && interests.length > 0) {
+          if ((interest.length !== interests.length && interests.length > 0) || showRandom) {
             showRandomStrangerMessage = true;
           }
 
