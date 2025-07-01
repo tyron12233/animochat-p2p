@@ -10,7 +10,7 @@ TURN_SERVER_REPO_PATH="$HOME/NodeProjects/animochat-turn-server"
 
 # IMPORTANT: Add files or directories to keep.
 # Any directory listed here will be kept with all its contents.
-FILES_TO_KEEP=(".gitignore" "CNAME" ".elasticbeanstalk" ".nojekyll" "node_modules")
+FILES_TO_KEEP=(".gitignore" "CNAME" ".elasticbeanstalk" ".nojekyll" "node_modules" ".git")
 
 # --- 1. Clean the TURN server repository ---
 echo "Cleaning the TURN server repository..."
@@ -53,6 +53,7 @@ echo "Latest commit message: $COMMIT_MESSAGE"
 # --- 5. Commit and push to the TURN server repo ---
 echo "Committing and pushing changes to the TURN server repository..."
 cd "$TURN_SERVER_REPO_PATH"
+git checkout pages
 git add .
 git commit -m "$COMMIT_MESSAGE"
 git push
