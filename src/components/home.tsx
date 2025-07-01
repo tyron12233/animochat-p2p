@@ -169,10 +169,18 @@ export default function Home() {
             </div>
 
             <div className="max-w-md mx-auto text-sm space-y-6 text-center">
-              <div className="text-red-700 bg-red-50 p-4 rounded-2xl border border-red-200 font-medium">
+              <div className="text-yellow-700 bg-yellow-50 p-4 rounded-2xl border border-yellow-200 font-medium">
                 <p>
-                  This is a test version of AnimoChat. Not all features are
-                  implemented, and you may encounter bugs.
+                  <strong>Notice:</strong> This site will soon move to a new domain:{" "}
+                  <a
+                    href="https://chat.tyronscott.me"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-green-700 font-semibold"
+                  >
+                    chat.tyronscott.me
+                  </a>
+                  . Please update your bookmarks!
                 </p>
               </div>
             </div>
