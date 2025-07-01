@@ -529,7 +529,7 @@ export const useAnimochatV2 = (
           content: null,
           sender: userId,
         };
-        sendPacket(disconnect);
+        sendPacket(disconnectPacket);
       }
 
       wsRef.current?.close();
