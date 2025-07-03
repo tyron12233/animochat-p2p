@@ -540,7 +540,7 @@ function renderContent(
             ),
           }}
         >
-          {content.slice(last, m.startIndex)}
+          {content.slice(last, m.startIndex - 1)}
         </Linkify>
       );
     }
@@ -562,7 +562,7 @@ function renderContent(
           e.stopPropagation();
         }}
       >
-        {content.slice(m.startIndex, m.endIndex)}
+        {content.slice(m.startIndex - 1, m.endIndex)}
       </a>
     );
 
