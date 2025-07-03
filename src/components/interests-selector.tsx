@@ -14,8 +14,6 @@ import { LoadingSpinner } from "./loading-spinner";
 import Link from "next/link";
 import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 
-
-
 // --- PROPS INTERFACE ---
 interface InterestSelectorProps {
   interests: Set<string>;
@@ -44,8 +42,6 @@ const InterestTag = ({
     </button>
   </div>
 );
-
-
 
 // --- MAIN COMPONENT: InterestSelector ---
 export default function InterestSelector({
@@ -234,12 +230,22 @@ export default function InterestSelector({
         </AnimateChangeInHeight>
       </div>
 
-      <div className="mt-12 w-[350px] max-w-full mx-auto">
+      <div className="mt-8 w-[350px] max-w-full mx-auto">
+        <div className="mb-4">
+          <Link href="/chat-rooms" passHref>
+            <Button
+              variant={"ghost"}
+              className="w-full rounded-full py-6 text-base flex items-center justify-center"
+            >
+              <Users size={20} className="mr-2" />
+              Chat Rooms
+            </Button>
+          </Link>
+        </div>
+
         <Button
           onClick={handleFindMatch}
-          disabled={
-            isConnecting
-          }
+          disabled={isConnecting}
           className="w-full rounded-full py-6 bg-green-600 hover:bg-green-700 text-white font-bold text-base disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {isConnecting ? (
@@ -251,21 +257,7 @@ export default function InterestSelector({
             "Find Match"
           )}
         </Button>
-
-         <div className="mt-4">
-          <Link href="/chat-rooms" passHref>
-            <Button
-            variant={"outline"}
-              className="w-full rounded-full py-6 text-base flex items-center justify-center"
-            >
-              <Users size={20} className="mr-2" />
-              Experimental Chat Rooms
-            </Button>
-          </Link>
-        </div>
       </div>
-
-      
 
       <div className="text-center mt-6">
         <Button

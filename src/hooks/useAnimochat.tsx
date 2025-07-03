@@ -1014,7 +1014,7 @@ export const useAnimochatV2 = (
             interests.includes(i.trim())
           );
           if (
-            !hasOverlap ||
+            (!hasOverlap && interests.length !== 0) ||
             showRandom
           ) {
             showRandomStrangerMessage = true;
