@@ -543,14 +543,6 @@ function TextMessage({
         <>
           <div className="px-2 py-2">
             <p className="text-5xl">{message.content}</p>
-            <div className="mt-4">
-              <ReactionBubble
-                message={message}
-                user={user}
-                theme={theme}
-                mode={mode}
-              />
-            </div>
           </div>
         </>
       ) : (
