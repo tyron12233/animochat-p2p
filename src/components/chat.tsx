@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 // For this example, we will style them directly where possible.
 // import { Button } from "@/components/ui/button";
 // import { Input } from "@/components/ui/input";
-import { DEFAULT_THEME, Message, UserMessage, type User } from "../lib/types";
+import { DEFAULT_THEME, Mention, Message, UserMessage, type User } from "../lib/types";
 import ChatMessageItem, { bumbleTheme } from "./chat/chat-message-item";
 import { useActualMessages } from "../hooks/use-actual-messages";
 import { EmojiOverlay } from "./chat/emoji-overlay";
@@ -38,7 +38,7 @@ interface ChatProps {
   name: string;
   groupChat: boolean;
   messages: Message[];
-  sendMessage: (text: string, replyingToId: string | undefined) => void;
+  sendMessage: (text: string, replyingToId: string | undefined, mentions: Mention[]) => void;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
   onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
   onDeleteMessage?: (messageId: string) => void;
@@ -74,17 +74,17 @@ const DynamicGlobalStyles = ({
       }
     }
 
-    #chat-messages-list::-webkit-scrollbar {
+    div::-webkit-scrollbar {
       width: 8px;
     }
-    #chat-messages-list::-webkit-scrollbar-track {
+    div::-webkit-scrollbar-track {
       background: ${theme.messageList.scrollbarTrack[mode]};
     }
-    #chat-messages-list::-webkit-scrollbar-thumb {
+    div::-webkit-scrollbar-thumb {
       background-color: ${theme.messageList.scrollbarThumb[mode]};
       border-radius: 4px;
     }
-    #chat-messages-list::-webkit-scrollbar-thumb:hover {
+    div::-webkit-scrollbar-thumb:hover {
       background-color: ${theme.buttons.primary.hoverBackground[mode]};
     }
     #chat-input:focus {
@@ -134,7 +134,7 @@ export default function Chat({
     if (currentUser) {
       setCurrentNickname(currentUser.nickname || "Unknown");
     }
-  }, [participants])
+  }, [participants]);
 
   useEffect(() => {
     const nickname = participants.find((p) => p.userId === user.id)?.nickname;
@@ -194,6 +194,8 @@ export default function Chat({
   const isAtBottom = useRef(true);
 
   const [currentMessage, setCurrentMessage] = useState("");
+  const [currentMentions, setCurrentMentions] = useState<Mention[]>([]);  
+  
   const [confirmedEnd, setConfirmedEnd] = useState(false);
   const isEmojiMenuOpen = useRef(false);
 
@@ -226,6 +228,52 @@ export default function Chat({
       });
     }
   };
+
+  const [mentionParticipants, setMentionParticipants] = useState<Participant[]>([]);
+
+  // Create a ref to store the timeout ID for debouncing
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentMessage(e.target.value);
+    onStartTyping();
+
+    // Clear any existing timeout to debounce the mention search
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Debounce mention search to prevent lag when typing quickly
+    debounceTimeoutRef.current = setTimeout(() => {
+      const textInput = document.getElementById("chat-input") as HTMLInputElement;
+      const cursorPosition = textInput.selectionStart || 0;
+      const textBeforeCursor = e.target.value.slice(0, cursorPosition);
+      const atIndex = textBeforeCursor.lastIndexOf("@");
+      
+      // if starts with @, add all participants, else filter
+      if (atIndex !== -1) {
+        const query = textBeforeCursor.slice(atIndex + 1).toLowerCase();
+        if (query.length > 0) {
+          const filteredParticipants = participants.filter((p) =>
+            p.nickname.toLowerCase().startsWith(query)
+          );
+          setMentionParticipants(filteredParticipants);
+        } else {
+          setMentionParticipants(participants);
+        }
+      } else {
+        setMentionParticipants([]);
+      }
+    }, 200);
+  };
+  
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (groupChat) return;
@@ -333,7 +381,9 @@ export default function Chat({
         setCurrentMessage("");
         return;
       }
-      sendMessage(trimmedMessage, messageId);
+      sendMessage(trimmedMessage, messageId, currentMentions);
+
+      setCurrentMentions([]);
       setCurrentMessage("");
       if (messageId) {
         setBottomMessagePreviewState(null);
@@ -789,6 +839,67 @@ export default function Chat({
           </motion.div>
         </AnimateChangeInHeight>
 
+        <AnimateChangeInHeight>
+          <div
+          id="mentions-container"
+          className="border-t"
+          style={{
+            borderColor: theme.inputArea.border[mode],
+          }}
+        >
+          {mentionParticipants.length > 0 && (
+            <div
+              style={{
+                backgroundColor: theme.inputArea.background[mode],
+                borderColor: theme.inputArea.border[mode],
+                maxHeight: "200px",
+                overflowY: "auto"
+              }}
+              className="p-2 border-t"
+            >
+              <ul className="space-y-1">
+                {mentionParticipants.map((participant) => (
+                  <li
+                    key={participant.userId}
+                    className="flex items-center gap-2 cursor-pointer p-2 rounded-md transition-colors"
+                    onClick={() => {
+                      const textInput = document.getElementById("chat-input") as HTMLInputElement;
+                      const cursorPosition = textInput.selectionStart || 0;
+                      const textBeforeCursor = currentMessage.slice(0, cursorPosition);
+                      const atIndex = textBeforeCursor.lastIndexOf("@");
+                      const newMessage = `${textBeforeCursor.slice(0, atIndex + 1)}${participant.nickname} ${currentMessage.slice(cursorPosition)}`;
+                      setCurrentMessage(newMessage);
+                      setMentionParticipants([]);
+                      textInput.focus();
+                      textInput.setSelectionRange(atIndex + participant.nickname.length + 2, atIndex + participant.nickname.length + 2);
+
+                      // add mention to currentMentions
+                      setCurrentMentions((prev) => [
+                        ...prev,
+                        {
+                          id: participant.userId,
+                          startIndex: atIndex + 1,
+                          endIndex: atIndex + participant.nickname.length + 1,
+                        },
+                      ]);
+                    }}
+                  >
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        color: theme.inputArea.inputText[mode],
+                      }}
+                    >
+                      {participant.nickname}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        </AnimateChangeInHeight>
+
         <div
           style={{
             backgroundColor: theme.inputArea.background[mode],
@@ -802,10 +913,7 @@ export default function Chat({
               disabled={status !== "connected"}
               type="text"
               value={currentMessage}
-              onChange={(e) => {
-                setCurrentMessage(e.target.value);
-                onStartTyping();
-              }}
+              onChange={handleInputChange}
               placeholder="Type a message..."
               style={{
                 background: theme.inputArea.inputBackground[mode],

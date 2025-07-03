@@ -34,6 +34,7 @@ export interface Reaction {
   message_id: string;
   user_id: string;
   emoji: string | null;
+  nickname?: string;
 }
 
 interface BaseMessage {
@@ -55,11 +56,18 @@ export interface UserMessage extends BaseMessage {
   sender: string; // peerId
   replyingTo?: string;
   reactions?: Reaction[];
+  mentions?: Mention[];
   role?: string;
 }
 
 export type Message = UserMessage | SystemMessage;
 
+
+export interface Mention {
+  id: string;
+  startIndex: number;
+  endIndex: number;
+}
 
 export type PeerConnectionPacket<Content, T extends String> = {
   type: T;

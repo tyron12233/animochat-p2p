@@ -10,7 +10,7 @@ import { useLongPressHack } from "@/src/hooks/use-long-press-hack";
 import Image from "next/image";
 import { useState } from "react";
 import { PhotoView } from "react-photo-view";
-import { Message, User } from "@/src/lib/types"; // Updated to ChatThemeV2
+import { Mention, Message, User } from "@/src/lib/types"; // Updated to ChatThemeV2
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 import "./swipeable-message.css";
@@ -416,9 +416,9 @@ function AdminCssInjecion({
   className,
   isUserMessage,
   hasNext,
-  hasPrevious
+  hasPrevious,
 }: {
-  className: string,
+  className: string;
   isUserMessage: boolean;
   hasPrevious: boolean;
   hasNext: boolean;
@@ -503,6 +503,102 @@ function AdminCssInjecion({
   );
 }
 
+function renderContent(
+  sender: string,
+  currentUserId: string,
+  content: string,
+  mentions: Mention[] = [],
+  onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void,
+  linkColor?: string
+) {
+  // Sort so we slice in-order
+  const sorted = [...mentions].sort((a, b) => a.startIndex - b.startIndex);
+  const parts: React.ReactNode[] = [];
+  let last = 0;  
+
+  for (let i = 0; i < sorted.length; i++) {
+    const m = sorted[i];
+    // text before this mention
+    if (m.startIndex > last) {
+      parts.push(
+        <Linkify
+          key={`text-${i}`}
+          options={{
+            render: ({ attributes, content }) => (
+              <a
+                {...attributes}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "underline", color: linkColor }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLinkClick?.(e);
+                }}
+              >
+                {content}
+              </a>
+            ),
+          }}
+        >
+          {content.slice(last, m.startIndex)}
+        </Linkify>
+      );
+    }
+
+    // the mention itself
+    parts.push(
+      <a
+        key={`mention-${i}`}
+        className="font-semibold hover:underline"
+        style={{
+          // if the mention is the current user, we highlight
+            backgroundColor:
+            m.id === currentUserId
+              ? "rgba(0, 120, 255, 0.2)" // Light highlight for self-mentions
+              : "transparent",
+            textDecoration: "underline",
+          }}
+          onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        {content.slice(m.startIndex, m.endIndex)}
+      </a>
+    );
+
+    last = m.endIndex;
+  }
+
+  // any trailing text
+  if (last < content.length) {
+    parts.push(
+      <Linkify
+        key="text-end"
+        options={{
+          render: ({ attributes, content }) => (
+            <a
+              {...attributes}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", color: linkColor }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onLinkClick?.(e);
+              }}
+            >
+              {content}
+            </a>
+          ),
+        }}
+      >
+        {content.slice(last)}
+      </Linkify>
+    );
+  }
+
+  return parts;
+}
+
 function TextMessage({
   message,
   user,
@@ -532,12 +628,14 @@ function TextMessage({
 
   return (
     <>
-      {isAdmin && <AdminCssInjecion
-        className={className}
-        isUserMessage={isUserMessage}
-        hasPrevious={(message as any)?.hasPrevious ?? false}
-        hasNext={(message as any)?.hasNext ?? false}
-      />}
+      {isAdmin && (
+        <AdminCssInjecion
+          className={className}
+          isUserMessage={isUserMessage}
+          hasPrevious={(message as any)?.hasPrevious ?? false}
+          hasNext={(message as any)?.hasNext ?? false}
+        />
+      )}
 
       {isLargeEmojiMessage ? (
         <>
@@ -604,7 +702,16 @@ function TextMessage({
                       Message has been deleted.
                     </span>
                   ) : (
-                    message.content
+                    <p className="break-words whitespace-pre-wrap">
+                      {renderContent(
+                        message.sender,
+                        user.id,
+                        message.content,
+                        (message as any).mentions,
+                        onLinkClick,
+                        theme.linkColor[mode]
+                      )}
+                    </p>
                   )}
                 </Linkify>
               </p>

@@ -9,6 +9,7 @@ import type {
   Status,
   SystemMessage,
   UserMessage,
+  Mention,
 } from "../lib/types";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
@@ -166,11 +167,6 @@ export const useAnimochatV2 = (
     emoji: string | null,
     reactingUserId: string
   ) => {
-    console.log("Handling reaction:", {
-      messageId,
-      emoji,
-      userId: reactingUserId,
-    });
     setMessages((prevMessages) =>
       prevMessages.map((msg) => {
         if (msg.id !== messageId || msg.type === "system") return msg;
@@ -181,6 +177,10 @@ export const useAnimochatV2 = (
         );
         let newReactions: Reaction[];
 
+        let reactingUserNickname = participants.find(
+          (p) => p.userId === reactingUserId
+        )?.nickname || "Anonymous";
+
         if (existingReactionIndex > -1) {
           if (emoji) {
             // Replace existing reaction
@@ -189,6 +189,7 @@ export const useAnimochatV2 = (
               user_id: reactingUserId,
               emoji,
               message_id: messageId,
+              nickname: reactingUserNickname,
             };
           } else {
             // Remove the reaction
@@ -200,7 +201,7 @@ export const useAnimochatV2 = (
           // Add a new reaction
           newReactions = [
             ...reactions,
-            { user_id: reactingUserId, emoji, message_id: messageId },
+            { user_id: reactingUserId, emoji, message_id: messageId, nickname: reactingUserNickname },
           ];
         } else {
           // Do nothing
@@ -393,6 +394,10 @@ export const useAnimochatV2 = (
       // Optimistically update the UI for the local user immediately.
       handleReaction(messageId, emoji || null, userId);
 
+      const nickname = participants.find(
+        (p) => p.userId === userId
+      )?.nickname || "Anonymous";
+
       // Send the reaction packet to the server to be relayed to the other user.
       const packet: ReactionPacket = {
         type: "reaction",
@@ -401,11 +406,12 @@ export const useAnimochatV2 = (
           message_id: messageId,
           emoji: emoji || null,
           user_id: userId,
+          nickname: nickname,
         },
       };
       sendPacket(packet);
     },
-    [userId, sendPacket]
+    [userId, sendPacket, participants]
   );
 
   const editMessage = useCallback(
@@ -436,7 +442,7 @@ export const useAnimochatV2 = (
   );
 
   const sendMessage = useCallback(
-    (content: string, replyingToId?: string) => {
+    (content: string, replyingToId?: string, mentions?: Mention[]) => {
       if (!userId || !chatId) return;
 
       const stopTypingPacket: TypingPacket = {
@@ -454,6 +460,7 @@ export const useAnimochatV2 = (
         replyingTo: replyingToId,
         sender: userId,
         role: user?.role,
+        mentions: mentions || [],
       } as any;
 
       const packet: MessagePacket = {

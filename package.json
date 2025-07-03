@@ -30,6 +30,7 @@
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.0.0",
     "react-linkify": "^1.0.0-alpha",
+    "react-mentions": "^4.4.10",
     "react-photo-view": "^1.2.7",
     "react-tooltip": "^5.29.1",
     "recharts": "^3.0.0",
@@ -47,6 +48,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-linkify": "^1.0.4",
+    "@types/react-mentions": "^4.4.1",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.4",
     "typescript": "^5"

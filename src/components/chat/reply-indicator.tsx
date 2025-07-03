@@ -1,5 +1,6 @@
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { Message } from "@/src/lib/types"; // Assuming types are in this path
+import { LucideReply, Reply } from "lucide-react";
 import Image from "next/image";
 
 /*
@@ -54,8 +55,19 @@ export default function ReplyIndicator({
     );
   }
 
+  const topMessage = `${isUserMessage ? "You replied" : "Replying"} to ${message.senderNickname}`
+
   return (
     <>
+      <div 
+        className={`flex ${isUserMessage ? "flex-row" : "flex-row-reverse"} items-center`}
+        style={{
+          color: theme.overlays.replyingPreview.description[mode],
+        }}
+      >
+        <Reply width={16} height={16} className="mx-1" />
+        <p className="text-xs my-1">{topMessage}</p>
+      </div>
       <div
         className="rounded-tl-3xl rounded-tr-3xl rounded-b-3xl px-3 pt-2 text-sm opacity-[0.65] pb-[32px] -mb-[32px] -z-10"
         style={{
