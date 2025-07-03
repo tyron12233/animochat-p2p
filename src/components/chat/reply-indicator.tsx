@@ -62,7 +62,7 @@ export default function ReplyIndicator({
       <div 
         className={`mx-2 flex ${isUserMessage ? "flex-row" : "flex-row-reverse"} items-center`}
         style={{
-          color: theme.overlays.replyingPreview.description[mode],
+          color: theme.secondaryText[mode],
         }}
       >
         <Reply width={16} height={16} className="mx-1" />
