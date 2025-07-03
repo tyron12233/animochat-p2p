@@ -258,8 +258,12 @@ export const useAnimochatV2 = (
     (messageId: string) => {
       if (!userId || !chatId) return;
 
-      // Optimistically update the UI to remove the message.
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+      // Optimistically update the UI to remove the message. (set type to deleted)
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, type: "deleted" } : msg
+        )
+      );
 
       const packet: DeleteMessagePacket = {
         type: "message_delete",

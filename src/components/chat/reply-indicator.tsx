@@ -55,7 +55,7 @@ export default function ReplyIndicator({
     );
   }
 
-  const topMessage = `${isUserMessage ? "You replied" : "Replying"} to ${message.senderNickname}`
+  let topMessage = `${isUserMessage ? "You replied" : `${message.senderNickname} replied`} to ${message.senderNickname}`
 
   return (
     <>
