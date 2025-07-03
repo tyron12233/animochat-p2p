@@ -168,7 +168,7 @@ export default function MessageBubble({
           scale: replyIconScale,
         }}
       >
-        <Reply className="w-4 h-4" style={{ color: theme.accent.main[mode] }} />
+        <Reply className="w-4 h-4" style={{ color: theme.message.strangerMessage.text[mode] }} />
       </motion.div>
 
       {!error && isUserMessage && (
@@ -262,7 +262,8 @@ export default function MessageBubble({
 
         {message.replyingTo && (
           <ReplyIndicator
-            message={message.replyingTo}
+            message={message}
+            replyingMessage={message.replyingTo}
             isUserMessage={isUserMessage}
             theme={theme}
             mode={mode}

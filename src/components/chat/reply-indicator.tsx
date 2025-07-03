@@ -30,7 +30,8 @@ interface ChatThemeV2 {
 
 /* ReplyIndicator Component */
 interface ReplyIndicatorProps {
-  message: any; // Consider creating a more specific type for replied messages
+  replyingMessage: any; 
+  message: any,
   isUserMessage: boolean;
   theme: ChatThemeV2;
   mode: "light" | "dark";
@@ -38,16 +39,18 @@ interface ReplyIndicatorProps {
 
 export default function ReplyIndicator({
   message,
+  replyingMessage,
   isUserMessage,
   theme,
   mode,
 }: ReplyIndicatorProps) {
-  if (!message) return null;
+  if (!replyingMessage) return null;
 
-  if (message.type === "image") {
+  if (replyingMessage.type === "image") {
     return (
       <ReplyIndicatorImage
         message={message}
+        replyingMessage={replyingMessage}
         isUserMessage={isUserMessage}
         theme={theme}
         mode={mode}
@@ -55,7 +58,7 @@ export default function ReplyIndicator({
     );
   }
 
-  let topMessage = `${isUserMessage ? "You replied" : `${message.senderNickname} replied`} to ${message.senderNickname}`
+  let topMessage = `${isUserMessage ? "You replied" : `${message.senderNickname} replied`} to ${replyingMessage.senderNickname}`
 
   return (
     <>
@@ -77,7 +80,7 @@ export default function ReplyIndicator({
         }}
       >
         <p className="break-words whitespace-pre-wrap">
-          {message.type === "deleted" ? "Deleted message." : message.content}
+          {replyingMessage.type === "deleted" ? "Deleted message." : replyingMessage.content}
         </p>
       </div>
     </>
@@ -86,6 +89,7 @@ export default function ReplyIndicator({
 
 function ReplyIndicatorImage({
   message,
+  replyingMessage,
   isUserMessage,
   theme,
   mode,
@@ -97,7 +101,7 @@ function ReplyIndicatorImage({
       style={{ backgroundColor: theme.general.background[mode] }}
     >
       <Image
-        src={message.content}
+        src={replyingMessage.content}
         alt="Reply image"
         className="object-contain"
         width={80}

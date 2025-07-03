@@ -61,7 +61,7 @@ export default function ChatMessageItem({
   const isAdvertisement = index % 5 === 0;
   const advertisementMessageId = isAdvertisement ? message.id : null;
   const showName =
-    ((message as any)?.senderNickname && (message as any)?.showName) && message.sender !== user.id && message.replyingTo === null;
+    ((message as any)?.senderNickname && (message as any)?.showName) && message.sender !== user.id && (message.replyingTo === null || message.replyingTo === undefined);
   let name = null;
   if (showName) {
     name = message.senderNickname;
