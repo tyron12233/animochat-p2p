@@ -5,6 +5,7 @@ import { User, Message } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { defaultTheme } from "@/src/lib/default-chat-themes";
 import { Participant } from "@/src/hooks/useAnimochat";
+import { formatMessageTime } from "@/src/lib/date-utils";
 
 interface ChatMessageItemProps {
   participants: Participant[]
@@ -82,7 +83,7 @@ export default function ChatMessageItem({
             }}
           >
             {message.created_at &&
-              format(new Date(message.created_at), "h:mm a")}
+              formatMessageTime(message.created_at)}
           </p>
         </div>
       )}
