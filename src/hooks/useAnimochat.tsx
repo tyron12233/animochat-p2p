@@ -165,7 +165,8 @@ export const useAnimochatV2 = (
   const handleReaction = (
     messageId: string,
     emoji: string | null,
-    reactingUserId: string
+    reactingUserId: string,
+    reactingUserNickname: string = "Anonymous"
   ) => {
     setMessages((prevMessages) =>
       prevMessages.map((msg) => {
@@ -176,10 +177,6 @@ export const useAnimochatV2 = (
           (r) => r.user_id === reactingUserId
         );
         let newReactions: Reaction[];
-
-        let reactingUserNickname = participants.find(
-          (p) => p.userId === reactingUserId
-        )?.nickname || "Anonymous";
 
         if (existingReactionIndex > -1) {
           if (emoji) {
@@ -825,8 +822,8 @@ export const useAnimochatV2 = (
               setMessages((prev) => [...prev, jsonPacket.content]);
               break;
             case "reaction":
-              const { message_id, emoji, user_id } = jsonPacket.content;
-              handleReaction(message_id, emoji, user_id);
+              const { message_id, emoji, user_id, nickname } = jsonPacket.content as Reaction;
+              handleReaction(message_id, emoji, user_id, nickname);
               break;
             case "typing":
               const isTyping = jsonPacket.content as boolean;
