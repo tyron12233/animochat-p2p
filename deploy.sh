@@ -22,6 +22,23 @@ for item in "${FILES_TO_KEEP[@]}"; do
   prune_paths+=(-o -name "$item")
 done
 
+
+echo "Building the p2p project..."
+cd "$P2P_REPO_PATH"
+bun run build
+echo "p2p project built successfully."
+
+
+# --- 4. Get the latest commit message from the p2p repo ---
+echo "Fetching the latest commit message from the p2p repository..."
+cd "$P2P_REPO_PATH"
+COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+echo "Latest commit message: $COMMIT_MESSAGE"
+
+cd "$TURN_SERVER_REPO_PATH"
+
+git checkout pages
+
 # The final find command will:
 # 1. Look for the files/dirs to keep and -prune them (don't traverse into them).
 # 2. For everything else (-o), delete it.
@@ -32,28 +49,16 @@ fi
 
 echo "TURN server repository cleaned."
 
-# --- 2. Build the p2p project ---
-echo "Building the p2p project..."
-cd "$P2P_REPO_PATH"
-bun run build
-echo "p2p project built successfully."
 
-# --- 3. Move the build files ---
+
 echo "Moving build files to the TURN server repository..."
 # The trailing slash on the source path ensures the contents are moved.
 mv "$P2P_REPO_PATH/dist/"* "$TURN_SERVER_REPO_PATH/"
 echo "Build files moved."
 
-# --- 4. Get the latest commit message from the p2p repo ---
-echo "Fetching the latest commit message from the p2p repository..."
-cd "$P2P_REPO_PATH"
-COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-echo "Latest commit message: $COMMIT_MESSAGE"
 
-# --- 5. Commit and push to the TURN server repo ---
-echo "Committing and pushing changes to the TURN server repository..."
-cd "$TURN_SERVER_REPO_PATH"
-git checkout pages
+
+
 git add .
 git commit -m "$COMMIT_MESSAGE"
 git push

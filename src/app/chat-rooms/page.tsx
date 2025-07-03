@@ -20,11 +20,13 @@ import {
   ChevronRight,
   Hash,
   Circle,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import GroupChat from "@/src/components/group-chat/group-chat";
 import { ChatThemeProvider } from "@/src/context/theme-context";
 import { AuthProvider, useAuth } from "@/src/context/auth-context";
+import { Message } from "@/src/lib/types";
 
 // --- START: Enhanced Components ---
 
@@ -55,6 +57,7 @@ export interface ChatRoom {
   max_participants: number;
   name: string;
   serverUrl: string;
+  recent_message?: Message;
 }
 
 // --- CONSTANTS ---
@@ -215,7 +218,6 @@ const RoomListItem = ({
               </div>
             </div>
           </div>
-
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-1">
               <Users size={12} />
@@ -237,6 +239,14 @@ const RoomListItem = ({
                 {Math.round(occupancyRate * 100)}%
               </span>
             </div>
+          </div>
+
+          <div className="text-sm text-gray-500 gap-4 mt-2">
+           {room.recent_message && (
+              <span>
+                <b>{(room.recent_message as any)?.senderNickname ?? "Someone"}</b>: {room.recent_message.content}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -524,14 +534,19 @@ function ChatRooms() {
         error={createRoomError}
       />
 
-      {/* Simple Background */}
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto p-6">
-          {/* Compact Header */}
-          {/* --- RESPONSIVE HEADER --- */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             {/* Left Side: Title and Room Count */}
             <div className="flex items-center gap-3">
+              <Button 
+                variant={"ghost"}
+                onClick={(() => {
+                    window?.history?.back()
+                })}
+              >
+                <ArrowLeft />
+              </Button>
               <div className="flex-shrink-0 w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
                 <MessageCircle className="text-white w-5 h-5" />
               </div>
