@@ -7,6 +7,7 @@ import { Message, User } from "../lib/types";
 import { AnimateChangeInHeight } from "../lib/animate-height-change";
 import ChatMessageItem from "./chat/chat-message-item";
 import { Circle, CircleIcon } from "lucide-react";
+import { AuthUser } from "../context/auth-context";
 
 interface ThemePickerDialogProps {
   isOpen: boolean;
@@ -25,9 +26,11 @@ const ThemePreview = ({
   mode: "light" | "dark";
 }) => {
   const isEmojiMenuOpen = useRef(false);
-  const user: User = {
-    id: "me",
-  };
+  const user: AuthUser = {
+    id: "1",
+    is_anonymous: true,
+    role: "authenticated",
+  }
   const previewMessages: Message[] = [
     {
       id: "1",

@@ -70,7 +70,7 @@ export interface UserMessage extends BaseMessage {
 export interface VoiceMessage extends BaseMessage {
   type: "voice_message";
   content: string;
-  voice_content: Blob;
+  voice_content: Blob | null;
   sender: string;
   replyingTo?: string;
   reactions?: Reaction[];

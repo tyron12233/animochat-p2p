@@ -60,16 +60,14 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
   // Effect for handling audio source and events
   useEffect(() => {
     let audioUrl = "";
-    const isBlob = message.voice_content instanceof Blob;
-
-    if (isBlob) {
-      audioUrl = URL.createObjectURL(message.voice_content);
-    } else if (typeof message.voice_content === "string") {
-      audioUrl = message.voice_content;
+    
+    if (message.content) {
+      // base64 encoded string
+        audioUrl = `${message.content}`;
     } else {
       console.error(
         "Unsupported message content type for audio:",
-        typeof message.voice_content
+        typeof message.content
       );
       return;
     }
@@ -103,12 +101,9 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
       audio.removeEventListener("loadedmetadata", setAudioData);
       audio.removeEventListener("timeupdate", updateProgress);
       audio.removeEventListener("ended", handlePlaybackEnd);
-      if (isBlob) {
-        URL.revokeObjectURL(audioUrl);
-      }
       audioRef.current = null;
     };
-  }, [message.voice_content]);
+  }, [message.content]);
 
   // Effect for controlling play/pause
   useEffect(() => {

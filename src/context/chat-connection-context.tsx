@@ -250,12 +250,21 @@ export const ChatConnectionProvider = ({
     async (audioBlob: Blob) => {
       if (!userId || !chatId) return;
 
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      await new Promise((resolve) => {
+        console.log("Reading audio blob as base64...");
+        reader.onloadend = resolve;
+      });
+
+      const audioBase64 = reader.result as string;
+
       const message: VoiceMessage = {
         id: `msg_${Date.now()}`,
         session_id: chatId,
         created_at: new Date().toISOString(),
-        content: "voice message",
-        voice_content: audioBlob,
+        content: audioBase64,
+        voice_content: null,
         type: "voice_message",
         sender: userId,
         role: user?.role,
