@@ -110,6 +110,12 @@ export function useActualMessages(messages: Message[], isGroupChat = false): Mes
              }
         }
 
+        if (previous && previous.reactions && previous.reactions.length > 0) {
+            // If the previous message has reactions, it shouldn't visually connect to the current message
+            current.hasPrevious = false;
+            previous.hasNext = false; // Ensure the previous message doesn't think it has a next message from the same sender
+        }
+
         // 4. Reply Break (Previous): If current is a reply, break connection with the previous message.
         if (current.replyingTo && previous) {
             current.hasPrevious = false;
