@@ -14,6 +14,7 @@ import type {
   UserMessage,
   Mention,
   SystemMessage,
+  VoiceMessage,
 } from "../lib/types";
 import { useSession } from "./session-context";
 import { useChatTheme } from "./chat-theme-context";
@@ -27,6 +28,7 @@ import {
   TypingPacket,
   ChangeThemePacket,
   ParticipantJoinedPacket,
+  VoiceMessagePacket,
 } from "../lib/packets";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { defaultTheme } from "../lib/default-chat-themes";
@@ -37,6 +39,7 @@ interface ChatConnectionContextState {
   messages: Message[];
   participants: Participant[];
   typingUsers: string[];
+  sendVoiceMessage: (audioBlob: Blob) => Promise<void>;
   sendMessage: (
     content: string,
     replyingToId?: string,
@@ -101,7 +104,7 @@ export const ChatConnectionProvider = ({
   useEffect(() => {
     // @ts-ignore
     window.sendPacket = sendPacket;
-  }, [])
+  }, []);
 
   // Reaction handler
   const handleReaction = useCallback(
@@ -241,6 +244,34 @@ export const ChatConnectionProvider = ({
       sendPacket(packet);
     },
     [userId, sendPacket]
+  );
+
+  const sendVoiceMessage = useCallback(
+    async (audioBlob: Blob) => {
+      if (!userId || !chatId) return;
+
+      const message: VoiceMessage = {
+        id: `msg_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        content: "voice message",
+        voice_content: audioBlob,
+        type: "voice_message",
+        sender: userId,
+        role: user?.role,
+        reactions: [],
+      };
+
+      const packet: VoiceMessagePacket = {
+        type: "voice_message",
+        content: message,
+        sender: userId,
+      };
+
+      sendPacket(packet);
+      setMessages((prev) => [...prev, message]);
+    },
+    [userId, chatId, sendPacket, user]
   );
 
   const sendMessage = useCallback(
@@ -389,8 +420,6 @@ export const ChatConnectionProvider = ({
     ) => {
       if (wsRef.current || !userId) return;
 
-     
-
       let url = chatServerUrl.endsWith("/")
         ? chatServerUrl.slice(0, -1)
         : chatServerUrl;
@@ -457,6 +486,14 @@ export const ChatConnectionProvider = ({
                   msg.id === packet.content ? { ...msg, type: "deleted" } : msg
                 )
               );
+              break;
+            case "voice_message":
+              const voiceMessagePacket: VoiceMessagePacket = packet;
+              const voiceMessage: VoiceMessage = {
+                ...voiceMessagePacket.content,
+                reactions: [],
+              };
+              setMessages((prev) => [...prev, voiceMessage]);
               break;
             case "change_nickname":
               const { userId: changedUserId, newNickname } =
@@ -698,6 +735,7 @@ export const ChatConnectionProvider = ({
         participants,
         typingUsers,
         sendMessage,
+        sendVoiceMessage,
         editMessage,
         onDeleteMessage,
         onReact,

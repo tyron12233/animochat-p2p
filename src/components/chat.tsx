@@ -10,6 +10,7 @@ import {
   Mention,
   Message,
   UserMessage,
+  VoiceMessage,
   type User,
 } from "../lib/types";
 import ChatMessageItem, { bumbleTheme } from "./chat/chat-message-item";
@@ -42,6 +43,7 @@ import EditNicknameDialog from "./group-chat/edit-nickname-dialog";
 import { OnlineUsers, UserListModal } from "./chat/online-users";
 import { AuthUser, useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
+import { ChatInputBar } from "./chat/chat-input-bar";
 
 interface ChatProps {
   name: string;
@@ -107,6 +109,7 @@ export default function Chat({
     session: { status, setScreen },
     chat: {
       messages,
+      sendVoiceMessage,
       participants,
       typingUsers,
       sendMessage,
@@ -200,7 +203,7 @@ export default function Chat({
 
   const [emojiMenuState, setEmojiMenuState] = useState<{
     open: boolean;
-    message?: UserMessage | null;
+    message?: UserMessage | VoiceMessage | null;
     messageDiv?: HTMLDivElement | null;
   }>({ open: false });
 
@@ -211,7 +214,7 @@ export default function Chat({
     description: string;
   } | null>(null);
 
-  const onOpenEmojiMenu = (message: UserMessage | null) => {
+  const onOpenEmojiMenu = (message: UserMessage | VoiceMessage | null) => {
     if (!message) {
       setEmojiMenuState({ open: false });
       return;
@@ -934,46 +937,23 @@ export default function Chat({
           </AnimateChangeInHeight>
         )}
 
-        <div
-          style={{
-            backgroundColor: theme.inputArea.background[mode],
-            borderColor: theme.inputArea.border[mode],
+        <ChatInputBar 
+          theme={theme}
+          mode={mode}
+          currentMessage={currentMessage}
+          setCurrentMessage={setCurrentMessage}
+          currentMentions={currentMentions}
+          setCurrentMentions={setCurrentMentions}
+          onSendMessage={handleSend}
+          onSendVoiceMessage={(blob) => {
+            sendVoiceMessage(blob)
           }}
-          className="p-4 border-t shrink-0"
-        >
-          <form onSubmit={handleSend} className="flex space-x-3">
-            <input
-              id="chat-input"
-              disabled={status !== "connected"}
-              type="text"
-              value={currentMessage}
-              onChange={handleInputChange}
-              placeholder="Type a message..."
-              style={{
-                background: theme.inputArea.inputBackground[mode],
-                color: theme.inputArea.inputText[mode],
-                borderColor: theme.inputArea.border[mode],
-              }}
-              className="text-[16px] flex-grow p-3 border rounded-full"
-              autoComplete="off"
-              required
-            />
-            <Button
-              id="send-button"
-              type="submit"
-              disabled={!currentMessage.trim() || status !== "connected"}
-              style={{
-                background: theme.buttons.primary.background[mode],
-                color: theme.buttons.primary.text[mode],
-                opacity:
-                  !currentMessage.trim() || status !== "connected" ? 0.5 : 1,
-              }}
-              className="font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors"
-            >
-              <SendHorizonal size={20} />
-            </Button>
-          </form>
-        </div>
+          groupChat={groupChat}
+          status={status}
+          onStartTyping={onStartTyping}
+          participants={participants}
+          bottomMessagePreviewState={bottomMessagePreviewState}
+        />
       </div>
     </>
   );

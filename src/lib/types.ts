@@ -67,7 +67,17 @@ export interface UserMessage extends BaseMessage {
   role?: string;
 }
 
-export type Message = UserMessage | SystemMessage;
+export interface VoiceMessage extends BaseMessage {
+  type: "voice_message";
+  content: string;
+  voice_content: Blob;
+  sender: string;
+  replyingTo?: string;
+  reactions?: Reaction[];
+  role?: string;
+}
+
+export type Message = UserMessage | SystemMessage | VoiceMessage;
 
 
 export interface Mention {

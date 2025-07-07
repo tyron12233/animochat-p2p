@@ -14,6 +14,7 @@ import { Mention, Message, User } from "@/src/lib/types"; // Updated to ChatThem
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 import "./swipeable-message.css";
+import VoiceMessage from "./voice-message-bubble";
 /*
 This component now expects a `theme` prop that matches the `ChatThemeV2` interface, 
 which is aligned with the main chat component's theme structure. It also requires a `mode` prop ('light' | 'dark').
@@ -168,7 +169,10 @@ export default function MessageBubble({
           scale: replyIconScale,
         }}
       >
-        <Reply className="w-4 h-4" style={{ color: theme.message.strangerMessage.text[mode] }} />
+        <Reply
+          className="w-4 h-4"
+          style={{ color: theme.message.strangerMessage.text[mode] }}
+        />
       </motion.div>
 
       {!error && isUserMessage && (
@@ -221,7 +225,6 @@ export default function MessageBubble({
         dragConstraints={{ left: 0, right: 0 }}
         onDrag={handlePan}
         onDragEnd={handlePanEnd}
-        whileTap={{ scale: 0.8 }}
         style={{
           x,
           originX: isUserMessage ? 1 : 0,
@@ -283,6 +286,16 @@ export default function MessageBubble({
             roundedCorners={roundedCorners}
             isLargeEmojiMessage={isLargeEmojiMessage}
             onLinkClick={onLinkClick}
+          />
+        )}
+
+        {message.type === "voice_message" && (
+          <VoiceMessage
+            message={message}
+            theme={theme}
+            mode={mode}
+            isUserMessage={isUserMessage}
+            roundedCorners={roundedCorners}
           />
         )}
 
@@ -515,7 +528,7 @@ function renderContent(
   // Sort so we slice in-order
   const sorted = [...mentions].sort((a, b) => a.startIndex - b.startIndex);
   const parts: React.ReactNode[] = [];
-  let last = 0;  
+  let last = 0;
 
   for (let i = 0; i < sorted.length; i++) {
     const m = sorted[i];
@@ -553,13 +566,13 @@ function renderContent(
         className="font-semibold hover:underline"
         style={{
           // if the mention is the current user, we highlight
-            backgroundColor:
+          backgroundColor:
             m.id === currentUserId
               ? "rgba(0, 120, 255, 0.2)" // Light highlight for self-mentions
               : "transparent",
-            textDecoration: "underline",
-          }}
-          onClick={(e) => {
+          textDecoration: "underline",
+        }}
+        onClick={(e) => {
           e.stopPropagation();
         }}
       >

@@ -1,5 +1,5 @@
 import { ChatThemeV2 } from "./chat-theme";
-import { Participant, UserMessage, Reaction } from "./types";
+import { Participant, UserMessage, Reaction, VoiceMessage } from "./types";
 
 export type Packet<T, K extends string> = {
   type: K;
@@ -22,6 +22,7 @@ export type ParticipantJoinedPacket = Packet<Participant, "user_joined">;
 
 export type DeleteMessagePacket = Packet<string, "message_delete">;
 export type MessagePacket = Packet<UserMessage, "message">;
+export type VoiceMessagePacket = Packet<VoiceMessage, "voice_message">;
 export type ReactionPacket = Packet<Reaction, "reaction">;
 export type TypingPacket = Packet<boolean, "typing">;
 export type EditMessagePacket = Packet<

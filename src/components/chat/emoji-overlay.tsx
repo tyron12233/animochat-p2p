@@ -1,13 +1,13 @@
 import { AnimatePresence, motion } from "motion/react";
 import EmojiMenu from "./emoji-menu";
 import ContextMenu from "./context-menu";
-import { DEFAULT_THEME, Message, User, UserMessage } from "@/src/lib/types";
+import { DEFAULT_THEME, Message, User, UserMessage, VoiceMessage } from "@/src/lib/types";
 import { defaultTheme } from "@/src/lib/default-chat-themes";
 import { AuthUser } from "@/src/context/auth-context";
 
 interface EmojiOverlayProps {
   open: boolean;
-  message: UserMessage;
+  message: UserMessage | VoiceMessage;
   messageDiv: HTMLDivElement;
   user: AuthUser;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
