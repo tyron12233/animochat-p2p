@@ -60,6 +60,7 @@ interface ChatConnectionContextState {
   connectToExistingSession: (session: ChatSessionData) => void;
   disconnect: (isGroupChat?: boolean) => void;
   onStartTyping: () => void;
+  resetState: () => void;
 }
 
 const ChatConnectionContext = createContext<
@@ -272,7 +273,7 @@ export const ChatConnectionProvider = ({
       };
 
       const packet: VoiceMessagePacket = {
-        type: "voice_message",
+        type: "message",
         content: message,
         sender: userId,
       };
@@ -754,6 +755,11 @@ export const ChatConnectionProvider = ({
         disconnect,
         onStartTyping,
         connectToExistingSession,
+        resetState: () => {
+            setMessages([]);
+            setParticipants([]);
+            setTypingUsers([]);
+        }
       }}
     >
       {children}

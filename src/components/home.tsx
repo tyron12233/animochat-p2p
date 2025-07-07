@@ -86,7 +86,7 @@ export default function Home() {
                 setScreen("matchmaking");
               }}
               newChat={() => {
-                handleFindMatch(interests);
+                startMatchmaking(Array.from(interests));
               }}
             />
           </motion.div>

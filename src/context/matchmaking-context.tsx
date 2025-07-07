@@ -32,12 +32,13 @@ export const MatchmakingProvider = ({
   const eventSourceRef = useRef<EventSource | null>(null);
   const randomMatchmakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { setScreen, setStatus, setChatId } = useSession();
-  const { connectToChat } = useChatConnection();
+  const { connectToChat, resetState } = useChatConnection();
   const { setTheme, setMode } = useChatTheme();
   const userId = user?.id ?? "";
 
   const startMatchmaking = useCallback(
     (interests: string[], showRandom = false) => {
+      resetState();
       if (randomMatchmakingTimeoutRef.current) {
         clearTimeout(randomMatchmakingTimeoutRef.current);
       }
