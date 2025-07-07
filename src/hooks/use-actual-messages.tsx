@@ -126,11 +126,11 @@ export function useActualMessages(messages: Message[], isGroupChat = false): Mes
              }
         }
 
-        // if the previous message is reply, it should not be connected to the current message
-        if (previous && previous.replyingTo) {
-            current.hasPrevious = false;
-            previous.hasNext = false; // Modify the actual previous message object
-        }
+        // // if the previous message is reply, it should not be connected to the current message
+        // if (previous && previous.replyingTo) {
+        //     current.hasPrevious = false;
+        //     previous.hasNext = false; // Modify the actual previous message object
+        // }
 
         // 6. System/Typing Break: If the *next* message is system or typing, the current message shouldn't link forward.
         // (This prevents chaining a user message visually into a system message).
