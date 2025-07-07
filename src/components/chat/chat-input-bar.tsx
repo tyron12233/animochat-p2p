@@ -26,8 +26,8 @@ interface ChatInputBarProps {
     message: Message;
   } | null;
   currentMessage: string;
-  setCurrentMessage: (message: string) => void;
   currentMentions: Mention[];
+  handleInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setCurrentMentions: (mentions: Mention[]) => void;
 }
 
@@ -35,11 +35,11 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   status,
   theme,
   mode,
+  handleInputChange,
   onSendMessage,
   onSendVoiceMessage,
   onStartTyping,
   currentMessage,
-  setCurrentMessage,
   bottomMessagePreviewState,
   currentMentions,
 }) => {
@@ -48,11 +48,6 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentMessage(e.target.value);
-    onStartTyping();
-  };
 
 
   const startRecording = async () => {

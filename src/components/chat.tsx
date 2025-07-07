@@ -941,7 +941,7 @@ export default function Chat({
           theme={theme}
           mode={mode}
           currentMessage={currentMessage}
-          setCurrentMessage={setCurrentMessage}
+          handleInputChange={handleInputChange}
           currentMentions={currentMentions}
           setCurrentMentions={setCurrentMentions}
           onSendMessage={handleSend}
