@@ -118,20 +118,6 @@ export function useActualMessages(messages: Message[], isGroupChat = false): Mes
              }
         }
 
-        // 5. Reply Break (Next): If current is a reply, break connection with the next message.
-         if (current.replyingTo && next) {
-            current.hasNext = false;
-             if (next.sender === current.sender) {
-                 next.hasPrevious = false;
-             }
-        }
-
-        // // if the previous message is reply, it should not be connected to the current message
-        // if (previous && previous.replyingTo) {
-        //     current.hasPrevious = false;
-        //     previous.hasNext = false; // Modify the actual previous message object
-        // }
-
         // 6. System/Typing Break: If the *next* message is system or typing, the current message shouldn't link forward.
         // (This prevents chaining a user message visually into a system message).
         let effectiveNext = processedMessages[i + 1];

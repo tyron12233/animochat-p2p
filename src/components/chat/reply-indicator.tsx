@@ -80,7 +80,7 @@ export default function ReplyIndicator({
         }}
       >
         <p className="break-words whitespace-pre-wrap">
-          {replyingMessage.type === "deleted" ? "Deleted message." : replyingMessage.content}
+          {replyingMessage.type === "deleted" ? "Deleted message." : replyingMessage.type === "voice_message" ? "Voice message." : replyingMessage.content}
         </p>
       </div>
     </>

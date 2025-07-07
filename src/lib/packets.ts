@@ -22,7 +22,7 @@ export type ParticipantJoinedPacket = Packet<Participant, "user_joined">;
 
 export type DeleteMessagePacket = Packet<string, "message_delete">;
 export type MessagePacket = Packet<UserMessage, "message">;
-export type VoiceMessagePacket = Packet<VoiceMessage, "voice_message">;
+export type VoiceMessagePacket = Packet<VoiceMessage, "message">;
 export type ReactionPacket = Packet<Reaction, "reaction">;
 export type TypingPacket = Packet<boolean, "typing">;
 export type EditMessagePacket = Packet<

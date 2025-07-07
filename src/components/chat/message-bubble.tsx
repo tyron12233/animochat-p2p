@@ -291,7 +291,7 @@ export default function MessageBubble({
 
         {message.type === "voice_message" && (
           <VoiceMessage
-            message={message}
+            message={message as any}
             theme={theme}
             mode={mode}
             isUserMessage={isUserMessage}
