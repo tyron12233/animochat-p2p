@@ -5,6 +5,7 @@ import useUserId from "@/src/hooks/use-user-id";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/src/context/auth-context";
+import { useAnimoChat } from "@/src/hooks/use-animochat";
 
 interface GrouupChatProps {
   room: ChatRoom;
@@ -14,27 +15,13 @@ interface GrouupChatProps {
 export default function GroupChat({ room, onLeave }: GrouupChatProps) {
   const { user, session } = useAuth();
 
-  const {
-    connectToExistingSession,
-    messages,
-    disconnect,
-    onDeleteMessage,
-    typingUsers,
-    sendMessage,
-    participants,
-    onChangeNickname,
-    onReact,
-    status,
-    onStartTyping,
-    onChangeTheme,
-    editMessage,
-  } = useAnimochatV2(session, user, true);
+  const { chat,  } = useAnimoChat();
 
   useEffect(() => {
     if (!user || !room) {
       return;
     }
-    connectToExistingSession({
+    chat.connectToExistingSession({
       chatId: room.id,
       chatServerUrl: room.serverUrl,
     });
@@ -42,34 +29,10 @@ export default function GroupChat({ room, onLeave }: GrouupChatProps) {
 
   return (
     <>
-      <Chat
-        participants={participants}
-        name={room.name}
-        groupChat={true}
-        messages={messages}
-        onEditNickname={onChangeNickname}
-        sendMessage={sendMessage}
-        onReact={onReact}
-        goBack={() => {
-          onLeave();
-          disconnect(true);
-        }}
-        onDeleteMessage={onDeleteMessage}
-        endChat={() => {}}
-        onStartTyping={onStartTyping}
-        userId={user!.id}
-        cancelMatchmaking={() => {
-          onLeave();
-          disconnect(true);
-        }}
-        onEditMessage={editMessage}
-        onChangeTheme={onChangeTheme}
-        newChat={() => {
-          // NO-OP
-        }}
-        typingUsers={typingUsers}
-        status={status}
-      />
+      <Chat groupChat={true} name={room.name} onBack={() => {
+        chat.disconnect();
+        onLeave();
+      }} />
     </>
   );
 }

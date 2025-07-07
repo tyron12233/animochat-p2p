@@ -1,4 +1,4 @@
-import { Participant } from "@/src/hooks/useAnimochat";
+import { Participant } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { Users, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";

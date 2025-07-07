@@ -27,6 +27,7 @@ import GroupChat from "@/src/components/group-chat/group-chat";
 import { ChatThemeProvider } from "@/src/context/theme-context";
 import { AuthProvider, useAuth } from "@/src/context/auth-context";
 import { Message } from "@/src/lib/types";
+import { AnimoChatProvider } from "@/src/provider/animochat-provider";
 
 // --- START: Enhanced Components ---
 
@@ -242,9 +243,12 @@ const RoomListItem = ({
           </div>
 
           <div className="text-sm text-gray-500 gap-4 mt-2">
-           {room.recent_message && (
+            {room.recent_message && (
               <span>
-                <b>{(room.recent_message as any)?.senderNickname ?? "Someone"}</b>: {room.recent_message.content}
+                <b>
+                  {(room.recent_message as any)?.senderNickname ?? "Someone"}
+                </b>
+                : {room.recent_message.content}
               </span>
             )}
           </div>
@@ -292,9 +296,20 @@ export default function Page() {
   return (
     <AuthProvider>
       <AuthComponent>
-        <ChatRooms />
+        <AuthenticatedPage />
       </AuthComponent>
     </AuthProvider>
+  );
+}
+
+function AuthenticatedPage() {
+  const { user } = useAuth();
+  return (
+    <>
+      <AnimoChatProvider isGroupChat={true} user={user}>
+        <ChatRooms />
+      </AnimoChatProvider>
+    </>
   );
 }
 
@@ -423,9 +438,10 @@ function ChatRooms() {
         : server.url;
       const response = await fetch(`${baseUrl}/create-room`, {
         method: "POST",
-        headers: { "Content-Type": "application/json",
+        headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token || ""}`,
-         },
+        },
         body: JSON.stringify({ name, maxParticipants }),
       });
 
@@ -539,11 +555,11 @@ function ChatRooms() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             {/* Left Side: Title and Room Count */}
             <div className="flex items-center gap-3">
-              <Button 
+              <Button
                 variant={"ghost"}
-                onClick={(() => {
-                    window?.history?.back()
-                })}
+                onClick={() => {
+                  window?.history?.back();
+                }}
               >
                 <ArrowLeft />
               </Button>

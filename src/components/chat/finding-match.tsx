@@ -47,12 +47,13 @@ const Particle = ({ a, d, color }: ParticleProps) => {
 // Main animation component props
 interface FindingMatchAnimationProps {
     theme: ChatThemeV2;
+    isGroupChat?: boolean;
     mode: 'light' | 'dark';
     onCancel: () => void; // Added cancel handler prop
 }
 
 // Main animation component with enter and exit animations
-export const FindingMatchAnimation: React.FC<FindingMatchAnimationProps> = ({ theme, mode, onCancel }) => {
+export const FindingMatchAnimation: React.FC<FindingMatchAnimationProps> = ({ theme, mode, onCancel, isGroupChat }) => {
   // Create an array for the radar pulses
   const pulses = [0, 1, 2];
   
@@ -161,7 +162,7 @@ export const FindingMatchAnimation: React.FC<FindingMatchAnimationProps> = ({ th
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
       >
-        Finding a match...
+        {isGroupChat ? "Connecting to group chat..." : "Finding a match..."}
       </motion.p>
 
       <motion.button

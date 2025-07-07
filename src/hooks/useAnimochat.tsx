@@ -10,6 +10,11 @@ import type {
   SystemMessage,
   UserMessage,
   Mention,
+  Participant,
+  EditMessagePacket,
+  MessagePacket,
+  ReactionPacket,
+  TypingPacket,
 } from "../lib/types";
 import { useChatTheme } from "../context/theme-context";
 import { ChatThemeV2 } from "../lib/chat-theme";
@@ -18,6 +23,7 @@ import { ChatSessionData } from "./use-chat-session";
 import { API_MATCHMAKING_BASE_URL } from "../lib/servers";
 import { AuthUser, AuthSession } from "../context/auth-context";
 import { useWhatChanged } from "./use-what-changed";
+import { ChangeNicknamePacket, DeleteMessagePacket, ChangeThemePacket, DisconnectPacket, ParticipantJoinedPacket } from "../lib/packets";
 
 // --- Configuration ---
 // The base URL for your matchmaking server.
@@ -25,50 +31,6 @@ const API_BASE_URL = API_MATCHMAKING_BASE_URL;
 
 // --- Packet Types for WebSocket Communication ---
 // These define the structure of messages sent over the WebSocket connection.
-type Packet<T, K extends string> = {
-  type: K;
-  content: T;
-  sender: string;
-};
-
-export type ChangeNicknamePacket = Packet<
-  {
-    userId: string;
-    newNickname: string;
-  },
-  "change_nickname"
->;
-
-export interface Participant {
-  status: string;
-  userId: string;
-  nickname: string;
-}
-
-export type ParticipantsSyncPacket = Packet<Participant[], "participants_sync">;
-export type ParticipantJoinedPacket = Packet<Participant, "user_joined">;
-
-type DeleteMessagePacket = Packet<string, "message_delete">;
-type MessagePacket = Packet<UserMessage, "message">;
-type ReactionPacket = Packet<Reaction, "reaction">;
-type TypingPacket = Packet<boolean, "typing">;
-type EditMessagePacket = Packet<
-  { message_id: string; new_content: string; user_id: string },
-  "edit_message"
->;
-type DisconnectPacket = Packet<null, "disconnect">;
-type ChangeThemePacket = Packet<
-  {
-    mode: "light" | "dark";
-    theme: ChatThemeV2;
-  },
-  "change_theme"
->;
-
-// This packet is used when the user is offline or not connected.
-// the content is a string (the user id of the user who when offline).
-type OfflinePacket = Packet<string, "offline">;
-type UserJoinedPacket = Packet<string, "user_joined">;
 
 export const useAnimochatV2 = (
   session: AuthSession | null,

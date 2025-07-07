@@ -23,6 +23,13 @@ export interface User {
     id: string;
 }
 
+export interface Participant {
+  status: string;
+  userId: string;
+  nickname: string;
+}
+
+
 export type MatchmakingData = {
   state: "MATCHED" | "WAITING";
   matchedUserId: string;

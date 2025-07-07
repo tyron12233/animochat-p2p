@@ -9,72 +9,58 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import Link from "next/link";
 import { Server, Shield } from "lucide-react";
-import useUserId from "../hooks/use-user-id";
-import useChatSession, {
-  ChatSessionData,
-  ChatSessionStatus,
-} from "../hooks/use-chat-session";
+import useChatSession from "../hooks/use-chat-session";
 import { useAuth } from "../context/auth-context";
+import { useAnimoChat } from "../hooks/use-animochat";
 
 export default function Home() {
-  const { user, session, login, logout, isLoading: isAuthLoading} = useAuth();
+  const { user, session, login, logout, isLoading: isAuthLoading } = useAuth();
   const { chatSessionData, chatSessionStatus } = useChatSession(user);
 
-  // State for the admin login dialog
+  const { session: sessionCtx, chat, matchmaking } = useAnimoChat();
+  const { screen, status, setScreen } = sessionCtx;
+  const {
+    connectToChat,
+    messages,
+    participants,
+    typingUsers,
+    sendMessage,
+    editMessage,
+    onDeleteMessage,
+    onReact,
+    onChangeTheme,
+    onStartTyping,
+    disconnect,
+  } = chat;
+  const { startMatchmaking, onCancelMatchmaking } = matchmaking;
+
   const [isLoginDialogOpen, setLoginDialogOpen] = useState(false);
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-
-  const {
-    screen,
-    status,
-    messages,
-    startMatchmaking,
-    onChangeTheme,
-    disconnect,
-    editMessage,
-    sendMessage,
-    onReact,
-    participants,
-    onDeleteMessage,
-    onCancelMatchmaking,
-    onStartTyping,
-    handleGetStarted,
-    connectToExistingSession,
-    typingUsers,
-  } = useAnimochatV2(session!, user!);
+  const [interests, setInterests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (chatSessionStatus === "existing_session" && chatSessionData) {
-      connectToExistingSession(chatSessionData);
+      connectToChat(chatSessionData.chatServerUrl, chatSessionData.chatId);
+      setScreen("chat");
     }
-  }, [chatSessionStatus]);
-
-  const isConnecting = false;
-
-  const [interests, setInterests] = useState<Set<string>>(new Set());
-
-  
+  }, [chatSessionStatus, chatSessionData, connectToChat, setScreen]);
 
   const handleFindMatch = (interestsToMatch: Set<string>) => {
     startMatchmaking(Array.from(interestsToMatch));
   };
 
-  // Handler for the admin login form submission
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, you would have proper authentication logic here.
-    console.log("Admin Login Attempt:", {
-      username: adminUsername,
-      password: adminPassword,
-    });
-
     login(adminUsername, adminPassword);
-
     setLoginDialogOpen(false);
     setAdminUsername("");
     setAdminPassword("");
   };
+
+  function handleGetStarted() {
+    setScreen("matchmaking");
+  }
 
   // Animation properties for page transitions
   const pageTransition = {
@@ -94,28 +80,14 @@ export default function Home() {
             className="h-full w-full flex items-center justify-center sm:p-4"
           >
             <Chat
-              participants={participants}
               groupChat={false}
               name=""
-              key="chat"
-              goBack={() => {
-                handleGetStarted();
+              onBack={() => {
+                setScreen("matchmaking");
               }}
-              onDeleteMessage={onDeleteMessage}
-              onEditMessage={editMessage}
-              onStartTyping={onStartTyping}
-              cancelMatchmaking={onCancelMatchmaking}
-              typingUsers={typingUsers}
-              onReact={onReact}
-              onChangeTheme={onChangeTheme}
-              messages={messages}
-              sendMessage={sendMessage}
               newChat={() => {
                 handleFindMatch(interests);
               }}
-              endChat={disconnect}
-              userId={user!.id}
-              status={status}
             />
           </motion.div>
         );
@@ -141,7 +113,11 @@ export default function Home() {
               interests={interests}
               onInterestsChange={setInterests}
               onFindMatch={handleFindMatch}
-              isConnecting={isConnecting || isAuthLoading}
+              isConnecting={
+                status === "finding_match" ||
+                status === "connecting" ||
+                isAuthLoading
+              }
               status={status}
             />
           </motion.div>
@@ -171,7 +147,8 @@ export default function Home() {
             <div className="max-w-md mx-auto text-sm space-y-6 text-center">
               <div className="text-yellow-700 bg-yellow-50 p-4 rounded-2xl border border-yellow-200 font-medium">
                 <p>
-                  <strong>Notice:</strong> This site will soon move to a new domain:{" "}
+                  <strong>Notice:</strong> This site will soon move to a new
+                  domain:{" "}
                   <a
                     href="https://chat.tyronscott.me"
                     target="_blank"
@@ -228,7 +205,8 @@ export default function Home() {
 
             {user?.role && (
               <p className="font-mono text-gray-400 text-[10px] mt-2">
-                Your Role: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                Your Role:{" "}
+                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
               </p>
             )}
 
@@ -242,7 +220,7 @@ export default function Home() {
                 >
                   Log Out
                 </Button>
-              </div> 
+              </div>
             )}
 
             <div className="mt-4">
@@ -261,11 +239,13 @@ export default function Home() {
       </main>
 
       {/* Hidden Admin Login Button */}
-      <div
-        className="absolute bottom-2 right-2 h-6 w-6 cursor-pointer"
-        onClick={() => setLoginDialogOpen(true)}
-        title="Admin Login"
-      />
+      {screen !== "chat" && (
+        <div
+          className="absolute bottom-2 right-2 h-6 w-6 cursor-pointer"
+          onClick={() => setLoginDialogOpen(true)}
+          title="Admin Login"
+        />
+      )}
 
       {/* Admin Login Dialog */}
       <AnimatePresence>
@@ -287,12 +267,14 @@ export default function Home() {
             >
               <div className="flex flex-col items-center text-center">
                 <div className="bg-green-100 p-3 rounded-full mb-4">
-                    <Shield className="h-8 w-8 text-green-700" />
+                  <Shield className="h-8 w-8 text-green-700" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
                   Administrator Access
                 </h2>
-                <p className="text-gray-500 mb-6">Please enter your credentials to continue.</p>
+                <p className="text-gray-500 mb-6">
+                  Please enter your credentials to continue.
+                </p>
               </div>
               <form onSubmit={handleAdminLogin}>
                 <div className="space-y-4">

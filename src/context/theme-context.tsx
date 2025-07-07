@@ -13,11 +13,14 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ChatThemeProvider = ({
+/**
+ * @deprecated
+ */
+export function ChatThemeProvider({
   children,
 }: {
   children: React.ReactNode;
-}) => {
+}) {
   const [theme, setTheme] = useState<ChatThemeV2>(defaultTheme);
   const [mode, setMode] = useState<ThemeMode>("light");
 
@@ -34,7 +37,7 @@ export const ChatThemeProvider = ({
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
-};
+}
 
 export const useChatTheme = () => {
   const context = useContext(ThemeContext);

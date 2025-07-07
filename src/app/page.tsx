@@ -7,6 +7,7 @@ import Home from "../components/home";
 import MaintenancePage from "../components/maintenance";
 import useChatSession from "../hooks/use-chat-session";
 import { useMaintenanceStatus } from "../hooks/use-maintenance-status";
+import AuthenticatedPage from "./authenticated-page";
 
 export default function App() {
   const { isMaintenanceMode, isLoading, error } = useMaintenanceStatus();
@@ -25,11 +26,9 @@ export default function App() {
 
   return (
     <>
-      <ChatThemeProvider>
-        <AuthProvider>
-           <Home />
+         <AuthProvider>
+           <AuthenticatedPage />
         </AuthProvider>
-      </ChatThemeProvider>
     </>
   );
 }

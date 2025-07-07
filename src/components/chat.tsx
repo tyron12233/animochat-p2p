@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 // Assuming Button and Input are styled separately or adapt via CSS variables.
 // For this example, we will style them directly where possible.
 // import { Button } from "@/components/ui/button";
@@ -29,39 +29,25 @@ import ThemePickerDialog from "./theme-picker";
 import {
   auroraGlowTheme,
   cosmicLatteTheme,
+  criminologyTheme,
   defaultTheme,
   monochromeTheme,
   prideCelebrationTheme,
+  speakNowTheme,
   sunsetBlissTheme,
   tyronsTheme,
 } from "../lib/default-chat-themes";
-import { Participant } from "../hooks/useAnimochat";
+import { Participant } from "../lib/types";
 import EditNicknameDialog from "./group-chat/edit-nickname-dialog";
 import { OnlineUsers, UserListModal } from "./chat/online-users";
+import { AuthUser, useAuth } from "../context/auth-context";
+import { useAnimoChat } from "../hooks/use-animochat";
 
 interface ChatProps {
-  participants: Participant[];
   name: string;
   groupChat: boolean;
-  messages: Message[];
-  sendMessage: (
-    text: string,
-    replyingToId: string | undefined,
-    mentions: Mention[]
-  ) => void;
-  onReact: (messageId: string, reaction: string | null) => Promise<void>;
-  onChangeTheme?: (mode: "light" | "dark", theme: ChatThemeV2) => void;
-  onDeleteMessage?: (messageId: string) => void;
-  onEditMessage?: (messageId: string, newContent: string) => void;
-  cancelMatchmaking?: () => void;
-  onEditNickname?: (nickname: string) => void;
-  typingUsers: string[];
-  onStartTyping: () => void;
-  goBack: () => void;
-  endChat: () => void;
+  onBack?: () => void;
   newChat?: () => void;
-  userId: string;
-  status: string;
 }
 
 // A helper component to inject dynamic styles for pseudo-classes and elements
@@ -111,27 +97,30 @@ const DynamicGlobalStyles = ({
 );
 
 export default function Chat({
-  participants = [],
   name = "",
   groupChat = false,
-  messages,
-  goBack,
-  sendMessage,
-  onStartTyping,
-  cancelMatchmaking = () => {},
-  onEditMessage,
-  typingUsers,
-  onChangeTheme,
-  endChat,
-  newChat,
-  onDeleteMessage,
-  onEditNickname,
-  onReact,
-  userId: peerId,
-  status,
+  onBack,
+  newChat= () => {}
 }: ChatProps) {
-  const user: User = { id: peerId };
-  const { theme, mode } = useChatTheme();
+  const { user } = useAuth();
+  const {
+    session: { status, setScreen },
+    chat: {
+      messages,
+      participants,
+      typingUsers,
+      sendMessage,
+      onReact,
+      onChangeTheme,
+      onDeleteMessage,
+      editMessage: onEditMessage,
+      onChangeNickname: onEditNickname,
+      onStartTyping,
+      disconnect: endChat,
+    },
+    matchmaking: { onCancelMatchmaking: cancelMatchmaking },
+    theme: { theme, mode },
+  } = useAnimoChat();
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [currentNickname, setCurrentNickname] = useState<string>("Unknown");
@@ -140,14 +129,14 @@ export default function Chat({
     if (!participants || participants.length === 0) return;
 
     // Find the participant that matches the current user ID
-    const currentUser = participants.find((p) => p.userId === user.id);
+    const currentUser = participants.find((p) => p.userId === user!.id);
     if (currentUser) {
       setCurrentNickname(currentUser.nickname || "Unknown");
     }
   }, [participants]);
 
   useEffect(() => {
-    const nickname = participants.find((p) => p.userId === user.id)?.nickname;
+    const nickname = participants.find((p) => p.userId === user!.id)?.nickname;
     if (nickname) {
       setCurrentNickname(nickname);
     }
@@ -330,7 +319,7 @@ export default function Chat({
       return;
     }
     if (newMessagesAdded) {
-      const isUserMessage = lastMessage.sender === user.id;
+      const isUserMessage = lastMessage.sender === user!.id;
       if (isUserMessage || isAtBottom.current) {
         scrollerRef.current?.scrollToIndex(actualMessages.length - 1, {
           align: "end",
@@ -341,7 +330,7 @@ export default function Chat({
       }
     }
     prevMessagesLength.current = actualMessages.length;
-  }, [actualMessages, user.id]);
+  }, [actualMessages, user!.id]);
 
   useEffect(() => {
     const isSomeoneTyping = typingUsers.length > 0;
@@ -397,7 +386,10 @@ export default function Chat({
       }
 
       const validMentions = currentMentions.filter((mention) => {
-        const mentionText = trimmedMessage.slice(mention.startIndex, mention.endIndex);
+        const mentionText = trimmedMessage.slice(
+          mention.startIndex,
+          mention.endIndex
+        );
         // Find the participant by id
         const participant = participants.find((p) => p.userId === mention.id);
         // The mention is valid if the text matches the participant's nickname
@@ -444,7 +436,7 @@ export default function Chat({
           key={index}
           index={index}
           message={msg}
-          user={user}
+          user={user!}
           isLast={index === 0}
           onSwipe={(messageId) => {
             const message = messages.find((m) => m.id === messageId);
@@ -488,6 +480,8 @@ export default function Chat({
         onClose={() => setIsThemePickerOpen(false)}
         themes={[
           defaultTheme,
+          criminologyTheme,
+          speakNowTheme,
           monochromeTheme,
           tyronsTheme,
           prideCelebrationTheme,
@@ -512,7 +506,7 @@ export default function Chat({
         open={emojiMenuState.open}
         message={emojiMenuState.message!}
         messageDiv={emojiMenuState.messageDiv!}
-        user={user}
+        user={user!}
         onReact={onReact}
         onReply={(messageId) => {
           const message = messages.find((m) => m.id === messageId);
@@ -570,7 +564,7 @@ export default function Chat({
         >
           {(status !== "connected" || groupChat) && (
             <Button
-              onClick={goBack}
+              onClick={onBack}
               variant={"outline"}
               style={{
                 background: theme.buttons.secondary.background[mode],
@@ -679,7 +673,7 @@ export default function Chat({
           {!groupChat && status !== "connected" && (
             <Button
               id="new-chat-button"
-              onClick={newChat}
+              // onClick={newChat}
               className="px-3 py-1 text-sm rounded-full"
               style={{
                 background: theme.buttons.primary.background[mode],
@@ -719,6 +713,7 @@ export default function Chat({
             status === "finding_match" ||
             status === "connecting") && (
             <FindingMatchAnimation
+              isGroupChat={groupChat}
               onCancel={cancelMatchmaking}
               key="finding-match-animation"
               theme={theme}

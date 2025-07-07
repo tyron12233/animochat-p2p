@@ -4,14 +4,15 @@ import { RefObject } from "react";
 import { User, Message } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 import { defaultTheme } from "@/src/lib/default-chat-themes";
-import { Participant } from "@/src/hooks/useAnimochat";
+import { Participant } from "@/src/lib/types";
 import { formatMessageTime } from "@/src/lib/date-utils";
+import { AuthUser } from "@/src/context/auth-context";
 
 interface ChatMessageItemProps {
   participants: Participant[]
   index: number;
   message: any; // any for now
-  user: User;
+  user: AuthUser;
   isLast: boolean;
   onSwipe: (messageId: string) => void;
   onReact: (messageId: string, reaction: string | null) => Promise<void>;
