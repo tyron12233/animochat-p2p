@@ -682,7 +682,7 @@ function TextMessage({
                 color: bubbleTheme.text[mode],
               }}
             >
-              <p className="break-words whitespace-pre-wrap">
+              <div className="break-words whitespace-pre-wrap">
                 <Linkify
                   options={{
                     render: ({ attributes, content }) => (
@@ -728,7 +728,7 @@ function TextMessage({
                     </p>
                   )}
                 </Linkify>
-              </p>
+              </div>
             </div>
           </div>
         </div>

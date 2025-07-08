@@ -3,6 +3,8 @@ import { Play, Pause, AlertCircle, Loader2 } from "lucide-react";
 import { Message, User, VoiceMessage } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
+const MAX_DURATION = 15;
+
 const formatTime = (time: number) => {
   if (isNaN(time) || time === Infinity || time < 0) {
     return "0:00";
@@ -35,9 +37,107 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [waveform, setWaveform] = useState<number[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Generate waveform on mount
+  useEffect(() => {
+    setWaveform(Array.from({ length: 30 }, () => Math.random() * 0.7 + 0.3));
+  }, []);
+
+  const initializeAudio = () => {
+    if (!message.content || isInitialized || audioRef.current) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const audio = new Audio(message.content);
+    audioRef.current = audio;
+
+    const onLoaded = () => {
+      if (!audioRef.current) return;
+
+      const cappedDuration = Math.min(audio.duration, MAX_DURATION);
+      setDuration(cappedDuration);
+      setCurrentTime(audio.currentTime);
+      setIsLoading(false);
+      setIsInitialized(true);
+    };
+
+    const onTimeUpdate = () => {
+      if (!audioRef.current) return;
+      const curr = Math.min(audio.currentTime, MAX_DURATION);
+      setCurrentTime(curr);
+      setProgress((curr / MAX_DURATION) * 100);
+    };
+
+    const onEnded = () => setIsPlaying(false);
+    const onError = () => {
+      setError("Failed to load audio");
+      setIsLoading(false);
+    };
+
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+
+    // Cleanup
+    return () => {
+      audio.pause();
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+      audioRef.current = null;
+    };
+  };
+
+  const togglePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!isInitialized) initializeAudio();
+
+    setTimeout(() => {
+      if (audioRef.current && !isLoading && !error) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          if (audioRef.current.ended) {
+            audioRef.current.currentTime = 0;
+          }
+          audioRef.current.play().then(() => {
+            setIsPlaying(true);
+          }).catch((e) => {
+            console.error("Playback error:", e);
+            setError("Playback failed");
+            setIsPlaying(false);
+          });
+        }
+      }
+    }, 50); // slight delay to allow Safari to register interaction
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (
+      !audioRef.current ||
+      !waveformContainerRef.current ||
+      !isFinite(duration) ||
+      duration <= 0 ||
+      isLoading ||
+      !!error
+    ) return;
+
+    const rect = waveformContainerRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const newTime = Math.min((duration * clickX) / width, MAX_DURATION);
+    audioRef.current.currentTime = newTime;
+  };
+
+  // Update UI colors
   const bubbleTheme = isUserMessage
     ? theme.message.myMessage
     : theme.message.strangerMessage;
@@ -49,114 +149,6 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
     ? `${textColor}55`
     : `${theme.accent.main[mode]}55`;
 
-  // Generate random waveform
-  useEffect(() => {
-    setWaveform(Array.from({ length: 30 }, () => Math.random() * 0.7 + 0.3));
-  }, []);
-
-  // Load audio & attach events
-  useEffect(() => {
-    if (!message.content) {
-      setError("No audio content");
-      setIsLoading(false);
-      return;
-    }
-
-    setError(null);
-    setIsLoading(true);
-
-    const audio = new Audio(message.content);
-    audioRef.current = audio;
-
-    const onLoaded = () => {
-      if (!audioRef.current) return;
-
-      if (audio.duration !== Infinity && isFinite(audio.duration)) {
-        setDuration(audio.duration);
-      }
-      setCurrentTime(audio.currentTime);
-      setIsLoading(false);
-    };
-    const onTimeUpdate = () => {
-      if (audio.duration > 0) {
-        setDuration(audio.duration);
-        setCurrentTime(audio.currentTime);
-        setProgress((audio.currentTime / audio.duration) * 100);
-      }
-    };
-    const onEnded = () => {
-      setIsPlaying(false);
-    };
-    const onError = () => {
-      setError("Failed to load audio");
-      setIsLoading(false);
-    };
-
-    audio.addEventListener("loadedmetadata", onLoaded);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-
-    return () => {
-      audio.pause();
-      audio.removeEventListener("loadedmetadata", onLoaded);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-      audioRef.current = null;
-    };
-  }, [message.content]);
-
-  // Play/pause side‑effect
-  useEffect(() => {
-    if (!audioRef.current) return;
-
-    if (isPlaying) {
-      if (audioRef.current.ended) {
-        audioRef.current.currentTime = 0;
-      }
-      audioRef.current.play().catch((e) => {
-        console.error("Playback error:", e);
-        setError("Playback failed");
-        setIsPlaying(false);
-      });
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying]);
-
-  const togglePlayPause = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isLoading && !error) {
-      setIsPlaying((p) => !p);
-    } else {
-      console.warn("Cannot toggle play/pause: audio not ready or loading/error state");
-      console.log("Loading:", isLoading, "Error:", error, "Duration:", duration);
-    }
-  };
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (
-      !audioRef.current ||
-      !waveformContainerRef.current ||
-      !isFinite(duration) ||
-      duration <= 0 ||
-      isLoading ||
-      !!error
-    ) {
-      console.warn("Cannot seek: audio not ready or loading/error state");
-      return;
-    }
-
-    const rect = waveformContainerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const newTime = (duration * clickX) / width;
-    if (isFinite(newTime)) {
-      audioRef.current.currentTime = newTime;
-    }
-  };
-
   return (
     <div
       className={`${roundedCorners} px-3 py-2 flex items-center gap-3 w-64 md:w-72`}
@@ -165,7 +157,6 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         color: textColor,
       }}
     >
-      {/* Play/Pause / Loading / Error */}
       <button
         onClick={togglePlayPause}
         className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
@@ -195,7 +186,7 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         )}
       </button>
 
-      {/* Waveform + Seek + Timer */}
+      {/* Waveform + Time */}
       <div className="flex-grow flex items-center gap-2 h-8">
         <div
           ref={waveformContainerRef}
@@ -237,7 +228,7 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         >
           {error
             ? "--:--"
-            : isPlaying ? `${formatTime(currentTime)}` : formatTime(Number.parseInt(duration.toFixed(0)))}
+            : formatTime(isPlaying ? currentTime : Math.min(duration, MAX_DURATION))}
         </span>
       </div>
     </div>
