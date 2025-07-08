@@ -780,6 +780,154 @@ export const monochromeTheme: ChatThemeV2 = {
 };
 
 
+
+// export const relapseTheme: ChatThemeV2 = {
+//   name: "Multo (relapse)",
+//   typography: {
+//     fontFamily: "inherit",
+//     baseFontSize: "16px",
+//   },
+//   accent: {
+//     main: { light: "#ee9ca7", dark: "#e18ea6" },
+//     faded: {
+//       light: "rgba(238, 156, 167, 0.15)",
+//       dark: "rgba(225, 142, 166, 0.15)",
+//     },
+//   },
+//   secondaryText: { light: "#a195a0", dark: "#b0a5af" },
+//   errorText: { light: "#f87171", dark: "#f87171" },
+//   linkColor: { light: "#9333ea", dark: "#c084fc" },
+//   announcement: {
+//     background: { light: "#fff9fb", dark: "#4c3b4d" },
+//     text: { light: "#5c4754", dark: "#fdecf2" },
+//     border: { light: "#fceaf2", dark: "#604d60" },
+//   },
+//   animations: {
+//     typingIndicatorDots: {
+//       dark: "#fdecf2",
+//       light: "#d66983",
+//     },
+//   },
+//   messageList: {
+//     scrollbarThumb: { light: "#fceaf2", dark: "#7c5c7a" },
+//     scrollbarTrack: { light: "#fff9fb", dark: "#302830" },
+//   },
+//   overlays: {
+//     emojiMenu: {
+//       background: { light: "#fff9fb", dark: "#302830" },
+//       shadow:
+//         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+//     },
+//     replyingPreview: {
+//       background: { light: "#fdecf2", dark: "#4c3b4d" },
+//       border: { light: "#ee9ca7", dark: "#e18ea6" },
+//       closeIcon: {
+//         light: "#a195a0",
+//         dark: "#b0a5af",
+//       },
+//       description: {
+//         light: "#5c4754",
+//         dark: "#fdecf2",
+//       },
+//       title: {
+//         light: "#d66983",
+//         dark: "#ee9ca7",
+//       },
+//     },
+//   },
+//   general: {
+//     background: {
+//       light:
+//         "linear-gradient(rgba(243, 244, 246, 0.85), rgba(243, 244, 246, 0.85)), url('https://i.imgur.com/0ZPbznI.jpeg') center/cover no-repeat",
+//       dark:
+//         "linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)), url('https://i.imgur.com/H2FNigI.jpeg') center/cover no-repeat",
+//     },
+//     backdropBlur: "1.5rem",
+//     shadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+//     borderRadius: "2rem",
+//   },
+//   header: {
+//     background: {
+//       light: "rgba(255, 249, 251, 0.6)",
+//       dark: "rgba(48, 40, 48, 0.6)",
+//     },
+//     border: {
+//       light: "rgba(253, 236, 242, 0.8)",
+//       dark: "rgba(76, 59, 77, 0.8)",
+//     },
+//     statusLabel: { light: "#a195a0", dark: "#b0a5af" },
+//     statusValue: { light: "#d66983", dark: "#ee9ca7" },
+//   },
+//   message: {
+//     myMessage: {
+//       background: { light: "#ee9ca7", dark: "#e18ea6" },
+//       text: { light: "#ffffff", dark: "#ffffff" },
+//       isAnimated: false,
+//     },
+//     strangerMessage: {
+//       background: { light: "#fdecf2", dark: "#4c3b4d" },
+//       text: { light: "#5c4754", dark: "#fdecf2" },
+//       isAnimated: false,
+//     },
+//     systemMessage: {
+//       background: { light: "#fdecf2", dark: "#4c3b4d" },
+//       text: { light: "#a195a0", dark: "#b0a5af" },
+//     },
+//     deletedMessage: {
+//       text: { light: "#a195a0", dark: "#b0a5af" },
+//     },
+//     imageOverlay: {
+//       background: { light: "rgba(0, 0, 0, 0.4)", dark: "rgba(0, 0, 0, 0.4)" },
+//       text: { light: "#ffffff", dark: "#ffffff" },
+//     },
+//   },
+//   inputArea: {
+//     background: {
+//       light: "rgba(255, 249, 251, 0.6)",
+//       dark: "rgba(48, 40, 48, 0.6)",
+//     },
+//     border: {
+//       light: "rgba(253, 236, 242, 0.8)",
+//       dark: "rgba(76, 59, 77, 0.8)",
+//     },
+//     inputBackground: { light: "#fffbff", dark: "rgba(76, 59, 77, 0.5)" },
+//     inputText: { light: "#5c4754", dark: "#ee9ca7" },
+//     placeholderText: { light: "#a195a0", dark: "#7c5c7a" },
+//     focusRing: { light: "#ee9ca7", dark: "#e18ea6" },
+//   },
+//   buttons: {
+//     primary: {
+//       background: { light: "#ee9ca7", dark: "#e18ea6" },
+//       text: { light: "#ffffff", dark: "#ffffff" },
+//       hoverBackground: { light: "#e18ea6", dark: "#d66983" },
+//     },
+//     secondary: {
+//       background: { light: "#fffbff", dark: "#4c3b4d" },
+//       text: { light: "#d66983", dark: "#ee9ca7" },
+//       hoverBackground: { light: "#fdecf2", dark: "#604d60" },
+//       border: { light: "#fceaf2", dark: "#604d60" },
+//     },
+//     destructive: {
+//       background: { light: "#fca5a5", dark: "#ef4444" },
+//       text: { light: "#7f1d1d", dark: "#ffffff" },
+//       hoverBackground: { light: "#f87171", dark: "#dc2626" },
+//       border: { light: "#fca5a5", dark: "#ef4444" },
+//     },
+//     newMessages: {
+//       background: { light: "#fb923c", dark: "#fdba74" },
+//       text: { light: "#ffffff", dark: "#431407" },
+//       hoverBackground: { light: "#f97316", dark: "#fb923c" },
+//     },
+//   },
+//   reactions: {
+//     bubble: {
+//       background: { light: "#fdecf2", dark: "#604d60" },
+//       border: { light: "#fffbff", dark: "#302830" },
+//       text: { light: "#d66983", dark: "#ee9ca7" },
+//     },
+//   },
+// };
+
 export const tyronsTheme: ChatThemeV2 = {
   name: "Tyron's Theme",
   typography: {
@@ -1066,6 +1214,7 @@ export const criminologyTheme: ChatThemeV2 = {
     },
   },
 };
+
 
 export const speakNowTheme: ChatThemeV2 = {
   name: "Speak Now (ts)",

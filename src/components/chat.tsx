@@ -102,7 +102,7 @@ export default function Chat({
   name = "",
   groupChat = false,
   onBack,
-  newChat= () => {}
+  newChat,
 }: ChatProps) {
   const { user } = useAuth();
   const {
@@ -676,7 +676,7 @@ export default function Chat({
           {!groupChat && status !== "connected" && (
             <Button
               id="new-chat-button"
-              // onClick={newChat}
+              onClick={newChat}
               className="px-3 py-1 text-sm rounded-full"
               style={{
                 background: theme.buttons.primary.background[mode],
