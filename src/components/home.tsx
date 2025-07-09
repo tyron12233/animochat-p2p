@@ -21,6 +21,7 @@ export default function Home() {
   const { screen, status, setScreen } = sessionCtx;
   const {
     connectToChat,
+    connectToExistingSession,
     messages,
     participants,
     typingUsers,
@@ -41,10 +42,11 @@ export default function Home() {
 
   useEffect(() => {
     if (chatSessionStatus === "existing_session" && chatSessionData) {
-      connectToChat(chatSessionData.chatServerUrl, chatSessionData.chatId);
-      setScreen("chat");
+      connectToExistingSession(
+        chatSessionData
+      )
     }
-  }, [chatSessionStatus, chatSessionData, connectToChat, setScreen]);
+  }, [chatSessionStatus, chatSessionData, connectToExistingSession]);
 
   const handleFindMatch = (interestsToMatch: Set<string>) => {
     startMatchmaking(Array.from(interestsToMatch));
