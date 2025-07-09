@@ -252,13 +252,27 @@ export const ChatConnectionProvider = ({
       if (!userId || !chatId) return;
 
       const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      await new Promise((resolve) => {
-        console.log("Reading audio blob as base64...");
-        reader.onloadend = resolve;
+      const readerPromise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+          } else {
+            reject(new Error("Failed to read blob as base64 string."));
+          }
+        };
+        reader.onerror = () => {
+          reject(reader.error || new Error("FileReader error."));
+        };
+        reader.readAsDataURL(audioBlob);
       });
 
-      const audioBase64 = reader.result as string;
+      let audioBase64: string;
+      try {
+        audioBase64 = await readerPromise;
+      } catch (error) {
+        console.error("Error converting audio blob to base64:", error);
+        return;
+      }
 
       const message: VoiceMessage = {
         id: `msg_${Date.now()}`,
