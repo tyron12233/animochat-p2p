@@ -27,7 +27,7 @@ const ThemePreview = ({
 }) => {
   const isEmojiMenuOpen = useRef(false);
   const user: AuthUser = {
-    id: "1",
+    id: "me",
     is_anonymous: true,
     role: "authenticated",
   }

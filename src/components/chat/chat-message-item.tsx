@@ -25,6 +25,7 @@ interface ChatMessageItemProps {
   theme: ChatThemeV2;
   mode: "light" | "dark";
   animate?: boolean;
+  isGroupChat?: boolean;
   secondVisibleElement: string | null;
   onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
 }
@@ -36,6 +37,7 @@ export default function ChatMessageItem({
   user,
   animate = false,
   isLast = false,
+  isGroupChat = false,
   onSwipe,
   onStartedSwipe,
   onEndedSwipe,
@@ -61,11 +63,15 @@ export default function ChatMessageItem({
 
   const isAdvertisement = index % 5 === 0;
   const advertisementMessageId = isAdvertisement ? message.id : null;
-  const showName =
+  let showName =
     ((message as any)?.senderNickname && (message as any)?.showName) && message.sender !== user.id && (message.replyingTo === null || message.replyingTo === undefined);
   let name = null;
   if (showName) {
     name = message.senderNickname;
+  }
+
+  if (!isGroupChat) {
+    showName = false;
   }
 
   return (

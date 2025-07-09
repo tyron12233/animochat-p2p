@@ -440,6 +440,7 @@ export default function Chat({
           index={index}
           message={msg}
           user={user!}
+          isGroupChat={groupChat}
           isLast={index === 0}
           onSwipe={(messageId) => {
             const message = messages.find((m) => m.id === messageId);
