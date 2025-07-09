@@ -73,8 +73,8 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
     };
 
     const onEnded = () => setIsPlaying(false);
-    const onError = () => {
-      setError("Failed to load audio");
+    const onError = (e: ErrorEvent) => {
+      setError("Failed to load audio: " + e.message);
       setIsLoading(false);
     };
 
@@ -108,13 +108,16 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
           if (audioRef.current.ended) {
             audioRef.current.currentTime = 0;
           }
-          audioRef.current.play().then(() => {
-            setIsPlaying(true);
-          }).catch((e) => {
-            console.error("Playback error:", e);
-            setError("Playback failed");
-            setIsPlaying(false);
-          });
+          audioRef.current
+            .play()
+            .then(() => {
+              setIsPlaying(true);
+            })
+            .catch((e) => {
+              console.error("Playback error:", e);
+              setError("Playback failed: " + e.message);
+              setIsPlaying(false);
+            });
         }
       }
     }, 50); // slight delay to allow Safari to register interaction
@@ -128,7 +131,8 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
       duration <= 0 ||
       isLoading ||
       !!error
-    ) return;
+    )
+      return;
 
     const rect = waveformContainerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -157,34 +161,41 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         color: textColor,
       }}
     >
-      <button
-        onClick={togglePlayPause}
-        className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-        style={{
-          color: bubbleTheme.background[mode],
-          backgroundColor: textColor,
-        }}
-        disabled={isLoading || !!error}
-        aria-label={
-          isLoading
-            ? "Loading voice message"
-            : error
-            ? "Error loading audio"
-            : isPlaying
-            ? "Pause voice message"
-            : "Play voice message"
-        }
-      >
-        {isLoading ? (
-          <Loader2 className="animate-spin" size={16} />
-        ) : error ? (
+      {error ? (
+        <div className="flex items-center gap-2 text-red-500">
           <AlertCircle size={16} />
-        ) : isPlaying ? (
-          <Pause size={16} fill={bubbleTheme.background[mode]} />
-        ) : (
-          <Play size={16} fill={bubbleTheme.background[mode]} className="ml-0.5" />
-        )}
-      </button>
+          <span className="text-xs font-mono">{error}</span>
+        </div>
+      ) : (
+        <button
+          onClick={togglePlayPause}
+          className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{
+        color: bubbleTheme.background[mode],
+        backgroundColor: textColor,
+          }}
+          disabled={isLoading}
+          aria-label={
+        isLoading
+          ? "Loading voice message"
+          : isPlaying
+          ? "Pause voice message"
+          : "Play voice message"
+          }
+        >
+          {isLoading ? (
+        <Loader2 className="animate-spin" size={16} />
+          ) : isPlaying ? (
+        <Pause size={16} fill={bubbleTheme.background[mode]} />
+          ) : (
+        <Play
+          size={16}
+          fill={bubbleTheme.background[mode]}
+          className="ml-0.5"
+        />
+          )}
+        </button>
+      )}
 
       {/* Waveform + Time */}
       <div className="flex-grow flex items-center gap-2 h-8">
@@ -228,13 +239,13 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
         >
           {error
             ? "--:--"
-            : formatTime(isPlaying ? currentTime : Math.min(duration, MAX_DURATION))}
+            : formatTime(
+                isPlaying ? currentTime : Math.min(duration, MAX_DURATION)
+              )}
         </span>
       </div>
     </div>
   );
 };
-
-
 
 export default VoiceMessageBubble;
