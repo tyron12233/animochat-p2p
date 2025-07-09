@@ -6,15 +6,15 @@ import React, {
   useCallback,
   ReactNode,
   useRef,
-} from 'react';
-import Cookies from 'js-cookie';
+} from "react";
+import Cookies from "js-cookie";
 
 // SECTION: Type Definitions
 // Describes the structure of the authenticated user object.
 export interface AuthUser {
   id: string;
   email?: string;
-  role: 'authenticated' | 'anonymous' | 'admin';
+  role: "authenticated" | "anonymous" | "admin";
   is_anonymous: boolean;
 }
 
@@ -50,8 +50,8 @@ const AuthContext = createContext<AuthContextType>({
 // END SECTION
 
 // SECTION: Constants and Utility Hooks
-const AUTH_API_BASE_URL = 'https://animochat-auth-server.onrender.com/api/auth';
-const SESSION_COOKIE_KEY = 'supabase.auth.session';
+const AUTH_API_BASE_URL = "https://animochat-auth-server.onrender.com/api/auth";
+const SESSION_COOKIE_KEY = "supabase.auth.session";
 
 /**
  * A custom hook to run a function at a set interval.
@@ -97,15 +97,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     try {
       const response = await fetch(`${AUTH_API_BASE_URL}/login/anonymous`, {
-        method: 'POST',
+        method: "POST",
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Anonymous login failed.');
-      
+      if (!response.ok)
+        throw new Error(data.message || "Anonymous login failed.");
+
       setUser(data.user);
       setSession(data.session);
       Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(data.session), {
-        sameSite: 'strict',
+        sameSite: "strict",
         secure: true,
         expires: 7, // Cookie expires in 7 days
       });
@@ -122,85 +123,91 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param currentToken The current session token.
    * @returns The new, refreshed session.
    */
-  const refreshToken = useCallback(async (currentToken: AuthSession) => {
-    try {
-      const response = await fetch(`${AUTH_API_BASE_URL}/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: currentToken.refresh_token }),
-      });
+  const refreshToken = useCallback(
+    async (currentToken: AuthSession) => {
+      try {
+        const response = await fetch(`${AUTH_API_BASE_URL}/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: currentToken.refresh_token }),
+        });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Token refresh failed.');
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.message || "Token refresh failed.");
 
-      const newSession = { ...currentToken, ...data.session };
-      setSession(newSession);
-      Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(newSession), {
-        sameSite: 'strict',
-        secure: true,
-        expires: 7,
-      });
-      return newSession;
-    } catch (err: any) {
-      // If refresh fails, log out the user and log them in anonymously.
-      setUser(null);
-      setSession(null);
-      Cookies.remove(SESSION_COOKIE_KEY);
-      await loginAnonymously();
-      throw err;
-    }
-  }, [loginAnonymously]);
+        const newSession = { ...currentToken, ...data.session };
+        setSession(newSession);
+        Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(newSession), {
+          sameSite: "strict",
+          secure: true,
+          expires: 7,
+        });
+        return newSession;
+      } catch (err: any) {
+        // If refresh fails, log out the user and log them in anonymously.
+        setUser(null);
+        setSession(null);
+        Cookies.remove(SESSION_COOKIE_KEY);
+        await loginAnonymously();
+        throw err;
+      }
+    },
+    [loginAnonymously]
+  );
 
   /**
    * Validates the current session and sets the user state.
    * If the token is expired, it attempts to refresh it first.
    * @param currentSession The session to validate.
    */
-  const validateAndSetUser = useCallback(async (currentSession: AuthSession) => {
-    // Check if the access token is expired (or close to expiring).
-    // The expires_at is in seconds, Date.now() is in milliseconds.
-    if (currentSession.expires_at * 1000 < Date.now()) {
+  const validateAndSetUser = useCallback(
+    async (currentSession: AuthSession) => {
+      // Check if the access token is expired (or close to expiring).
+      // The expires_at is in seconds, Date.now() is in milliseconds.
+      if (currentSession.expires_at * 1000 < Date.now()) {
+        try {
+          // If expired, refresh the token.
+          const refreshedSession = await refreshToken(currentSession);
+          currentSession = refreshedSession; // Use the newly refreshed session.
+        } catch (error) {
+          // If refresh fails, the refreshToken function handles anonymous login.
+          console.error("Session expired and refresh failed.", error);
+          return;
+        }
+      }
+
       try {
-        // If expired, refresh the token.
-        const refreshedSession = await refreshToken(currentSession);
-        currentSession = refreshedSession; // Use the newly refreshed session.
-      } catch (error) {
-        // If refresh fails, the refreshToken function handles anonymous login.
-        console.error("Session expired and refresh failed.", error);
-        return; 
+        // Proceed to validate the (potentially new) access token.
+        const response = await fetch(`${AUTH_API_BASE_URL}/validate`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.valid) {
+          throw new Error(data.message || "Token validation failed.");
+        }
+
+        setUser(data.user);
+        setSession(currentSession);
+        Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(currentSession), {
+          sameSite: "strict",
+          secure: true,
+          expires: 7,
+        });
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+        // Fallback to anonymous login if validation fails for any reason.
+        await loginAnonymously();
       }
-    }
-
-    try {
-      // Proceed to validate the (potentially new) access token.
-      const response = await fetch(`${AUTH_API_BASE_URL}/validate`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentSession.access_token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data.valid) {
-        throw new Error(data.message || 'Token validation failed.');
-      }
-
-      setUser(data.user);
-      setSession(currentSession);
-      Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(currentSession), {
-        sameSite: 'strict',
-        secure: true,
-        expires: 7,
-      });
-      setError(null);
-
-    } catch (err: any) {
-      setError(err.message);
-      // Fallback to anonymous login if validation fails for any reason.
-      await loginAnonymously();
-    }
-  }, [refreshToken, loginAnonymously]);
+    },
+    [refreshToken, loginAnonymously]
+  );
 
   /**
    * Initializes the authentication state on component mount.
@@ -210,7 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       setIsLoading(true);
       const storedSessionJSON = Cookies.get(SESSION_COOKIE_KEY);
-      
+
       if (storedSessionJSON) {
         try {
           const storedSession = JSON.parse(storedSessionJSON);
@@ -255,12 +262,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     try {
       const response = await fetch(`${AUTH_API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login failed.');
+      if (!response.ok) throw new Error(data.message || "Login failed.");
       await validateAndSetUser(data.session);
     } catch (err: any) {
       setError(err.message);
@@ -296,7 +303,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
