@@ -52,7 +52,37 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
     setIsLoading(true);
     setError(null);
 
-    const audio = new Audio(message.content);
+    const base64String = message.content;
+    if (!base64String.startsWith("data:audio/")) {
+      setError("Invalid audio data format");
+      setIsLoading(false);
+      return;
+    }
+
+    // Decode the Base64 string
+    function base64ToBlob(base64: string, mimeType: string) {
+      const byteCharacters = atob(base64);
+
+      // Create an ArrayBuffer to hold the binary data
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+
+      // Create a Blob from the ArrayBuffer
+      const blob = new Blob([byteArray], { type: mimeType });
+      return blob;
+    }
+
+    const blob = base64ToBlob(
+      base64String.split(",")[1], // Remove the data URL prefix
+      "audio/webm" // Assuming the audio is in 
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const audio = new Audio(url);
     audioRef.current = audio;
 
     const onLoaded = () => {
@@ -73,8 +103,10 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
     };
 
     const onEnded = () => setIsPlaying(false);
-    const onError = (e: ErrorEvent) => {
-      setError("Failed to load audio: " + e.message);
+    const onError = () => {
+      const errorMessage =
+        audioRef.current?.error?.message || "An unknown error occurred";
+      setError("Failed to load audio: " + errorMessage);
       setIsLoading(false);
     };
 
@@ -85,6 +117,12 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
 
     // Cleanup
     return () => {
+      
+      // clean up url
+      if (audioRef.current) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+
       audio.pause();
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("timeupdate", onTimeUpdate);
@@ -174,28 +212,28 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
           onClick={togglePlayPause}
           className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
           style={{
-        color: bubbleTheme.background[mode],
-        backgroundColor: textColor,
+            color: bubbleTheme.background[mode],
+            backgroundColor: textColor,
           }}
           disabled={isLoading}
           aria-label={
-        isLoading
-          ? "Loading voice message"
-          : isPlaying
-          ? "Pause voice message"
-          : "Play voice message"
+            isLoading
+              ? "Loading voice message"
+              : isPlaying
+              ? "Pause voice message"
+              : "Play voice message"
           }
         >
           {isLoading ? (
-        <Loader2 className="animate-spin" size={16} />
+            <Loader2 className="animate-spin" size={16} />
           ) : isPlaying ? (
-        <Pause size={16} fill={bubbleTheme.background[mode]} />
+            <Pause size={16} fill={bubbleTheme.background[mode]} />
           ) : (
-        <Play
-          size={16}
-          fill={bubbleTheme.background[mode]}
-          className="ml-0.5"
-        />
+            <Play
+              size={16}
+              fill={bubbleTheme.background[mode]}
+              className="ml-0.5"
+            />
           )}
         </button>
       )}
