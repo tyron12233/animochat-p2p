@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause, AlertCircle, Loader2 } from "lucide-react";
-import { Message, User, VoiceMessage } from "@/src/lib/types";
+import { VoiceMessage } from "@/src/lib/types";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
 
 const MAX_DURATION = 15;
@@ -97,30 +97,33 @@ const VoiceMessageBubble: React.FC<VoiceMessageProps> = ({
   const togglePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!isInitialized) initializeAudio();
+    if (!isInitialized) {
+      initializeAudio();
+      // On first click, initialize and then wait for user to click again to play.
+      // This is a common pattern to deal with browser autoplay restrictions.
+      return;
+    }
 
-    setTimeout(() => {
-      if (audioRef.current && !isLoading && !error) {
-        if (isPlaying) {
-          audioRef.current.pause();
-          setIsPlaying(false);
-        } else {
-          if (audioRef.current.ended) {
-            audioRef.current.currentTime = 0;
-          }
-          audioRef.current
-            .play()
-            .then(() => {
-              setIsPlaying(true);
-            })
-            .catch((e) => {
-              console.error("Playback error:", e);
-              setError("Playback failed: " + e.message);
-              setIsPlaying(false);
-            });
+    if (audioRef.current && !isLoading && !error) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        if (audioRef.current.ended) {
+          audioRef.current.currentTime = 0;
         }
+        audioRef.current
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch((e) => {
+            console.error("Playback error:", e);
+            setError("Playback failed: " + e.message);
+            setIsPlaying(false);
+          });
       }
-    }, 50); // slight delay to allow Safari to register interaction
+    }
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
