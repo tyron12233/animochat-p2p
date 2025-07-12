@@ -87,6 +87,7 @@ export const ChatConnectionProvider = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+
   const userId = user?.id ?? "";
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -96,9 +97,7 @@ export const ChatConnectionProvider = ({
   const reconnectionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectionAttemptsRef = useRef<number>(0);
 
-
   const chatServerUrlRef = useRef<string>("");
-
 
   // Low-level packet sender
   const sendPacket = useCallback((packet: any) => {
@@ -721,14 +720,13 @@ export const ChatConnectionProvider = ({
 
           if (!isDisconnectingRef.current) {
             setStatus("reconnecting");
-          }
 
-          // reconnection logic
-          if (reconnectionAttemptsRef.current < 5) {
-            reconnectionAttemptsRef.current++;
-            reconnectionTimerRef.current = setTimeout(() => {
-              connectToChat(chatServerUrl, chatIdToConnect, interests, true);
-            }, 2000 * reconnectionAttemptsRef.current);
+            if (reconnectionAttemptsRef.current < 5) {
+              reconnectionAttemptsRef.current++;
+              reconnectionTimerRef.current = setTimeout(() => {
+                connectToChat(chatServerUrl, chatIdToConnect, interests, true);
+              }, 2000 * reconnectionAttemptsRef.current);
+            }
           }
         };
         ws.onerror = (err) => {
@@ -839,10 +837,10 @@ export const ChatConnectionProvider = ({
         connectToExistingSession,
         chatServerUrlRef,
         resetState: () => {
-            setMessages([]);
-            setParticipants([]);
-            setTypingUsers([]);
-        }
+          setMessages([]);
+          setParticipants([]);
+          setTypingUsers([]);
+        },
       }}
     >
       {children}
