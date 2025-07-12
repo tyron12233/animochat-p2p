@@ -44,7 +44,7 @@ export default function useChatSession(user: AuthUser | null) {
           chatServerUrl: serverUrl,
         });
 
-        setChatSessionStatus("existing_session")
+        setChatSessionStatus("existing_session");
       } catch (error) {
         console.error("Error fetching existing session:", error);
         setChatSessionStatus("no_session");

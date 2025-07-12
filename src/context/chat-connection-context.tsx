@@ -798,7 +798,7 @@ export const ChatConnectionProvider = ({
         setMode(json.mode || "light");
       })
       .then(() => {
-        connectToChat(data.chatServerUrl, data.chatId, []);
+        connectToChat(data.chatServerUrl, data.chatId, [], true);
       }) .catch(() => {
         setStatus("error");
         console.error("Failed to sync messages or participants.");

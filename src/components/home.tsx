@@ -46,7 +46,7 @@ export default function Home() {
         chatSessionData
       )
     }
-  }, [chatSessionStatus, chatSessionData, connectToExistingSession]);
+  }, [chatSessionStatus, chatSessionData]);
 
   const handleFindMatch = (interestsToMatch: Set<string>) => {
     startMatchmaking(Array.from(interestsToMatch));
