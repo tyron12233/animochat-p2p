@@ -671,7 +671,43 @@ export const ChatConnectionProvider = ({
               console.warn("Unknown packet type:", packet.type);
           }
         };
-        ws.onclose = () => {
+        ws.onclose = (ev: CloseEvent) => {
+          if (ev.code === 1010) {
+            // banned code
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `system_${Date.now()}`,
+                session_id: chatIdToConnect,
+                created_at: new Date().toISOString(),
+                type: "system",
+                content: "You have been banned from this chat.",
+                sender: "system",
+              },
+            ]);
+            setStatus("disconnected");
+            wsRef.current = null;
+            return;
+          }
+
+          // 1020 (room full)
+          if (ev.code === 1020) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `system_${Date.now()}`,
+                session_id: chatIdToConnect,
+                created_at: new Date().toISOString(),
+                type: "system",
+                content: "The chat room is full.",
+                sender: "system",
+              },
+            ]);
+            setStatus("disconnected");
+            wsRef.current = null;
+            return;
+          }
+
           if (!isDisconnectingRef.current) {
             setStatus("reconnecting");
           }
