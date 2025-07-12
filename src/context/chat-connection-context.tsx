@@ -39,6 +39,7 @@ interface ChatConnectionContextState {
   messages: Message[];
   participants: Participant[];
   typingUsers: string[];
+  setTypingUsers: React.Dispatch<React.SetStateAction<string[]>>;
   sendVoiceMessage: (audioBlob: Blob) => Promise<void>;
   sendMessage: (
     content: string,
@@ -50,6 +51,7 @@ interface ChatConnectionContextState {
   onReact: (messageId: string, emoji?: string | null) => Promise<void>;
   onChangeNickname: (nickname: string) => void;
   onChangeTheme: (mode: "light" | "dark", theme: ChatThemeV2) => void;
+  sendPacket: (packet: any) => void;
   connectToChat: (
     chatServerUrl: string,
     chatIdToConnect: string,
@@ -807,6 +809,7 @@ export const ChatConnectionProvider = ({
     <ChatConnectionContext.Provider
       value={{
         messages,
+        setTypingUsers,
         participants,
         typingUsers,
         sendMessage,
@@ -817,6 +820,7 @@ export const ChatConnectionProvider = ({
         onChangeNickname,
         onChangeTheme,
         connectToChat,
+        sendPacket,
         disconnect,
         onStartTyping,
         connectToExistingSession,

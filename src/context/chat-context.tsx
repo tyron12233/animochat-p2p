@@ -6,7 +6,7 @@ import { AuthUser } from "./auth-context";
 // Assuming these packet types are defined elsewhere, as in the original file
 import { ChangeNicknamePacket, DeleteMessagePacket, EditMessagePacket, MessagePacket, ReactionPacket, TypingPacket, ChangeThemePacket } from '../lib/packets';
 import { ChatThemeV2 } from "../lib/chat-theme";
-import { useWebSocket } from "./websocket-context";
+import { useChatConnection } from "./chat-connection-context";
 
 interface ChatContextState {
   messages: Message[];
@@ -27,10 +27,10 @@ const ChatContext = createContext<ChatContextState | undefined>(undefined);
 
 export const ChatProvider = ({ children, user }: { children: ReactNode, user: AuthUser | null }) => {
   const { chatId } = useSession();
-  const { sendPacket, isTypingRef } = useWebSocket();
+  const { sendPacket, typingUsers, setTypingUsers } = useChatConnection();
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+
   const userId = user?.id ?? "";
 
   const handleReaction = useCallback((messageId: string, emoji: string | null, reactingUserId: string, reactingUserNickname: string = "Anonymous") => {
@@ -116,7 +116,10 @@ export const ChatProvider = ({ children, user }: { children: ReactNode, user: Au
 
     const stopTypingPacket: TypingPacket = { type: "typing", content: false, sender: userId };
     sendPacket(stopTypingPacket);
-    if(isTypingRef.current) isTypingRef.current = false;
+    
+    if (typingUsers.includes(userId)) {
+      setTypingUsers((prev) => prev.filter((id) => id !== userId));
+    }
 
 
     const message: UserMessage = {
@@ -133,7 +136,7 @@ export const ChatProvider = ({ children, user }: { children: ReactNode, user: Au
     const packet: MessagePacket = { type: "message", content: message, sender: userId };
     sendPacket(packet);
     setMessages((prev) => [...prev, message]);
-  }, [userId, chatId, sendPacket, user, isTypingRef]);
+  }, [userId, chatId, sendPacket, user, typingUsers]);
 
   return (
     <ChatContext.Provider value={{

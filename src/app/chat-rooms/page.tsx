@@ -54,7 +54,7 @@ interface ChatServer {
 
 export interface ChatRoom {
   id: string;
-  participants: number;
+  participants: {id: string}[];
   max_participants: number;
   name: string;
   serverUrl: string;
@@ -174,7 +174,7 @@ const RoomListItem = ({
   room: ChatRoom;
   onJoin: () => void;
 }) => {
-  const occupancyRate = room.participants / room.max_participants;
+  const occupancyRate = room.participants.length / room.max_participants;
   const activityLevel =
     occupancyRate < 0.3
       ? { label: "Quiet", icon: Coffee, color: "text-blue-500 bg-blue-50" }
@@ -223,7 +223,7 @@ const RoomListItem = ({
             <div className="flex items-center gap-1">
               <Users size={12} />
               <span>
-                {room.participants}/{room.max_participants}
+                {room.participants.length}/{room.max_participants}
               </span>
             </div>
 
