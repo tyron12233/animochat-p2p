@@ -797,14 +797,13 @@ export const ChatConnectionProvider = ({
         setTheme(json.theme || defaultTheme);
         setMode(json.mode || "light");
       })
-      .catch(() => {
+      .then(() => {
+        connectToChat(data.chatServerUrl, data.chatId, []);
+      }) .catch(() => {
         setStatus("error");
         console.error("Failed to sync messages or participants.");
         return [];
       })
-      .then(() => {
-        connectToChat(data.chatServerUrl, data.chatId, []);
-      });
   }
 
   return (
