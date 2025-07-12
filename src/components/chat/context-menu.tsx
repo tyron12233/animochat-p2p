@@ -1,8 +1,10 @@
-
 import { motion } from "motion/react";
-import { Copy, Delete, Edit, Reply, Trash } from "lucide-react";
+import { Ban, Copy, Delete, Edit, Reply, Trash } from "lucide-react";
 import { createRef, useLayoutEffect, useState, useEffect, useRef } from "react";
 import { ChatThemeV2 } from "@/src/lib/chat-theme";
+import { useChat } from "@/src/context/chat-context";
+import { useAnimoChat } from "@/src/hooks/use-animochat";
+import { useAuth } from "@/src/context/auth-context";
 
 interface ContextMenuProps {
   theme: ChatThemeV2;
@@ -23,34 +25,106 @@ export default function ContextMenu({
   onCopy,
   onEdit,
   onClose,
-  onDelete
+  onDelete,
 }: ContextMenuProps) {
   const messageBuble = anchor.querySelector("#message-bubble")!;
   const isUserMessage = messageBuble.classList.contains("items-end");
-  
+
+  const { chat, matchmaking, session } = useAnimoChat();
+
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "admin" || false;
+
   // if the message bubble contains a div with the id "image-message-container", then it is an image message
-  const isImageMessage = messageBuble.querySelector(
-    "#image-message-container"
-  ) !== null;
+  const isImageMessage =
+    messageBuble.querySelector("#image-message-container") !== null;
 
-  const items = [
-    { icon: <Copy className="h-4 w-4" />, text: "Copy sender", onClick: () => {
-      const senderId = messageBuble.getAttribute("data-sender-id");
-      if (senderId) {
-        navigator.clipboard.writeText(senderId);
-      }
-      }},
-    { icon: <Reply className="h-4 w-4" />, text: "Reply", onClick: onReply },
-    { icon: <Copy className="h-4 w-4" />, text: "Copy", onClick: onCopy },
-    ...(isUserMessage && !isImageMessage
-      ? [{ icon: <Edit className="h-4 w-4" />, text: "Edit", onClick: onEdit }]
-      : []),
+  const createContextMenuItems = () => {
+    const menuItems = [];
 
-      // delete message is isUserMessage
-    ...(isUserMessage
-      ? [{ icon: <Trash className="h-4 w-4" />, text: "Delete", onClick: onDelete }]
-      : []),
-  ];
+    if (isAdmin) {
+      menuItems.push({
+        icon: <Copy className="h-4 w-4" />,
+        text: "Copy sender",
+        onClick: () => {
+          const senderId = messageBuble.getAttribute("data-sender-id");
+          if (senderId) {
+            navigator.clipboard.writeText(senderId);
+          }
+        },
+      });
+
+      menuItems.push({
+        icon: <Ban className="h-4 w-4" />,
+        text: "Ban user",
+        onClick: () => {
+          const senderId = messageBuble.getAttribute("data-sender-id");
+          const serverUrlp = chat.chatServerUrlRef.current;
+          // remove trailing slash if it exists
+          let cleanedServerUrl = serverUrlp.replace(/\/$/, "");
+
+
+          if (senderId) {
+            // api
+            // /ban/:chatId/:userId
+
+            fetch(
+              `${cleanedServerUrl}/ban/${session.chatId}/${senderId}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            )
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error("Failed to ban user");
+                }
+                return response.json();
+              })
+              .catch((error) => {
+                console.error("Error banning user:", error);
+              });
+          }
+
+          onClose();
+        }
+      });
+    }
+
+    menuItems.push({
+      icon: <Reply className="h-4 w-4" />,
+      text: "Reply",
+      onClick: onReply,
+    });
+    menuItems.push({
+      icon: <Copy className="h-4 w-4" />,
+      text: "Copy",
+      onClick: onCopy,
+    });
+
+    if (isUserMessage && !isImageMessage) {
+      menuItems.push({
+        icon: <Edit className="h-4 w-4" />,
+        text: "Edit",
+        onClick: onEdit,
+      });
+    }
+
+    if (isUserMessage) {
+      menuItems.push({
+        icon: <Trash className="h-4 w-4" />,
+        text: "Delete",
+        onClick: onDelete,
+      });
+    }
+
+    return menuItems;
+  };
+
+  const items = createContextMenuItems();
 
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -145,7 +219,8 @@ export default function ContextMenu({
       className="absolute flex flex-col rounded-3xl w-[200px] overflow-clip"
       style={{
         background:
-          theme.general.background[mode] || "linear-gradient(180deg, #ffffff, #ffffff)",
+          theme.general.background[mode] ||
+          "linear-gradient(180deg, #ffffff, #ffffff)",
         top: position.top,
         left: position.left,
       }}

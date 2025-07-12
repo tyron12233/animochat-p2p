@@ -57,6 +57,7 @@ interface ChatConnectionContextState {
     isReconnecting?: boolean,
     showRandomStrangerMessage?: boolean
   ) => void;
+  chatServerUrlRef: React.RefObject<string>;
   connectToExistingSession: (session: ChatSessionData) => void;
   disconnect: (isGroupChat?: boolean) => void;
   onStartTyping: () => void;
@@ -92,6 +93,10 @@ export const ChatConnectionProvider = ({
   const isDisconnectingRef = useRef<boolean>(false);
   const reconnectionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectionAttemptsRef = useRef<number>(0);
+
+
+  const chatServerUrlRef = useRef<string>("");
+
 
   // Low-level packet sender
   const sendPacket = useCallback((packet: any) => {
@@ -459,6 +464,8 @@ export const ChatConnectionProvider = ({
           setStatus("connected");
           reconnectionAttemptsRef.current = 0;
 
+          chatServerUrlRef.current = url;
+
           let message: string;
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
@@ -813,6 +820,7 @@ export const ChatConnectionProvider = ({
         disconnect,
         onStartTyping,
         connectToExistingSession,
+        chatServerUrlRef,
         resetState: () => {
             setMessages([]);
             setParticipants([]);
