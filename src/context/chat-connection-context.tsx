@@ -760,51 +760,63 @@ export const ChatConnectionProvider = ({
     ]
   );
 
-  function connectToExistingSession(data: ChatSessionData) {
-    setStatus("connecting");
+  const connectToExistingSession = useCallback(
+    (data: ChatSessionData) => {
+      setStatus("connecting");
 
-    const syncMessages = async (chatServer: string, chatId: string) => {
-      ///sync/:chatId
-      let baseUrl = chatServer.endsWith("/")
-        ? chatServer.slice(0, -1)
-        : chatServer;
-      const syncApi = `${baseUrl}/sync/${chatId}`;
-      try {
-        const headers: HeadersInit = {};
-        const response = await fetch(syncApi, {
-          headers,
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to sync messages: ${response.statusText}`);
+      const syncMessages = async (chatServer: string, chatId: string) => {
+        ///sync/:chatId
+        let baseUrl = chatServer.endsWith("/")
+          ? chatServer.slice(0, -1)
+          : chatServer;
+        const syncApi = `${baseUrl}/sync/${chatId}`;
+        try {
+          const headers: HeadersInit = {};
+          const response = await fetch(syncApi, {
+            headers,
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to sync messages: ${response.statusText}`);
+          }
+
+          // will return a message sync packet
+          const responseJson = await response.json();
+
+          return responseJson;
+        } catch (error) {
+          console.error("Error syncing messages:", error);
+          return [];
         }
+      };
 
-        // will return a message sync packet
-        const responseJson = await response.json();
+      setChatId(data.chatId);
 
-        return responseJson;
-      } catch (error) {
-        console.error("Error syncing messages:", error);
-        return [];
-      }
-    };
-
-    setChatId(data.chatId);
-
-    syncMessages(data.chatServerUrl, data.chatId)
-      .then((json) => {
-        setMessages(json.messages.content || []);
-        setParticipants(json.onlineParticipants || []);
-        setTheme(json.theme || defaultTheme);
-        setMode(json.mode || "light");
-      })
-      .then(() => {
-        connectToChat(data.chatServerUrl, data.chatId, [], true);
-      }) .catch(() => {
-        setStatus("error");
-        console.error("Failed to sync messages or participants.");
-        return [];
-      })
-  }
+      syncMessages(data.chatServerUrl, data.chatId)
+        .then((json) => {
+          setMessages(json.messages.content || []);
+          setParticipants(json.onlineParticipants || []);
+          setTheme(json.theme || defaultTheme);
+          setMode(json.mode || "light");
+        })
+        .then(() => {
+          connectToChat(data.chatServerUrl, data.chatId, [], true);
+        })
+        .catch(() => {
+          setStatus("error");
+          console.error("Failed to sync messages or participants.");
+          return [];
+        });
+    },
+    [
+      setStatus,
+      setChatId,
+      setMessages,
+      setParticipants,
+      setTheme,
+      setMode,
+      connectToChat,
+    ]
+  );
 
   return (
     <ChatConnectionContext.Provider
