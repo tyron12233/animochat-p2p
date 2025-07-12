@@ -464,6 +464,8 @@ export const ChatConnectionProvider = ({
         ws.onopen = (e) => {
           console.log("WebSocket connection established.");
           setStatus("connected");
+
+          reconnectionTimerRef.current = null;
           reconnectionAttemptsRef.current = 0;
 
           chatServerUrlRef.current = url;
@@ -801,7 +803,7 @@ export const ChatConnectionProvider = ({
         return [];
       })
       .then(() => {
-        connectToChat(data.chatServerUrl, data.chatId, [], true);
+        connectToChat(data.chatServerUrl, data.chatId, []);
       });
   }
 
