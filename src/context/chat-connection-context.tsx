@@ -711,6 +711,14 @@ export const ChatConnectionProvider = ({
           if (!isDisconnectingRef.current) {
             setStatus("reconnecting");
           }
+
+          // reconnection logic
+          if (reconnectionAttemptsRef.current < 5) {
+            reconnectionAttemptsRef.current++;
+            reconnectionTimerRef.current = setTimeout(() => {
+              connectToChat(chatServerUrl, chatIdToConnect, interests, true);
+            }, 2000 * reconnectionAttemptsRef.current);
+          }
         };
         ws.onerror = (err) => {
           console.error("WebSocket error:", err);
