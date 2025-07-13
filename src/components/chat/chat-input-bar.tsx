@@ -302,53 +302,53 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 className="text-[16px] flex-grow p-3 border rounded-full"
                 autoComplete="off"
               />
-              <Button
+                <Button
                 id="send-button"
                 type={hasText ? "submit" : "button"}
                 onClick={
                   !hasText && hasImage
-                    ? handleSendImage
-                    : !hasText
-                    ? startRecording
-                    : undefined
+                  ? handleSendImage
+                  : !hasText
+                  ? startRecording
+                  : undefined
                 }
-                disabled={isInputDisabled || (!hasText && !hasImage)}
+                disabled={isInputDisabled}
                 style={{
                   background: theme.buttons.primary.background[mode],
                   color: theme.buttons.primary.text[mode],
-                  opacity: isInputDisabled || (!hasText && !hasImage) ? 0.5 : 1,
+                  opacity: isInputDisabled ? 0.5 : 1,
                 }}
                 className="font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
                 aria-label={
                   hasImage && !hasText
-                    ? "Send image"
-                    : hasText
-                    ? "Send message"
-                    : "Record voice message"
+                  ? "Send image"
+                  : hasText
+                  ? "Send message"
+                  : "Record voice message"
                 }
-              >
+                >
                 <AnimatePresence mode="popLayout">
                   {hasText || hasImage ? (
-                    <motion.div
-                      key="send"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <SendHorizonal size={20} />
-                    </motion.div>
+                  <motion.div
+                    key="send"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    <SendHorizonal size={20} />
+                  </motion.div>
                   ) : (
-                    <motion.div
-                      key="mic"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <Mic size={20} />
-                    </motion.div>
+                  <motion.div
+                    key="mic"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    <Mic size={20} />
+                  </motion.div>
                   )}
                 </AnimatePresence>
-              </Button>
+                </Button>
             </motion.form>
           )}
         </AnimatePresence>
