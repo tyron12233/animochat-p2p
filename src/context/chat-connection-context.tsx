@@ -1,4 +1,4 @@
-import {
+import React, {
   createContext,
   useState,
   useContext,
@@ -64,6 +64,7 @@ interface ChatConnectionContextState {
   connectToExistingSession: (session: ChatSessionData) => void;
   disconnect: (isGroupChat?: boolean) => void;
   onStartTyping: () => void;
+  wsRef: React.RefObject<WebSocket | null>
   resetState: () => void;
 }
 
@@ -966,6 +967,7 @@ export const ChatConnectionProvider = ({
         sendImageMessage,
         onStartTyping,
         connectToExistingSession,
+        wsRef,
         chatServerUrlRef,
         resetState: () => {
           setMessages([]);

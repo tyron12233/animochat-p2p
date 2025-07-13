@@ -59,7 +59,7 @@ export default function ReplyIndicator({
   }
 
   let topMessage = `${isUserMessage ? "You replied" : `${message.senderNickname} replied`} to ${replyingMessage.senderNickname}`
-
+  
   return (
     <>
       <div 
@@ -79,7 +79,7 @@ export default function ReplyIndicator({
           color: theme.overlays.replyingPreview.description[mode],
         }}
       >
-        <p className="break-words whitespace-pre-wrap">
+        <p className="break-words whitespace-pre-wrap line-clamp-4">
           {replyingMessage.type === "deleted" ? "Deleted message." : replyingMessage.type === "voice_message" ? "Voice message." : replyingMessage.content}
         </p>
       </div>

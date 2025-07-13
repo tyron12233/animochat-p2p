@@ -44,6 +44,9 @@ import { OnlineUsers, UserListModal } from "./chat/online-users";
 import { AuthUser, useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
 import { ChatInputBar } from "./chat/chat-input-bar";
+import SharedMusicPlayer from "./shared-music-player";
+import { useSharedAudioPlayer } from "../hooks/use-shared-audio";
+import AdminControls from "./admin-controls";
 
 interface ChatProps {
   name: string;
@@ -108,6 +111,7 @@ export default function Chat({
   const {
     session: { status, setScreen },
     chat: {
+      wsRef,
       messages,
       sendVoiceMessage,
       sendImageMessage,
@@ -201,6 +205,32 @@ export default function Chat({
 
   const [confirmedEnd, setConfirmedEnd] = useState(false);
   const isEmojiMenuOpen = useRef(false);
+
+  const {
+    isPlaying,
+    setSong,
+    isMuted,
+    progress,
+    duration,
+    currentSong,
+    toggleMute,
+    play,
+  } = useSharedAudioPlayer(wsRef.current);
+
+  /**
+   * Handles the submission of a new song from the admin dialog
+   * and sends it over the WebSocket.
+   * @param {string} name The name of the song.
+   * @param {string} url The URL of the song's MP3 file.
+   */
+  const handleSetSong = (name: string, url: string) => {
+    if (wsRef.current && user?.role === "admin") {
+      setSong({
+        name: name,
+        url: url,
+      });
+    }
+  };
 
   const [emojiMenuState, setEmojiMenuState] = useState<{
     open: boolean;
@@ -700,6 +730,30 @@ export default function Chat({
           )}
         </div>
 
+        {user?.role === "admin" && (
+          <AdminControls
+            onSetSong={handleSetSong}
+            theme={theme}
+            mode={mode}
+            socket={wsRef.current}
+            isPlaying={isPlaying}
+            progress={progress}
+            play={play}
+          />
+        )}
+
+        {currentSong && (
+          <SharedMusicPlayer
+            songName={currentSong.name}
+            artistName={"Shared Playback"}
+            progress={(progress / duration) * 100 || 0}
+            isMuted={isMuted}
+            onMuteToggle={toggleMute}
+            theme={theme}
+            mode={mode}
+          />
+        )}
+
         {announcement && (
           <div
             style={{
@@ -939,7 +993,7 @@ export default function Chat({
           </AnimateChangeInHeight>
         )}
 
-        <ChatInputBar 
+        <ChatInputBar
           theme={theme}
           mode={mode}
           currentMessage={currentMessage}
@@ -948,10 +1002,10 @@ export default function Chat({
           setCurrentMentions={setCurrentMentions}
           onSendMessage={handleSend}
           onSendVoiceMessage={(blob) => {
-            sendVoiceMessage(blob)
+            sendVoiceMessage(blob);
           }}
           onSendImageMessage={(imageB) => {
-            sendImageMessage(imageB)
+            sendImageMessage(imageB);
           }}
           groupChat={groupChat}
           status={status}
