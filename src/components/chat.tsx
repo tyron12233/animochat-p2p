@@ -215,6 +215,8 @@ export default function Chat({
     currentSong,
     toggleMute,
     play,
+    playbackBlocked,
+    unblockPlayback,
   } = useSharedAudioPlayer(wsRef.current);
 
   /**
@@ -739,6 +741,8 @@ export default function Chat({
             isPlaying={isPlaying}
             progress={progress}
             play={play}
+            playbackBlocked={playbackBlocked}
+            unblockPlayback={unblockPlayback}
           />
         )}
 
@@ -748,285 +752,267 @@ export default function Chat({
             artistName={"Shared Playback"}
             currentTime={progress}
             duration={duration}
-            onSeek={(seek) => {
-              if (user?.role === "admin" && wsRef.current) {
-                wsRef.current.send(
-                  JSON.stringify({
-                    type: "music_seek",
-                    content: {
-                      seekTime: seek
-                    }
-                    
-                  })
-                );
-              }
-            }}
             isMuted={isMuted}
             onMuteToggle={toggleMute}
+            onSeek={() => {}}
             theme={theme}
             mode={mode}
+            playbackBlocked={playbackBlocked}
+            onUnblockPlayback={unblockPlayback}
           />
         )}
 
-        {announcement && (
-          <div
-            style={{
-              background: theme.announcement.background[mode],
-              color: theme.announcement.text[mode],
-              borderColor: theme.announcement.border[mode],
-            }}
-            className="p-2 text-center text-xs border-b shrink-0"
-          >
-            <div dangerouslySetInnerHTML={{ __html: announcement }} />
-          </div>
-        )}
-
-        <AnimatePresence>
-          {(status === "waiting_for_match" ||
-            status === "finding_match" ||
-            status === "connecting") && (
-            <FindingMatchAnimation
-              isGroupChat={groupChat}
-              onCancel={cancelMatchmaking}
-              key="finding-match-animation"
-              theme={theme}
-              mode={mode}
-            />
-          )}
-        </AnimatePresence>
-
-        <div className="max-h-full h-full relative">
-          <VList
-            ref={scrollerRef}
-            style={{ overflowX: "hidden" }}
-            id="chat-messages-list"
-            onScroll={(offset) => {
-              if (!scrollerRef.current) return;
-              const scrollOffset =
-                offset -
-                scrollerRef.current.scrollSize +
-                scrollerRef.current.viewportSize;
-              isAtBottom.current = scrollOffset >= -100;
-
-              if (isAtBottom.current) {
-                setShowNewMessagesButton(false);
-              }
-            }}
-            reverse
-          >
-            {actualMessages.map((msg, index) => renderMessage(msg, index))}
-            <div className="overflow-hidden">
-              <AnimateChangeInHeight>
-                {typingUsers.length > 0 && (
-                  <TypingIndicator
-                    typingUsers={typingUsers}
-                    key="typing-indicator"
-                    theme={theme}
-                    mode={mode}
-                  />
-                )}
-              </AnimateChangeInHeight>
-            </div>
-          </VList>
-
+        <div
+          className="flex-grow overflow-y-auto"
+          id="chat-messages-list-container"
+        >
           <AnimatePresence>
-            {showNewMessagesButton && (
-              <motion.div
-                key="new-messages-button"
-                initial={{ y: "100%" }}
-                animate={{ y: "0" }}
-                exit={{ y: "100%" }}
-                className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-2 pt-4"
-              >
-                <button
-                  id="new-messages-button"
-                  onClick={() => {
-                    scrollerRef.current?.scrollToIndex(
-                      actualMessages.length - 1,
-                      { align: "end", smooth: true }
-                    );
-                    setShowNewMessagesButton(false);
-                  }}
-                  style={{
-                    backgroundColor: theme.buttons.newMessages.background[mode],
-                    color: theme.buttons.newMessages.text[mode],
-                  }}
-                  className="px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-colors"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                  New messages
-                </button>
-              </motion.div>
+            {(status === "waiting_for_match" ||
+              status === "finding_match" ||
+              status === "connecting") && (
+              <FindingMatchAnimation
+                isGroupChat={groupChat}
+                onCancel={cancelMatchmaking}
+                key="finding-match-animation"
+                theme={theme}
+                mode={mode}
+              />
             )}
           </AnimatePresence>
-        </div>
 
-        <AnimateChangeInHeight>
-          <motion.div
-            key="bottom-message-preview"
-            style={{
-              paddingBottom: bottomMessagePreviewState ? "2rem" : 0,
-              overflow: "hidden",
-              visibility: bottomMessagePreviewState ? "visible" : "hidden",
-              height: bottomMessagePreviewState ? "auto" : 0,
-              backgroundColor: theme.overlays.replyingPreview.background[mode],
-              borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
-            }}
-            className="flex items-start gap-2 px-3 py-2 relative"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span
-                  style={{
-                    color: theme.overlays.replyingPreview.title[mode],
-                  }}
-                  className="text-xs font-semibold"
-                >
-                  {bottomMessagePreviewState?.type === "replying"
-                    ? "Replying to"
-                    : "Editing"}
-                </span>
-                <button
-                  type="button"
-                  className="ml-auto"
-                  aria-label="Cancel"
-                  onClick={() => setBottomMessagePreviewState(null)}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke={theme.overlays.replyingPreview.closeIcon[mode]}
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-              <div
-                style={{
-                  color: theme.overlays.replyingPreview.description[mode],
-                }}
-                className="text-xs truncate max-w-xs"
-              >
-                {bottomMessagePreviewState?.description}
-              </div>
-            </div>
-          </motion.div>
-        </AnimateChangeInHeight>
+          <div className="max-h-full h-full relative">
+            <VList
+              ref={scrollerRef}
+              style={{ overflowX: "hidden" }}
+              id="chat-messages-list"
+              onScroll={(offset) => {
+                if (!scrollerRef.current) return;
+                const scrollOffset =
+                  offset -
+                  scrollerRef.current.scrollSize +
+                  scrollerRef.current.viewportSize;
+                isAtBottom.current = scrollOffset >= -100;
 
-        {groupChat && (
-          <AnimateChangeInHeight>
-            <div
-              id="mentions-container"
-              className="border-t"
-              style={{
-                borderColor: theme.inputArea.border[mode],
+                if (isAtBottom.current) {
+                  setShowNewMessagesButton(false);
+                }
               }}
+              reverse
             >
-              {mentionParticipants.length > 0 && (
+              {actualMessages.map((msg, index) => renderMessage(msg, index))}
+              <div className="overflow-hidden">
+                <AnimateChangeInHeight>
+                  {typingUsers.length > 0 && (
+                    <TypingIndicator
+                      typingUsers={typingUsers}
+                      key="typing-indicator"
+                      theme={theme}
+                      mode={mode}
+                    />
+                  )}
+                </AnimateChangeInHeight>
+              </div>
+            </VList>
+
+            <AnimatePresence>
+              {showNewMessagesButton && (
+                <motion.div
+                  key="new-messages-button"
+                  initial={{ y: "100%" }}
+                  animate={{ y: "0" }}
+                  exit={{ y: "100%" }}
+                  className="absolute bottom-0 left-0 w-full flex items-center justify-center pb-2 pt-4"
+                >
+                  <button
+                    id="new-messages-button"
+                    onClick={() => {
+                      scrollerRef.current?.scrollToIndex(
+                        actualMessages.length - 1,
+                        { align: "end", smooth: true }
+                      );
+                      setShowNewMessagesButton(false);
+                    }}
+                    style={{
+                      backgroundColor: theme.buttons.newMessages.background[mode],
+                      color: theme.buttons.newMessages.text[mode],
+                    }}
+                    className="px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                      />
+                    </svg>
+                    New messages
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <AnimateChangeInHeight>
+            <motion.div
+              key="bottom-message-preview"
+              style={{
+                paddingBottom: bottomMessagePreviewState ? "2rem" : 0,
+                overflow: "hidden",
+                visibility: bottomMessagePreviewState ? "visible" : "hidden",
+                height: bottomMessagePreviewState ? "auto" : 0,
+                backgroundColor: theme.overlays.replyingPreview.background[mode],
+                borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
+              }}
+              className="flex items-start gap-2 px-3 py-2 relative"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    style={{
+                      color: theme.overlays.replyingPreview.title[mode],
+                    }}
+                    className="text-xs font-semibold"
+                  >
+                    {bottomMessagePreviewState?.type === "replying"
+                      ? "Replying to"
+                      : "Editing"}
+                  </span>
+                  <button
+                    type="button"
+                    className="ml-auto"
+                    aria-label="Cancel"
+                    onClick={() => setBottomMessagePreviewState(null)}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke={theme.overlays.replyingPreview.closeIcon[mode]}
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
                 <div
                   style={{
-                    backgroundColor: theme.inputArea.background[mode],
-                    borderColor: theme.inputArea.border[mode],
-                    maxHeight: "200px",
-                    overflowY: "auto",
+                    color: theme.overlays.replyingPreview.description[mode],
                   }}
-                  className="p-2 border-t"
+                  className="text-xs truncate max-w-xs"
                 >
-                  <ul className="space-y-1">
-                    {mentionParticipants.map((participant) => (
-                      <li
-                        key={participant.userId}
-                        className="flex items-center gap-2 cursor-pointer p-2 rounded-md transition-colors"
-                        onClick={() => {
-                          const textInput = document.getElementById(
-                            "chat-input"
-                          ) as HTMLInputElement;
-                          const cursorPosition = textInput.selectionStart || 0;
-                          const textBeforeCursor = currentMessage.slice(
-                            0,
-                            cursorPosition
-                          );
-                          const atIndex = textBeforeCursor.lastIndexOf("@");
-                          const newMessage = `${textBeforeCursor.slice(
-                            0,
-                            atIndex + 1
-                          )}${participant.nickname} ${currentMessage.slice(
-                            cursorPosition
-                          )}`;
-                          setCurrentMessage(newMessage);
-                          setMentionParticipants([]);
-                          textInput.focus();
-                          textInput.setSelectionRange(
-                            atIndex + participant.nickname.length + 2,
-                            atIndex + participant.nickname.length + 2
-                          );
+                  {bottomMessagePreviewState?.description}
+                </div>
+              </div>
+            </motion.div>
+          </AnimateChangeInHeight>
 
-                          // add mention to currentMentions
-                          setCurrentMentions((prev) => [
-                            ...prev,
-                            {
-                              id: participant.userId,
-                              startIndex: atIndex + 1,
-                              endIndex:
-                                atIndex + participant.nickname.length + 1,
-                            },
-                          ]);
-                        }}
-                      >
-                        <span
-                          className="text-sm font-medium"
-                          style={{
-                            color: theme.inputArea.inputText[mode],
+          {groupChat && (
+            <AnimateChangeInHeight>
+              <div
+                id="mentions-container"
+                className="border-t"
+                style={{
+                  borderColor: theme.inputArea.border[mode],
+                }}
+              >
+                {mentionParticipants.length > 0 && (
+                  <div
+                    style={{
+                      backgroundColor: theme.inputArea.background[mode],
+                      borderColor: theme.inputArea.border[mode],
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                    }}
+                    className="p-2 border-t"
+                  >
+                    <ul className="space-y-1">
+                      {mentionParticipants.map((participant) => (
+                        <li
+                          key={participant.userId}
+                          className="flex items-center gap-2 cursor-pointer p-2 rounded-md transition-colors"
+                          onClick={() => {
+                            const textInput = document.getElementById(
+                              "chat-input"
+                            ) as HTMLInputElement;
+                            const cursorPosition = textInput.selectionStart || 0;
+                            const textBeforeCursor = currentMessage.slice(
+                              0,
+                              cursorPosition
+                            );
+                            const atIndex = textBeforeCursor.lastIndexOf("@");
+                            const newMessage = `${textBeforeCursor.slice(
+                              0,
+                              atIndex + 1
+                            )}${participant.nickname} ${currentMessage.slice(
+                              cursorPosition
+                            )}`;
+                            setCurrentMessage(newMessage);
+                            setMentionParticipants([]);
+                            textInput.focus();
+                            textInput.setSelectionRange(
+                              atIndex + participant.nickname.length + 2,
+                              atIndex + participant.nickname.length + 2
+                            );
+
+                            // add mention to currentMentions
+                            setCurrentMentions((prev) => [
+                              ...prev,
+                              {
+                                id: participant.userId,
+                                startIndex: atIndex + 1,
+                                endIndex:
+                                  atIndex + participant.nickname.length + 1,
+                              },
+                            ]);
                           }}
                         >
-                          {participant.nickname}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </AnimateChangeInHeight>
-        )}
+                          <span
+                            className="text-sm font-medium"
+                            style={{
+                              color: theme.inputArea.inputText[mode],
+                            }}
+                          >
+                            {participant.nickname}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AnimateChangeInHeight>
+          )}
 
-        <ChatInputBar
-          theme={theme}
-          mode={mode}
-          currentMessage={currentMessage}
-          handleInputChange={handleInputChange}
-          currentMentions={currentMentions}
-          setCurrentMentions={setCurrentMentions}
-          onSendMessage={handleSend}
-          onSendVoiceMessage={(blob) => {
-            sendVoiceMessage(blob);
-          }}
-          onSendImageMessage={(imageB) => {
-            sendImageMessage(imageB);
-          }}
-          groupChat={groupChat}
-          status={status}
-          onStartTyping={onStartTyping}
-          participants={participants}
-          bottomMessagePreviewState={bottomMessagePreviewState}
-        />
+          <ChatInputBar
+            theme={theme}
+            mode={mode}
+            currentMessage={currentMessage}
+            handleInputChange={handleInputChange}
+            currentMentions={currentMentions}
+            setCurrentMentions={setCurrentMentions}
+            onSendMessage={handleSend}
+            onSendVoiceMessage={(blob) => {
+              sendVoiceMessage(blob);
+            }}
+            onSendImageMessage={(imageB) => {
+              sendImageMessage(imageB);
+            }}
+            groupChat={groupChat}
+            status={status}
+            onStartTyping={onStartTyping}
+            participants={participants}
+            bottomMessagePreviewState={bottomMessagePreviewState}
+          />
+        </div>
       </div>
     </>
   );

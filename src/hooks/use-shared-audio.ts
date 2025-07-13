@@ -7,7 +7,7 @@ import { PeerConnectionPacket } from "../lib/types";
 interface Song {
   name: string;
   url: string;
-  progress?: number; 
+  progress?: number;
 }
 
 /**
@@ -24,11 +24,16 @@ interface MusicSeekPayload {
   seekTime: number;
 }
 
-
 export type MusicSetPacket = PeerConnectionPacket<Song, "music_set">;
 export type MusicPausePacket = PeerConnectionPacket<null, "music_pause">;
-export type MusicSeekPacket = PeerConnectionPacket<MusicSeekPayload, "music_seek">;
-export type MusicPlayPacket = PeerConnectionPacket<MusicPlayPayload, "music_play">
+export type MusicSeekPacket = PeerConnectionPacket<
+  MusicSeekPayload,
+  "music_seek"
+>;
+export type MusicPlayPacket = PeerConnectionPacket<
+  MusicPlayPayload,
+  "music_play"
+>;
 
 /**
  * The return type of the useSharedAudioPlayer hook.
@@ -39,9 +44,11 @@ interface SharedAudioPlayerState {
   progress: number;
   duration: number;
   currentSong: Song | null;
+  playbackBlocked: boolean;
   setSong: (song: Song) => void;
   toggleMute: () => void;
   play: () => void;
+  unblockPlayback: () => void;
 }
 
 /**
@@ -61,12 +68,33 @@ export const useSharedAudioPlayer = (
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
 
   const play = () => {
     if (audioRef.current) {
-        console.log("Playing audio:", currentSong?.name);
-      audioRef.current.play().catch((e) => console.error("Error playing audio:", e));
-      setIsPlaying(true);
+      console.log("Playing audio:", currentSong?.name);
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((e) => {
+          console.error("Error playing audio:", e);
+          setIsPlaying(false);
+        });
+    }
+  };
+
+  const unblockPlayback = () => {
+    if (playbackBlocked && audioRef.current) {
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setPlaybackBlocked(false);
+        })
+        .catch((e) => {
+          console.error("Error unblocking audio playback:", e);
+          setIsPlaying(false);
+        });
     }
   };
 
@@ -90,13 +118,15 @@ export const useSharedAudioPlayer = (
      */
     const handleWebSocketMessage = (messageEvent: MessageEvent) => {
       try {
-        const packet: PeerConnectionPacket<any, string> = JSON.parse(messageEvent.data);
+        const packet: PeerConnectionPacket<any, string> = JSON.parse(
+          messageEvent.data
+        );
 
         switch (packet.type) {
           case "music_set":
             const song = packet.content as Song | undefined;
             if (!song) {
-                break;
+              break;
             }
 
             console.log("Received music_set:", song);
@@ -109,8 +139,19 @@ export const useSharedAudioPlayer = (
             const playPayload = packet.content as MusicPlayPayload;
             console.log("Received music_play at:", playPayload.currentTime);
             audio.currentTime = playPayload.currentTime;
-            audio.play().catch((e) => console.error("Error playing audio:", e));
-            setIsPlaying(true);
+            audio
+              .play()
+              .then(() => {
+                setIsPlaying(true);
+                setPlaybackBlocked(false);
+              })
+              .catch((e) => {
+                console.error("Error playing audio:", e);
+                if (e.name === "NotAllowedError") {
+                  setPlaybackBlocked(true);
+                }
+                setIsPlaying(false);
+              });
             break;
 
           case "music_pause":
@@ -141,11 +182,11 @@ export const useSharedAudioPlayer = (
     // --- Registering Event Listeners ---
     socket.addEventListener("message", handleWebSocketMessage);
     socket.addEventListener("close", () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = ""; 
-        }
-    })
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+    });
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handlePlaybackEnded);
@@ -187,5 +228,7 @@ export const useSharedAudioPlayer = (
     currentSong,
     toggleMute,
     play,
+    playbackBlocked,
+    unblockPlayback,
   };
 };

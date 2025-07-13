@@ -11,6 +11,8 @@ interface AdminControlsProps {
   isPlaying: boolean;
   progress: number;
   play: () => void;
+  playbackBlocked: boolean;
+  unblockPlayback: () => void;
 }
 
 /**
@@ -26,40 +28,16 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   isPlaying,
   progress,
   play,
+  playbackBlocked,
+  unblockPlayback,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (!isPlaying) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+  const handlePlay = () => {
+    if (playbackBlocked) {
+      unblockPlayback();
       return;
     }
-
-    intervalRef.current = setInterval(() => {
-      if (socket) {
-        socket.send(
-          JSON.stringify({
-            type: "music_progress",
-            content: { currentTime: progress },
-          })
-        );
-      }
-    }, 2000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isPlaying, progress, socket]);
-
-  const handlePlay = () => {
     if (socket) {
       socket.send(
         JSON.stringify({

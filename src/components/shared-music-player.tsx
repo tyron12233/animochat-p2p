@@ -5,11 +5,13 @@ import { ChatThemeV2 } from "../lib/chat-theme";
 interface SharedMusicPlayerProps {
   songName: string;
   artistName: string;
-  currentTime: number;    // in seconds
-  duration: number;       // in seconds
+  currentTime: number; // in seconds
+  duration: number; // in seconds
   isMuted: boolean;
+  playbackBlocked: boolean;
   onMuteToggle: () => void;
   onSeek: (time: number) => void;
+  onUnblockPlayback: () => void;
   theme: ChatThemeV2;
   mode: "light" | "dark";
 }
@@ -32,19 +34,28 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   onSeek,
   theme,
   mode,
+  playbackBlocked,
+  onUnblockPlayback,
 }) => {
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
-      className="flex items-center gap-4 p-4 border-b shadow-sm"
+      className="flex items-center gap-4 p-4 border-b shadow-sm relative"
       style={{
         background: theme.header.background[mode],
         borderColor: theme.header.border[mode],
         color: theme.header.statusValue[mode],
       }}
     >
-
+      {playbackBlocked && (
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 cursor-pointer"
+          onClick={onUnblockPlayback}
+        >
+          <p className="text-white text-lg font-semibold">Tap to listen</p>
+        </div>
+      )}
       <div className="flex-grow">
         {/* Song & artist */}
         <div className="flex justify-between items-center">
