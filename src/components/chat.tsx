@@ -746,7 +746,9 @@ export default function Chat({
           <SharedMusicPlayer
             songName={currentSong.name}
             artistName={"Shared Playback"}
-            progress={(progress / duration) * 100 || 0}
+            currentTime={progress}
+            duration={duration}
+            onSeek={() => {}}
             isMuted={isMuted}
             onMuteToggle={toggleMute}
             theme={theme}
