@@ -748,7 +748,19 @@ export default function Chat({
             artistName={"Shared Playback"}
             currentTime={progress}
             duration={duration}
-            onSeek={() => {}}
+            onSeek={(seek) => {
+              if (user?.role === "admin" && wsRef.current) {
+                wsRef.current.send(
+                  JSON.stringify({
+                    type: "music_seek",
+                    content: {
+                      seekTime: seek
+                    }
+                    
+                  })
+                );
+              }
+            }}
             isMuted={isMuted}
             onMuteToggle={toggleMute}
             theme={theme}
