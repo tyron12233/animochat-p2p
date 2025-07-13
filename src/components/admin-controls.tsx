@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Music, Pause, Play } from "lucide-react";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import SetSongDialog from "./set-song-dialog";
@@ -29,6 +29,26 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    if (!isPlaying) {
+        return;
+    }
+
+    // report progress every second
+    const interval = setInterval(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+                JSON.stringify({
+                    event: "music_progress",
+                    payload: { progress },
+                })
+            );
+        }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying])
+
   const handlePlay = () => {
     if (socket) {
       socket.send(
@@ -43,7 +63,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 
   const handlePause = () => {
     if (socket) {
-      socket.send(JSON.stringify({ event: "music_pause", payload: {} }));
+      socket.send(JSON.stringify({ type: "music_pause", payload: {} }));
     }
   };
 
