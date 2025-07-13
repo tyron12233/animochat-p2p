@@ -114,7 +114,7 @@ export default function ContextMenu({
       });
     }
 
-    if (isUserMessage) {
+    if (isUserMessage || isAdmin) {
       menuItems.push({
         icon: <Trash className="h-4 w-4" />,
         text: "Delete",
