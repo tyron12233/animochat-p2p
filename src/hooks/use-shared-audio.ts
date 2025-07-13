@@ -170,7 +170,7 @@ export const useSharedAudioPlayer = (
     isMuted,
     setSong: (song: Song) => {
       if (socket) {
-        socket.send(JSON.stringify({ event: "music_set", payload: song }));
+        socket.send(JSON.stringify({ type: "music_set", payload: song }));
       }
       setCurrentSong(song);
       if (audioRef.current) {
