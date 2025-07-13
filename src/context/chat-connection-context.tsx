@@ -970,6 +970,11 @@ export const ChatConnectionProvider = ({
         wsRef,
         chatServerUrlRef,
         resetState: () => {
+          isDisconnectingRef.current = false;
+          reconnectionAttemptsRef.current = 0;
+          if (reconnectionTimerRef.current) {
+            clearTimeout(reconnectionTimerRef.current);
+          }
           setMessages([]);
           setParticipants([]);
           setTypingUsers([]);
