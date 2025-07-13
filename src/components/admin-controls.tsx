@@ -29,25 +29,35 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (!isPlaying) {
-        return;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
     }
 
-    // report progress every second
-    const interval = setInterval(() => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(
-                JSON.stringify({
-                    type: "music_progress",
-                    content: { progress },
-                })
-            );
-        }
-    }, 1000);
+    intervalRef.current = setInterval(() => {
+      if (socket) {
+        socket.send(
+          JSON.stringify({
+            type: "music_progress",
+            content: { currentTime: progress },
+          })
+        );
+      }
+    }, 2000);
 
-    return () => clearInterval(interval);
-  }, [isPlaying])
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isPlaying, progress, socket]);
 
   const handlePlay = () => {
     if (socket) {
