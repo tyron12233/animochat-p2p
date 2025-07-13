@@ -125,7 +125,18 @@ export const useSharedAudioPlayer = (
         switch (packet.type) {
           case "music_set":
             const song = packet.content as Song | undefined;
-            if (!song) {
+            const anySong = song as any;
+
+            if (!anySong || !anySong.name || !anySong.url) {
+              setCurrentSong(null);
+              audio.src = "";
+              setIsPlaying(false);
+              setDuration(0);
+              setProgress(0);
+              return;
+            }
+
+            if (!song || !song?.url) {
               break;
             }
 

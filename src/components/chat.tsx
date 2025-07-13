@@ -732,6 +732,19 @@ export default function Chat({
           )}
         </div>
 
+        {announcement && (
+          <div
+            style={{
+              background: theme.announcement.background[mode],
+              color: theme.announcement.text[mode],
+              borderColor: theme.announcement.border[mode],
+            }}
+            className="p-2 text-center text-xs border-b shrink-0"
+          >
+            <div dangerouslySetInnerHTML={{ __html: announcement }} />
+          </div>
+        )}
+
         {user?.role === "admin" && (
           <AdminControls
             onSetSong={handleSetSong}
@@ -757,13 +770,14 @@ export default function Chat({
             onSeek={() => {}}
             theme={theme}
             mode={mode}
+            isAdmin={user?.role === "admin"}
             playbackBlocked={playbackBlocked}
             onUnblockPlayback={unblockPlayback}
           />
         )}
 
         <div
-          className="flex-grow overflow-y-auto"
+          className="flex flex-col flex-grow"
           id="chat-messages-list-container"
         >
           <AnimatePresence>

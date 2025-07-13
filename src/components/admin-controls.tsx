@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Music, Pause, Play } from "lucide-react";
+import { Music, Pause, Play, X } from "lucide-react";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import SetSongDialog from "./set-song-dialog";
 
@@ -55,6 +55,12 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     }
   };
 
+  const handleRemoveSong = () => {
+    if (socket) {
+      socket.send(JSON.stringify({ type: "music_set", content: {} }));
+    }
+  };
+
   return (
     <div
       className="w-full flex justify-end items-center gap-2 p-2"
@@ -102,6 +108,18 @@ const AdminControls: React.FC<AdminControlsProps> = ({
         title="Set a song for the group"
       >
         <Music size={20} />
+      </button>
+      <button
+        onClick={handleRemoveSong}
+        style={{
+          background: theme.buttons.secondary.background[mode],
+          color: theme.buttons.secondary.text[mode],
+          borderColor: theme.buttons.secondary.border?.[mode] || "transparent",
+        }}
+        className="p-2 rounded-full"
+        title="Remove the current song"
+      >
+        <X size={20} />
       </button>
 
       <SetSongDialog
