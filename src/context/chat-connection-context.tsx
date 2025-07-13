@@ -794,8 +794,8 @@ export const ChatConnectionProvider = ({
                 )
               );
               break;
-            default:
-              console.warn("Unknown packet type:", packet.type);
+            // default:
+              // console.warn("Unknown packet type:", packet.type);
           }
         };
         ws.onclose = (ev: CloseEvent) => {

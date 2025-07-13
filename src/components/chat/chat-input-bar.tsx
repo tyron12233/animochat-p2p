@@ -153,8 +153,34 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target && typeof e.target.result === "string") {
-          onSendImageMessage(e.target.result);
-          setSelectedImage(null);
+          // Compress image using canvas
+          const img = new window.Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            // Resize if larger than 1024px (optional)
+            const maxDim = 1024;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = (height * maxDim) / width;
+                width = maxDim;
+              } else {
+                width = (width * maxDim) / height;
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              // JPEG for better compression, quality 0.7
+              const compressed = canvas.toDataURL("image/jpeg", 0.7);
+              onSendImageMessage(compressed);
+              setSelectedImage(null);
+            }
+          };
+          img.src = e.target.result;
         }
       };
       reader.readAsDataURL(selectedImage);
@@ -321,7 +347,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 className="font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
                 aria-label={
                   hasImage && !hasText
-                  ? "Send image"
+                  ? "andleSendImaged image"
                   : hasText
                   ? "Send message"
                   : "Record voice message"

@@ -39,7 +39,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(
                 JSON.stringify({
-                    event: "music_progress",
+                    type: "music_progress",
                     content: { progress },
                 })
             );
@@ -53,7 +53,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     if (socket) {
       socket.send(
         JSON.stringify({
-          event: "music_play",
+          type: "music_play",
           content: { currentTime: progress },
         })
       );
