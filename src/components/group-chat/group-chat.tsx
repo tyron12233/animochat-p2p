@@ -8,6 +8,8 @@ import { useAuth } from "@/src/context/auth-context";
 import { useAnimoChat } from "@/src/hooks/use-animochat";
 import { PhotoProvider } from "react-photo-view";
 
+import 'react-photo-view/dist/react-photo-view.css';
+
 interface GrouupChatProps {
   room: ChatRoom;
   onLeave: () => void;

@@ -14,6 +14,8 @@ import { useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
 import { PhotoProvider } from "react-photo-view";
 
+import 'react-photo-view/dist/react-photo-view.css';
+
 export default function Home() {
   const { user, session, login, logout, isLoading: isAuthLoading } = useAuth();
   const { chatSessionData, chatSessionStatus } = useChatSession(user);
