@@ -44,7 +44,6 @@ import { OnlineUsers, UserListModal } from "./chat/online-users";
 import { AuthUser, useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
 import { ChatInputBar } from "./chat/chat-input-bar";
-import { PhotoProvider } from "react-photo-view";
 
 interface ChatProps {
   name: string;
@@ -473,8 +472,6 @@ export default function Chat({
 
   return (
     <>
-
-    <PhotoProvider>
       <DynamicGlobalStyles theme={theme} mode={mode} />
       <UserListModal
         theme={theme}
@@ -963,8 +960,6 @@ export default function Chat({
           bottomMessagePreviewState={bottomMessagePreviewState}
         />
       </div>
-    
-    </PhotoProvider>
     </>
   );
 }

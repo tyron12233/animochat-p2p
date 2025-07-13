@@ -12,6 +12,7 @@ import { Server, Shield } from "lucide-react";
 import useChatSession from "../hooks/use-chat-session";
 import { useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
+import { PhotoProvider } from "react-photo-view";
 
 export default function Home() {
   const { user, session, login, logout, isLoading: isAuthLoading } = useAuth();
@@ -42,9 +43,7 @@ export default function Home() {
 
   useEffect(() => {
     if (chatSessionStatus === "existing_session" && chatSessionData) {
-      connectToExistingSession(
-        chatSessionData
-      )
+      connectToExistingSession(chatSessionData);
     }
   }, [chatSessionStatus, chatSessionData]);
 
@@ -81,16 +80,18 @@ export default function Home() {
             {...pageTransition}
             className="h-full w-full flex items-center justify-center sm:p-4"
           >
-            <Chat
-              groupChat={false}
-              name=""
-              onBack={() => {
-                setScreen("matchmaking");
-              }}
-              newChat={() => {
-                startMatchmaking(Array.from(interests));
-              }}
-            />
+            <PhotoProvider>
+              <Chat
+                groupChat={false}
+                name=""
+                onBack={() => {
+                  setScreen("matchmaking");
+                }}
+                newChat={() => {
+                  startMatchmaking(Array.from(interests));
+                }}
+              />
+            </PhotoProvider>
           </motion.div>
         );
 

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/src/context/auth-context";
 import { useAnimoChat } from "@/src/hooks/use-animochat";
+import { PhotoProvider } from "react-photo-view";
 
 interface GrouupChatProps {
   room: ChatRoom;
@@ -15,7 +16,7 @@ interface GrouupChatProps {
 export default function GroupChat({ room, onLeave }: GrouupChatProps) {
   const { user, session } = useAuth();
 
-  const { chat,  } = useAnimoChat();
+  const { chat } = useAnimoChat();
 
   useEffect(() => {
     if (!user || !room) {
@@ -29,10 +30,16 @@ export default function GroupChat({ room, onLeave }: GrouupChatProps) {
 
   return (
     <>
-      <Chat groupChat={true} name={room.name} onBack={() => {
-        chat.disconnect();
-        onLeave();
-      }} />
+      <PhotoProvider>
+        <Chat
+          groupChat={true}
+          name={room.name}
+          onBack={() => {
+            chat.disconnect();
+            onLeave();
+          }}
+        />
+      </PhotoProvider>
     </>
   );
 }
