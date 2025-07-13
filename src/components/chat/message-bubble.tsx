@@ -276,6 +276,7 @@ export default function MessageBubble({
         {(message.type === null ||
           message.type === undefined ||
           message.type === "text" ||
+          message.type === "user" ||
           message.type === "deleted") && (
           <TextMessage
             message={message}
