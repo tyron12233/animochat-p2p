@@ -93,7 +93,11 @@ export const useSharedAudioPlayer = (
 
         switch (packet.type) {
           case "music_set":
-            const song = packet.content as Song;
+            const song = packet.content as Song | undefined;
+            if (!song) {
+                break;
+            }
+
             console.log("Received music_set:", song);
             setCurrentSong(song);
             audio.src = song.url;
