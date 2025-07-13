@@ -396,8 +396,16 @@ function ChatRooms() {
 
       const results = await Promise.all(roomPromises);
       const allRooms = results.flat();
-      setAllChatRooms(allRooms);
-      setFilteredChatRooms(allRooms);
+
+      const sortedRooms = allRooms.sort((a, b) => {
+        const aCount = a.participants.length;
+        const bCount = b.participants.length; 
+
+        return bCount - aCount;
+      }); 
+
+      setAllChatRooms(sortedRooms);
+      setFilteredChatRooms(sortedRooms);
     } catch (e) {
       if (e instanceof Error) setError(e.message);
       else setError("An unknown error occurred.");
