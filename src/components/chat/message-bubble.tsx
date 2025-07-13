@@ -41,7 +41,8 @@ interface ChatThemeV2 {
 
 */
 
-function isOnlyEmojis(str: string): boolean {
+function isOnlyEmojis(str?: string): boolean {
+  if (!str) return false;
   const trimmed = str.trim();
   if (!trimmed) return false;
   const noSpaces = trimmed.replace(/\s+/g, "");
