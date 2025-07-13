@@ -737,7 +737,7 @@ export const ChatConnectionProvider = ({
           }
         };
         ws.onclose = (ev: CloseEvent) => {
-          if (ev.code === 1010) {
+          if (ev.code === 3010) {
             // banned code
             setMessages((prev) => [
               ...prev,
@@ -756,7 +756,7 @@ export const ChatConnectionProvider = ({
           }
 
           // 1020 (room full)
-          if (ev.code === 1020) {
+          if (ev.code === 3020) {
             setMessages((prev) => [
               ...prev,
               {
@@ -772,6 +772,8 @@ export const ChatConnectionProvider = ({
             wsRef.current = null;
             return;
           }
+
+          console.log("WebSocket closed:", ev);
 
           if (!isDisconnectingRef.current) {
             setMessages((prev) => [
