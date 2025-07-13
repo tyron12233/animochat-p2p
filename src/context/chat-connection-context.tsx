@@ -97,6 +97,8 @@ export const ChatConnectionProvider = ({
   const reconnectionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectionAttemptsRef = useRef<number>(0);
 
+  const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
   const chatServerUrlRef = useRef<string>("");
 
   // Low-level packet sender
@@ -111,6 +113,16 @@ export const ChatConnectionProvider = ({
   useEffect(() => {
     // @ts-ignore
     window.sendPacket = sendPacket;
+  }, []);
+
+  useEffect(() => {
+    // @ts-ignore
+    window.simulateWebsocketDisconnect = () => {
+      if (wsRef.current) {
+        wsRef.current.close(1000, "Simulated ddisconnect");
+        wsRef.current = null;
+      }
+    };
   }, []);
 
   // Reaction handler
@@ -313,7 +325,9 @@ export const ChatConnectionProvider = ({
         sender: userId,
       };
       sendPacket(stopTypingPacket);
-      if (isTypingRef.current) isTypingRef.current = false;
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+      }
 
       const message: UserMessage = {
         id: `msg_${Date.now()}`,
@@ -332,7 +346,26 @@ export const ChatConnectionProvider = ({
         sender: userId,
       };
       sendPacket(packet);
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...message,
+          status: "sending",
+        },
+      ]);
+
+      // if after 5 seconds no "message_acknowledgement" is received mark as error
+      const timeout = setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === message.id && (msg as any)?.status === "sending"
+              ? { ...msg, status: "error" }
+              : msg
+          )
+        );
+      }, 5000);
+
+      messageTimeoutsRef.current.set(message.id, timeout);
     },
     [userId, chatId, sendPacket, user]
   );
@@ -469,6 +502,9 @@ export const ChatConnectionProvider = ({
 
           chatServerUrlRef.current = url;
 
+          isTypingRef.current = false;
+          setTypingUsers([]);
+
           let message: string;
           if (isReconnecting) {
             message = "Reconnected to the chat successfully.";
@@ -514,6 +550,25 @@ export const ChatConnectionProvider = ({
           if (packet.sender === userId) return;
 
           switch (packet.type) {
+            case "message_acknowledgment":
+              const { messageId } = packet.content;
+              console.log("Message acknowledged:", messageId);
+              if (messageId) {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === messageId
+                      ? { ...msg, status: "sent" }
+                      : msg
+                  )
+                );
+
+                const timeout = messageTimeoutsRef.current.get(messageId);
+                if (timeout) {
+                  clearTimeout(timeout);
+                  messageTimeoutsRef.current.delete(messageId);
+                }
+              }
+              break;
             case "message_delete":
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -719,6 +774,18 @@ export const ChatConnectionProvider = ({
           }
 
           if (!isDisconnectingRef.current) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `system_${Date.now()}`,
+                session_id: chatIdToConnect,
+                created_at: new Date().toISOString(),
+                type: "system",
+                content: "Connection lost. Attempting to reconnect...",
+                sender: "system",
+              },
+            ]);
+
             setStatus("reconnecting");
 
             if (reconnectionAttemptsRef.current < 5) {

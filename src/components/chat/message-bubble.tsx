@@ -633,6 +633,7 @@ function TextMessage({
   onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
 }) {
   const isDeleted = message.type === "deleted";
+  const sending = (message as any).status === "sending";
   const bubbleTheme = isUserMessage
     ? theme.message.myMessage
     : theme.message.strangerMessage;
@@ -665,7 +666,7 @@ function TextMessage({
         >
           <div className="relative group">
             <div
-              className={`${roundedCorners} animate-gradient-x`}
+              className={`${roundedCorners} animate-gradient-x ${sending ? "opacity-50" :""} transition-opacity duration-100 ease-out`}
               style={{
                 background: bubbleTheme.background[mode],
                 backgroundSize: "200% 100%",
