@@ -7,6 +7,7 @@ import { PeerConnectionPacket } from "../lib/types";
 interface Song {
   name: string;
   url: string;
+  progress?: number; 
 }
 
 /**
@@ -139,6 +140,12 @@ export const useSharedAudioPlayer = (
 
     // --- Registering Event Listeners ---
     socket.addEventListener("message", handleWebSocketMessage);
+    socket.addEventListener("close", () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = ""; 
+        }
+    })
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handlePlaybackEnded);
@@ -173,11 +180,7 @@ export const useSharedAudioPlayer = (
         socket.send(JSON.stringify({ type: "music_set", content: song }));
       }
       setCurrentSong(song);
-      if (audioRef.current) {
-        audioRef.current.src = song.url;
-        audioRef.current.load();
-      }
-      setProgress(0);
+      setProgress(song.progress ?? 0);
     },
     progress,
     duration,
