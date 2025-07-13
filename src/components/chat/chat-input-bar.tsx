@@ -1,28 +1,29 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { SendHorizonal, Mic, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button'; 
-import { ChatThemeV2 } from '../../lib/chat-theme'; 
-import { Mention, Message, Participant, Status } from '../../lib/types'; 
+import { AnimatePresence, motion } from "framer-motion";
+import { SendHorizonal, Mic, Trash2, Image } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChatThemeV2 } from "../../lib/chat-theme";
+import { Mention, Message, Participant, Status } from "../../lib/types";
+import { useState, useRef, useEffect } from "react";
 
 // Helper to format time for the recorder
 const formatRecordingTime = (time: number) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 };
 
 interface ChatInputBarProps {
   status: Status;
   theme: ChatThemeV2;
-  mode: 'light' | 'dark';
+  mode: "light" | "dark";
   onSendMessage: (e: React.FormEvent) => void;
   onSendVoiceMessage: (audioBlob: Blob) => void;
+  onSendImageMessage: (base64Image: string) => void; // New prop for sending images
   onStartTyping: () => void;
   groupChat: boolean;
   participants: Participant[];
   bottomMessagePreviewState: {
-    type: 'editing' | 'replying';
+    type: "editing" | "replying";
     message: Message;
   } | null;
   currentMessage: string;
@@ -38,6 +39,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   handleInputChange,
   onSendMessage,
   onSendVoiceMessage,
+  onSendImageMessage,
   onStartTyping,
   currentMessage,
   bottomMessagePreviewState,
@@ -45,10 +47,23 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (selectedImage) {
+      const objectUrl = URL.createObjectURL(selectedImage);
+      setImagePreview(objectUrl);
+
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setImagePreview(null);
+    }
+  }, [selectedImage]);
 
   const startRecording = async () => {
     try {
@@ -64,61 +79,105 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
         onSendVoiceMessage(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
       setIsRecording(true);
-      
-      // Start timer
+
       setRecordingTime(0);
       recordingTimerRef.current = setInterval(() => {
-        setRecordingTime(prevTime => prevTime + 1);
-        
-        if (recordingTime >= 15) { 
+        setRecordingTime((prevTime) => prevTime + 1);
+
+        if (recordingTime >= 15) {
           stopRecording(true);
         }
       }, 1000);
-
     } catch (err) {
-      console.error('Error accessing microphone:', err);
+      console.error("Error accessing microphone:", err);
     }
   };
 
   const stopRecording = (send: boolean) => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        if(send) {
-            mediaRecorderRef.current.stop();
-        } else {
-            mediaRecorderRef.current.ondataavailable = null;
-            mediaRecorderRef.current.onstop = null;
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-        }
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
+      if (send) {
+        mediaRecorderRef.current.stop();
+      } else {
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = null;
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream
+          .getTracks()
+          .forEach((track) => track.stop());
+      }
     }
     setIsRecording(false);
     if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
+      clearInterval(recordingTimerRef.current);
     }
     setRecordingTime(0);
   };
 
-  // Cleanup on unmount
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedImage(event.target.files[0]);
+    }
+  };
+
+   const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const items = event.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      // Check if the clipboard item is an image
+      if (items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile();
+        if (blob) {
+          // Create a File object from the blob to handle it like a selected file
+          const pastedImageFile = new File([blob], "pasted-image.png", { type: blob.type });
+          setSelectedImage(pastedImageFile);
+        }
+        event.preventDefault(); // Prevent the browser's default paste behavior
+        break; // We only handle the first image found
+      }
+    }
+  };
+
+  const handleSendImage = () => {
+    if (selectedImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target && typeof e.target.result === "string") {
+          onSendImageMessage(e.target.result);
+          setSelectedImage(null);
+        }
+      };
+      reader.readAsDataURL(selectedImage);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
       }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state === "recording"
+      ) {
         mediaRecorderRef.current.stop();
       }
     };
   }, []);
 
   const hasText = currentMessage.trim().length > 0;
-  const isInputDisabled = status !== 'connected';
+  const hasImage = selectedImage !== null;
+  const isInputDisabled = status !== "connected";
 
   return (
     <div
@@ -128,6 +187,31 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       }}
       className="p-4 border-t shrink-0"
     >
+      {imagePreview && (
+        <div className="mb-2 flex items-center">
+          <img
+            src={imagePreview}
+            alt="Selected"
+            className="w-16 h-16 object-cover rounded-md mr-2"
+          />
+          {selectedImage && (
+            <p className="text-sm text-gray-500 flex-grow">
+              {selectedImage.name}
+            </p>
+          )}
+          <Button
+            onClick={() => setSelectedImage(null)}
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+          >
+            <Trash2
+              size={20}
+              style={{ color: theme.inputArea.inputText[mode] }}
+            />
+          </Button>
+        </div>
+      )}
       <div className="flex items-center space-x-3">
         <AnimatePresence mode="wait">
           {isRecording ? (
@@ -150,7 +234,10 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 className="rounded-full"
                 aria-label="Cancel recording"
               >
-                <Trash2 size={20} style={{ color: theme.inputArea.inputText[mode] }} />
+                <Trash2
+                  size={20}
+                  style={{ color: theme.inputArea.inputText[mode] }}
+                />
               </Button>
               <Button
                 onClick={() => stopRecording(true)}
@@ -167,13 +254,40 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           ) : (
             <motion.form
               key="text-input"
-              onSubmit={onSendMessage}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (hasText) {
+                  onSendMessage(e);
+                }
+              }}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               className="flex-grow flex items-center space-x-3"
             >
+              <Button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isInputDisabled}
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label="Send an image"
+              >
+                <Image
+                  size={20}
+                  style={{ color: theme.inputArea.inputText[mode] }}
+                />
+              </Button>
               <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                className="hidden"
+                accept="image/*"
+              />
+              <input
+                onPaste={handlePaste}
                 id="chat-input"
                 disabled={isInputDisabled}
                 type="text"
@@ -190,24 +304,46 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               />
               <Button
                 id="send-button"
-                type={hasText ? 'submit' : 'button'}
-                onClick={!hasText ? startRecording : undefined}
-                disabled={isInputDisabled}
+                type={hasText ? "submit" : "button"}
+                onClick={
+                  !hasText && hasImage
+                    ? handleSendImage
+                    : !hasText
+                    ? startRecording
+                    : undefined
+                }
+                disabled={isInputDisabled || (!hasText && !hasImage)}
                 style={{
                   background: theme.buttons.primary.background[mode],
                   color: theme.buttons.primary.text[mode],
-                  opacity: isInputDisabled && !hasText ? 0.5 : 1,
+                  opacity: isInputDisabled || (!hasText && !hasImage) ? 0.5 : 1,
                 }}
                 className="font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200"
-                aria-label={hasText ? "Send message" : "Record voice message"}
+                aria-label={
+                  hasImage && !hasText
+                    ? "Send image"
+                    : hasText
+                    ? "Send message"
+                    : "Record voice message"
+                }
               >
                 <AnimatePresence mode="popLayout">
-                  {hasText ? (
-                    <motion.div key="send" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                  {hasText || hasImage ? (
+                    <motion.div
+                      key="send"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                    >
                       <SendHorizonal size={20} />
                     </motion.div>
                   ) : (
-                    <motion.div key="mic" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                    <motion.div
+                      key="mic"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                    >
                       <Mic size={20} />
                     </motion.div>
                   )}

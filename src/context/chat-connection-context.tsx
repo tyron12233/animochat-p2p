@@ -41,6 +41,7 @@ interface ChatConnectionContextState {
   typingUsers: string[];
   setTypingUsers: React.Dispatch<React.SetStateAction<string[]>>;
   sendVoiceMessage: (audioBlob: Blob) => Promise<void>;
+  sendImageMessage: (base64: string) => void;
   sendMessage: (
     content: string,
     replyingToId?: string,
@@ -315,6 +316,34 @@ export const ChatConnectionProvider = ({
     },
     [userId, chatId, sendPacket, user]
   );
+
+  const sendImageMessage = useCallback(
+    (base64: string) => {
+      if (!userId || !chatId) return;
+
+      const message: UserMessage = {
+        id: `msg_${Date.now()}`,
+        session_id: chatId,
+        created_at: new Date().toISOString(),
+        content: base64,
+        type: "image",
+        sender: userId,
+        role: user?.role,
+        reactions: [],
+      };
+
+      const packet: MessagePacket = {
+        type: "message",
+        content: message,
+        sender: userId,
+      };
+
+      sendPacket(packet);
+      setMessages((prev) => [...prev, message]);
+    },
+    [userId, chatId, sendPacket, user]
+  );
+  
 
   const sendMessage = useCallback(
     (content: string, replyingToId?: string, mentions?: Mention[]) => {
@@ -902,6 +931,7 @@ export const ChatConnectionProvider = ({
         connectToChat,
         sendPacket,
         disconnect,
+        sendImageMessage,
         onStartTyping,
         connectToExistingSession,
         chatServerUrlRef,

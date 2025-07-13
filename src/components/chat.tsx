@@ -44,6 +44,7 @@ import { OnlineUsers, UserListModal } from "./chat/online-users";
 import { AuthUser, useAuth } from "../context/auth-context";
 import { useAnimoChat } from "../hooks/use-animochat";
 import { ChatInputBar } from "./chat/chat-input-bar";
+import { PhotoProvider } from "react-photo-view";
 
 interface ChatProps {
   name: string;
@@ -110,6 +111,7 @@ export default function Chat({
     chat: {
       messages,
       sendVoiceMessage,
+      sendImageMessage,
       participants,
       typingUsers,
       sendMessage,
@@ -471,6 +473,8 @@ export default function Chat({
 
   return (
     <>
+
+    <PhotoProvider>
       <DynamicGlobalStyles theme={theme} mode={mode} />
       <UserListModal
         theme={theme}
@@ -949,6 +953,9 @@ export default function Chat({
           onSendVoiceMessage={(blob) => {
             sendVoiceMessage(blob)
           }}
+          onSendImageMessage={(imageB) => {
+            sendImageMessage(imageB)
+          }}
           groupChat={groupChat}
           status={status}
           onStartTyping={onStartTyping}
@@ -956,6 +963,8 @@ export default function Chat({
           bottomMessagePreviewState={bottomMessagePreviewState}
         />
       </div>
+    
+    </PhotoProvider>
     </>
   );
 }

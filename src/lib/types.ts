@@ -58,7 +58,7 @@ export interface SystemMessage extends BaseMessage {
 }
 
 export interface UserMessage extends BaseMessage {
-  type?: "user" | "deleted"; // or 'user'
+  type?: "image" | "user" | "deleted"; // or 'user'
   content: string;
   sender: string; // peerId
   replyingTo?: string;
