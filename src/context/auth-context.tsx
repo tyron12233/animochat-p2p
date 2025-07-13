@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(data.user);
       setSession(data.session);
       Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(data.session), {
-        sameSite: "strict",
+        sameSite: "none",
         secure: true,
         expires: 7, // Cookie expires in 7 days
       });
@@ -139,7 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const newSession = { ...currentToken, ...data.session };
         setSession(newSession);
         Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(newSession), {
-          sameSite: "strict",
+          sameSite: "none",
           secure: true,
           expires: 7,
         });
@@ -195,7 +195,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
         setSession(currentSession);
         Cookies.set(SESSION_COOKIE_KEY, JSON.stringify(currentSession), {
-          sameSite: "strict",
+          sameSite: "none",
           secure: true,
           expires: 7,
         });

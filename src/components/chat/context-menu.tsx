@@ -73,6 +73,7 @@ export default function ContextMenu({
               `${cleanedServerUrl}/ban/${session.chatId}/${senderId}`,
               {
                 method: "POST",
+                credentials: "include",
                 headers: {
                   "Content-Type": "application/json",
                 },
