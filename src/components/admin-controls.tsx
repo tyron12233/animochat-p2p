@@ -40,7 +40,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             socket.send(
                 JSON.stringify({
                     event: "music_progress",
-                    payload: { progress },
+                    content: { progress },
                 })
             );
         }
@@ -54,7 +54,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
       socket.send(
         JSON.stringify({
           event: "music_play",
-          payload: { currentTime: progress },
+          content: { currentTime: progress },
         })
       );
       play();
@@ -63,7 +63,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 
   const handlePause = () => {
     if (socket) {
-      socket.send(JSON.stringify({ type: "music_pause", payload: {} }));
+      socket.send(JSON.stringify({ type: "music_pause", content: {} }));
     }
   };
 
