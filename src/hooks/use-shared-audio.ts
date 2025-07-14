@@ -68,6 +68,7 @@ interface SharedAudioPlayerState {
   toggleMute: () => void;
   play: () => void;
   unblockPlayback: () => void;
+  playbackError: string | null;
   skipVotes: number;
   skipThreshold: number;
   hasVotedToSkip: boolean;
@@ -94,6 +95,7 @@ export const useSharedAudioPlayer = (
   const [progress, setProgress] = useState(0);
   const [queue, setQueue] = useState<Song[]>([]);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [skipVotes, setSkipVotes] = useState(0);
   const [skipThreshold, setSkipThreshold] = useState(1);
   const [hasVotedToSkip, setHasVotedToSkip] = useState(false);
@@ -103,9 +105,19 @@ export const useSharedAudioPlayer = (
       console.log("Playing audio:", currentSong?.name);
       audioRef.current
         .play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true);
+          setPlaybackBlocked(false);
+          setPlaybackError(null);
+        })
         .catch((e) => {
           console.error("Error playing audio:", e);
+          if (e.name === "NotAllowedError") {
+            setPlaybackBlocked(true);
+            setPlaybackError("Playback was blocked by the browser. Click to play.");
+          } else {
+            setPlaybackError(`An error occurred: ${e.message}`);
+          }
           setIsPlaying(false);
         });
     }
@@ -118,9 +130,16 @@ export const useSharedAudioPlayer = (
         .then(() => {
           setIsPlaying(true);
           setPlaybackBlocked(false);
+          setPlaybackError(null);
         })
         .catch((e) => {
           console.error("Error unblocking audio playback:", e);
+          if (e.name === "NotAllowedError") {
+            setPlaybackBlocked(true);
+            setPlaybackError("Playback was blocked by the browser. Click to play.");
+          } else {
+            setPlaybackError(`An error occurred: ${e.message}`);
+          }
           setIsPlaying(false);
         });
     }
@@ -184,11 +203,15 @@ export const useSharedAudioPlayer = (
                   .then(() => {
                     setIsPlaying(true);
                     setPlaybackBlocked(false);
+                    setPlaybackError(null);
                   })
                   .catch((e) => {
                     console.error("Error playing audio on sync:", e);
                     if (e.name === "NotAllowedError") {
                       setPlaybackBlocked(true);
+                      setPlaybackError("Playback was blocked by the browser. Click to play.");
+                    } else {
+                      setPlaybackError(`An error occurred: ${e.message}`);
                     }
                     setIsPlaying(false);
                   });
@@ -238,11 +261,15 @@ export const useSharedAudioPlayer = (
               .then(() => {
                 setIsPlaying(true);
                 setPlaybackBlocked(false);
+                setPlaybackError(null);
               })
               .catch((e) => {
                 console.error("Error playing audio:", e);
                 if (e.name === "NotAllowedError") {
                   setPlaybackBlocked(true);
+                  setPlaybackError("Playback was blocked by the browser. Click to play.");
+                } else {
+                  setPlaybackError(`An error occurred: ${e.message}`);
                 }
                 setIsPlaying(false);
               });
@@ -350,6 +377,7 @@ export const useSharedAudioPlayer = (
     play,
     playbackBlocked,
     unblockPlayback,
+    playbackError,
     skipVotes,
     skipThreshold,
     hasVotedToSkip,

@@ -92,9 +92,18 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
           const creator = Array.isArray(track.creator)
             ? track.creator.join(", ")
             : track.creator;
+
+          // Clean the title
+          let cleanedTitle = track.title
+            .replace(/\(.*\)|\[.*\]/g, "") // Remove content in parentheses and brackets
+            .replace(/(\s*-\s*)?Unknown Artist/i, "") // Remove "Unknown Artist"
+            .trim();
+
           const newSong: Song = {
-            name: `${track.title} - ${creator || "Unknown Artist"}`,
-            url: `https://archive.org/download/${track.identifier}/${encodeURIComponent(songFile.name)}`,
+            name: creator ? `${cleanedTitle} - ${creator}` : cleanedTitle,
+            url: `https://archive.org/download/${track.identifier}/${encodeURIComponent(
+              songFile.name
+            )}`,
           };
           onAddSong(newSong);
           toast.success("Song added to queue!");

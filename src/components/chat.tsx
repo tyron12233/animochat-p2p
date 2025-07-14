@@ -139,6 +139,7 @@ export default function Chat({
     setSong,
     toggleMute,
     playbackBlocked,
+    playbackError,
     unblockPlayback,
     skipVotes,
     skipThreshold,
@@ -779,12 +780,13 @@ export default function Chat({
             playbackBlocked={playbackBlocked}
             onUnblockPlayback={unblockPlayback}
             isAdmin={user?.role === "admin"}
+            onAddSong={addToQueue}
             onSkip={voteToSkip}
             skipVotes={skipVotes}
             skipThreshold={skipThreshold}
             hasVotedToSkip={hasVotedToSkip}
             queue={queue}
-            onAddSong={addToQueue}
+            playbackError={playbackError}
           />
         )}
 

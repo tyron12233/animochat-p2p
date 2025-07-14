@@ -20,6 +20,7 @@ interface SharedMusicPlayerProps {
   duration: number; // in seconds
   isMuted: boolean;
   playbackBlocked: boolean;
+  playbackError: string | null;
   isAdmin: boolean;
   queue: Song[];
   onMuteToggle: () => void;
@@ -62,6 +63,7 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   hasVotedToSkip,
   queue,
   onAddSong,
+  playbackError,
 }) => {
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
@@ -126,7 +128,18 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
         borderBottom: `1px solid ${theme.header.border[mode]}`,
       }}
     >
-      {playbackBlocked && (
+      {playbackError && (
+        <div
+          className="absolute inset-0 bg-red-500 bg-opacity-80 flex flex-col items-center justify-center z-10 cursor-pointer rounded-lg"
+          onClick={onUnblockPlayback}
+        >
+          <p className="text-white text-lg font-semibold">{playbackError}</p>
+          <button className="mt-2 px-4 py-2 bg-white text-red-500 rounded-md">
+            Click to Retry
+          </button>
+        </div>
+      )}
+      {playbackBlocked && !playbackError && (
         <div
           className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10 cursor-pointer rounded-lg"
           onClick={onUnblockPlayback}
