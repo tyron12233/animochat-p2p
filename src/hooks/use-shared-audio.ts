@@ -151,6 +151,7 @@ export const useSharedAudioPlayer = (
         );
 
         switch (packet.type) {
+        
           case "music_sync":
             console.log("Received music_sync packet:", packet);
             const musicInfo = packet.content as MusicInfo;
