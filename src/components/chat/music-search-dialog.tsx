@@ -80,13 +80,13 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
 
         let songFile =
           audioFiles.find(
-            (f: any) => f.title && f.title.toLowerCase() === track.title.toLowerCase()
+            (f: any) =>
+              f.title && f.title.toLowerCase() === track.title.toLowerCase()
           ) ||
           audioFiles.find((f: any) =>
             f.name.toLowerCase().includes(track.title.toLowerCase())
           ) ||
           audioFiles[0];
-
 
         if (songFile) {
           const creator = Array.isArray(track.creator)
@@ -101,9 +101,9 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
 
           const newSong: Song = {
             name: creator ? `${cleanedTitle} - ${creator}` : cleanedTitle,
-            url: `https://archive.org/download/${track.identifier}/${encodeURIComponent(
-              songFile.name
-            )}`,
+            url: `https://archive.org/download/${
+              track.identifier
+            }/${encodeURIComponent(songFile.name)}`,
           };
           onAddSong(newSong);
           toast.success("Song added to queue!");
@@ -124,7 +124,16 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Add song to queue">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Add song to queue"
+          className="p-2 rounded-full transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none"
+          style={{
+            backgroundColor: theme.buttons.secondary.background[mode],
+            color: theme.buttons.secondary.text[mode],
+          }}
+        >
           <PlusCircle />
         </Button>
       </DialogTrigger>

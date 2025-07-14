@@ -24,7 +24,15 @@ export const QueueDialog: React.FC<QueueDialogProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-2 rounded-full transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none"
+          style={{
+            backgroundColor: theme.buttons.secondary.background[mode],
+            color: theme.buttons.secondary.text[mode],
+          }}
+        >
           <ListMusic />
         </Button>
       </DialogTrigger>
