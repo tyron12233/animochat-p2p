@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Music, PlusCircle } from "lucide-react";
 import { Song } from "../../lib/types";
 import Spinner from "../ui/spinner";
+import { toast } from "sonner";
 
 const ARCHIVE_API_URL = "https://archive.org/";
 
@@ -31,6 +32,7 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
   theme,
   mode,
 }) => {
+  const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ArchiveTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +56,7 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
       }
     } catch (error) {
       console.error("Error fetching from Internet Archive API:", error);
+      toast.error("Failed to search for music. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -81,20 +84,23 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
             url: `https://archive.org/download/${track.identifier}/${mp3File.name}`,
           };
           onAddSong(newSong);
+          toast.success("Song added to queue!");
+          setOpen(false);
         } else {
           console.error("No MP3 file found for this track.");
-          // You could add a user-facing error message here
+          toast.error("No playable MP3 file found for this song.");
         }
       }
     } catch (error) {
       console.error("Error fetching metadata from Internet Archive:", error);
+      toast.error("Failed to add song. Please try again later.");
     } finally {
       setIsAdding(null);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" title="Add song to queue">
           <PlusCircle />
