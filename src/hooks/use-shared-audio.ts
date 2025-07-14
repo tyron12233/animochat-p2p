@@ -151,7 +151,11 @@ export const useSharedAudioPlayer = (
         );
 
         switch (packet.type) {
-        
+          case "music_queue_update":
+            const newQueue = packet.content as Song[];
+            console.log("Received music_queue_update:", newQueue);
+            setQueue(newQueue);
+            break;
           case "music_sync":
             console.log("Received music_sync packet:", packet);
             const musicInfo = packet.content as MusicInfo;
@@ -202,6 +206,10 @@ export const useSharedAudioPlayer = (
             break;
           case "music_set":
             const content = packet.content as { song: Song | undefined, queue?: Song[] };
+
+            if (content.queue) {
+                setQueue(content.queue);
+            }
             if (content.song) {
               console.log("Received music_set for song:", content.song.name);
               setCurrentSong(content.song);
@@ -209,6 +217,7 @@ export const useSharedAudioPlayer = (
               audio.currentTime = content.song.progress ?? 0;
               setProgress(content.song.progress ?? 0);
               setDuration(0); 
+              setHasVotedToSkip(false);
               play();
             } else {
               console.log("Received music_set with no song, resetting player.");
