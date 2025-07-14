@@ -130,6 +130,25 @@ export default function Chat({
     theme: { theme, mode },
   } = useAnimoChat();
 
+  const {
+    isPlaying,
+    isMuted,
+    progress,
+    duration,
+    currentSong,
+    setSong,
+    toggleMute,
+    playbackBlocked,
+    unblockPlayback,
+    skipVotes,
+    skipThreshold,
+    hasVotedToSkip,
+    voteToSkip,
+    play,
+    queue,
+    addToQueue,
+  } = useSharedAudioPlayer(wsRef.current);
+
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [currentNickname, setCurrentNickname] = useState<string>("Unknown");
 
@@ -205,19 +224,6 @@ export default function Chat({
 
   const [confirmedEnd, setConfirmedEnd] = useState(false);
   const isEmojiMenuOpen = useRef(false);
-
-  const {
-    isPlaying,
-    setSong,
-    isMuted,
-    progress,
-    duration,
-    currentSong,
-    toggleMute,
-    play,
-    playbackBlocked,
-    unblockPlayback,
-  } = useSharedAudioPlayer(wsRef.current);
 
   /**
    * Handles the submission of a new song from the admin dialog
@@ -759,10 +765,10 @@ export default function Chat({
           />
         )}
 
-        {currentSong && (
+        {true && (
           <SharedMusicPlayer
-            songName={currentSong.name}
-            artistName={"Shared Playback"}
+            songName={currentSong?.name || "No song playing"}
+            artistName={"Shared Music"}
             currentTime={progress}
             duration={duration}
             isMuted={isMuted}
@@ -770,9 +776,15 @@ export default function Chat({
             onSeek={() => {}}
             theme={theme}
             mode={mode}
-            isAdmin={user?.role === "admin"}
             playbackBlocked={playbackBlocked}
             onUnblockPlayback={unblockPlayback}
+            isAdmin={user?.role === "admin"}
+            onSkip={voteToSkip}
+            skipVotes={skipVotes}
+            skipThreshold={skipThreshold}
+            hasVotedToSkip={hasVotedToSkip}
+            queue={queue}
+            onAddSong={addToQueue}
           />
         )}
 
@@ -847,7 +859,8 @@ export default function Chat({
                       setShowNewMessagesButton(false);
                     }}
                     style={{
-                      backgroundColor: theme.buttons.newMessages.background[mode],
+                      backgroundColor:
+                        theme.buttons.newMessages.background[mode],
                       color: theme.buttons.newMessages.text[mode],
                     }}
                     className="px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-colors"
@@ -881,7 +894,8 @@ export default function Chat({
                 overflow: "hidden",
                 visibility: bottomMessagePreviewState ? "visible" : "hidden",
                 height: bottomMessagePreviewState ? "auto" : 0,
-                backgroundColor: theme.overlays.replyingPreview.background[mode],
+                backgroundColor:
+                  theme.overlays.replyingPreview.background[mode],
                 borderLeft: `4px solid ${theme.overlays.replyingPreview.border[mode]}`,
               }}
               className="flex items-start gap-2 px-3 py-2 relative"
@@ -957,7 +971,8 @@ export default function Chat({
                             const textInput = document.getElementById(
                               "chat-input"
                             ) as HTMLInputElement;
-                            const cursorPosition = textInput.selectionStart || 0;
+                            const cursorPosition =
+                              textInput.selectionStart || 0;
                             const textBeforeCursor = currentMessage.slice(
                               0,
                               cursorPosition

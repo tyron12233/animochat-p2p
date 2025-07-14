@@ -5,7 +5,14 @@ export type DataConnection = PeerJSDataConnection;
 
 export type Screen = 'intro' | 'matchmaking' | 'chat';
 
-
+/**
+ * Represents the structure of a song object.
+ */
+export interface Song {
+  name: string;
+  url: string;
+  progress?: number;
+}
 
 export type Status = 'initializing' | 'ready' | 'connecting' | 'reconnecting' | 'connected' | 'disconnected' | 'error' | 'finding_match' | 'waiting_for_match';
 

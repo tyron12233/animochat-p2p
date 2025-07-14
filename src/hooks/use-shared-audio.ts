@@ -1,14 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { PeerConnectionPacket } from "../lib/types";
-
-/**
- * Represents the structure of a song object.
- */
-interface Song {
-  name: string;
-  url: string;
-  progress?: number;
-}
+import { PeerConnectionPacket, Song } from "../lib/types";
 
 /**
  * Represents the data received from the 'music_play' WebSocket event.
@@ -24,6 +15,25 @@ interface MusicSeekPayload {
   seekTime: number;
 }
 
+/**
+ * Represents the data received from the 'music_skip_result' WebSocket event.
+ */
+interface MusicSkipResultPayload {
+  skipVotes: number;
+  skipThreshold: number;
+}
+
+export interface MusicInfo {
+  currentSong?: Song;
+  progress: number;
+  state: "playing" | "paused";
+  playTime?: number;
+  queue?: Song[];
+  skipVotes?: { userId: string }[];
+  skipThreshold?: number;
+}
+
+export type MusicAddQueuePacket = PeerConnectionPacket<Song, "music_add_queue">;
 export type MusicSetPacket = PeerConnectionPacket<Song, "music_set">;
 export type MusicPausePacket = PeerConnectionPacket<null, "music_pause">;
 export type MusicSeekPacket = PeerConnectionPacket<
@@ -33,6 +43,14 @@ export type MusicSeekPacket = PeerConnectionPacket<
 export type MusicPlayPacket = PeerConnectionPacket<
   MusicPlayPayload,
   "music_play"
+>;
+export type MusicSkipRequestPacket = PeerConnectionPacket<
+  null,
+  "music_skip_request"
+>;
+export type MusicSkipResultPacket = PeerConnectionPacket<
+  MusicSkipResultPayload,
+  "music_skip_result"
 >;
 
 /**
@@ -45,10 +63,16 @@ interface SharedAudioPlayerState {
   duration: number;
   currentSong: Song | null;
   playbackBlocked: boolean;
+  queue: Song[];
   setSong: (song: Song) => void;
   toggleMute: () => void;
   play: () => void;
   unblockPlayback: () => void;
+  skipVotes: number;
+  skipThreshold: number;
+  hasVotedToSkip: boolean;
+  voteToSkip: () => void;
+  addToQueue: (song: Song) => void;
 }
 
 /**
@@ -68,7 +92,11 @@ export const useSharedAudioPlayer = (
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [queue, setQueue] = useState<Song[]>([]);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const [skipVotes, setSkipVotes] = useState(0);
+  const [skipThreshold, setSkipThreshold] = useState(1);
+  const [hasVotedToSkip, setHasVotedToSkip] = useState(false);
 
   const play = () => {
     if (audioRef.current) {
@@ -123,6 +151,54 @@ export const useSharedAudioPlayer = (
         );
 
         switch (packet.type) {
+          case "music_sync":
+            console.log("Received music_sync packet:", packet);
+            const musicInfo = packet.content as MusicInfo;
+
+            setQueue(musicInfo.queue ?? []);
+            setSkipVotes(musicInfo.skipVotes?.length ?? 0);
+            setSkipThreshold(musicInfo.skipThreshold ?? 1);
+
+            if (musicInfo.currentSong) {
+              if (musicInfo.currentSong.url !== currentSong?.url) {
+                setCurrentSong(musicInfo.currentSong);
+                audio.src = musicInfo.currentSong.url;
+              }
+
+              const serverProgress =
+                musicInfo.state === "playing" && musicInfo.playTime
+                  ? musicInfo.progress + (Date.now() - musicInfo.playTime) / 1000
+                  : musicInfo.progress;
+
+              audio.currentTime = serverProgress;
+              setProgress(serverProgress);
+
+              if (musicInfo.state === "playing") {
+                audio
+                  .play()
+                  .then(() => {
+                    setIsPlaying(true);
+                    setPlaybackBlocked(false);
+                  })
+                  .catch((e) => {
+                    console.error("Error playing audio on sync:", e);
+                    if (e.name === "NotAllowedError") {
+                      setPlaybackBlocked(true);
+                    }
+                    setIsPlaying(false);
+                  });
+              } else {
+                audio.pause();
+                setIsPlaying(false);
+              }
+            } else {
+              setCurrentSong(null);
+              audio.src = "";
+              setIsPlaying(false);
+              setProgress(0);
+              setDuration(0);
+            }
+            break;
           case "music_set":
             const song = packet.content as Song | undefined;
             const anySong = song as any;
@@ -144,6 +220,9 @@ export const useSharedAudioPlayer = (
             setCurrentSong(song);
             audio.src = song.url;
             setIsPlaying(false);
+            setHasVotedToSkip(false);
+            setSkipVotes(0);
+            setSkipThreshold(1);
             break;
 
           case "music_play":
@@ -175,6 +254,13 @@ export const useSharedAudioPlayer = (
             const seekPayload = packet.content as MusicSeekPayload;
             console.log("Received music_seek to:", seekPayload.seekTime);
             audio.currentTime = seekPayload.seekTime;
+            break;
+
+          case "music_skip_result":
+            const skipResultPayload = packet.content as MusicSkipResultPayload;
+            console.log("Received music_skip_result:", skipResultPayload);
+            setSkipVotes(skipResultPayload.skipVotes);
+            setSkipThreshold(skipResultPayload.skipThreshold);
             break;
         }
       } catch (error) {
@@ -224,6 +310,21 @@ export const useSharedAudioPlayer = (
     });
   };
 
+  const addToQueue = (song: Song) => {
+    if (socket) {
+      console.log("Sending music_add_queue", song);
+      socket.send(JSON.stringify({ type: "music_add_queue", content: song }));
+    }
+  };
+
+  const voteToSkip = () => {
+    if (socket) {
+      console.log("Sending music_skip_request");
+      socket.send(JSON.stringify({ type: "music_skip_request" }));
+      setHasVotedToSkip(true);
+    }
+  };
+
   return {
     isPlaying,
     isMuted,
@@ -241,5 +342,11 @@ export const useSharedAudioPlayer = (
     play,
     playbackBlocked,
     unblockPlayback,
+    skipVotes,
+    skipThreshold,
+    hasVotedToSkip,
+    voteToSkip,
+    queue,
+    addToQueue,
   };
 };

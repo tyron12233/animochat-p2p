@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Music, Volume2, VolumeX } from "lucide-react";
+import { Music, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { ChatThemeV2 } from "../lib/chat-theme";
+import { Song } from "../lib/types";
+import { QueueDialog } from "./chat/queue-dialog";
+import { MusicSearchDialog } from "./chat/music-search-dialog";
+
 
 interface SharedMusicPlayerProps {
   songName: string;
@@ -10,11 +14,18 @@ interface SharedMusicPlayerProps {
   isMuted: boolean;
   playbackBlocked: boolean;
   isAdmin: boolean;
+  queue: Song[];
   onMuteToggle: () => void;
   onSeek: (time: number) => void;
   onUnblockPlayback: () => void;
+  onAddSong: (song: Song) => void;
   theme: ChatThemeV2;
   mode: "light" | "dark";
+  // Props for skip functionality
+  onSkip: () => void;
+  skipVotes: number;
+  skipThreshold: number;
+  hasVotedToSkip: boolean;
 }
 
 const formatTime = (sec: number) => {
@@ -38,6 +49,12 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   playbackBlocked,
   onUnblockPlayback,
   isAdmin,
+  onSkip,
+  skipVotes,
+  skipThreshold,
+  hasVotedToSkip,
+  queue,
+  onAddSong,
 }) => {
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
@@ -90,10 +107,11 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
 
   const displayTime = isSeeking ? seekTime : currentTime;
   const progressPercent = duration > 0 ? (displayTime / duration) * 100 : 0;
+  const remainingVotes = skipThreshold - skipVotes;
 
   return (
     <div
-      className="flex items-center gap-4 p-4 shadow-lg relative"
+      className="flex items-center gap-4 p-4 shadow-lg relative rounded-lg"
       style={{
         background: theme.header.background[mode],
         color: theme.header.statusValue[mode],
@@ -102,7 +120,7 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
     >
       {playbackBlocked && (
         <div
-          className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10 cursor-pointer"
+          className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10 cursor-pointer rounded-lg"
           onClick={onUnblockPlayback}
         >
           <p className="text-white text-lg font-semibold animate-pulse">
@@ -112,19 +130,19 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
       )}
 
       {/* Album Art */}
-      <div
+      {/* <div
         className="w-16 h-16 rounded-md flex-shrink-0 flex items-center justify-center"
         style={{
           background: `linear-gradient(45deg, ${theme.buttons.primary.background[mode]}, ${theme.buttons.secondary.background[mode]})`,
         }}
       >
         <Music size={32} style={{ color: theme.buttons.primary.text[mode] }} />
-      </div>
+      </div> */}
 
-      <div className="flex-grow flex flex-col justify-center">
-        {/* Song & artist */}
-        <div className="flex justify-between items-start">
-          <div>
+      <div className="ml-2 flex-grow flex flex-col justify-center min-w-0">
+        {/* Song & artist & Controls */}
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-grow min-w-0">
             <div className="font-bold text-base truncate">{songName}</div>
             <div
               className="text-sm opacity-80 truncate"
@@ -133,16 +151,50 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
               {artistName}
             </div>
           </div>
-          <button
-            onClick={onMuteToggle}
-            className="p-2 rounded-full hover:scale-110 transition-transform"
-            style={{
-              backgroundColor: theme.buttons.secondary.background[mode],
-              color: theme.buttons.secondary.text[mode],
-            }}
-          >
-            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-          </button>
+
+          {/* Controls Container */}
+          <div className="flex items-center flex-shrink-0 gap-2">
+             {/* Skip Button and Vote Counter */}
+             {skipThreshold > 0 && (
+                <div className="flex items-center gap-2">
+                    {skipVotes > 0 && remainingVotes > 0 && (
+                        <span className="text-xs font-medium p-1 rounded-md" style={{
+                            color: theme.buttons.primary.text[mode],
+                            backgroundColor: theme.buttons.primary.background[mode],
+                        }}>
+                           {remainingVotes} left
+                        </span>
+                    )}
+                    <button
+                        onClick={onSkip}
+                        disabled={hasVotedToSkip}
+                        title={hasVotedToSkip ? "You have voted to skip" : "Vote to skip song"}
+                        className="p-2 rounded-full hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                            backgroundColor: theme.buttons.secondary.background[mode],
+                            color: theme.buttons.secondary.text[mode],
+                        }}
+                    >
+                        <SkipForward size={20} />
+                    </button>
+                </div>
+            )}
+            
+            {/* Mute Button */}
+            <button
+              onClick={onMuteToggle}
+              title={isMuted ? "Unmute" : "Mute"}
+              className="p-2 rounded-full hover:scale-110 transition-transform"
+              style={{
+                backgroundColor: theme.buttons.secondary.background[mode],
+                color: theme.buttons.secondary.text[mode],
+              }}
+            >
+              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+            <QueueDialog queue={queue} theme={theme} mode={mode} />
+            <MusicSearchDialog onAddSong={onAddSong} theme={theme} mode={mode} />
+          </div>
         </div>
 
         {/* Seek bar & Time stamps */}
@@ -168,7 +220,7 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
               }}
             />
             <div
-              className="w-4 h-4 rounded-full absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transform transition-transform"
+              className="w-4 h-4 rounded-full absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transform transition-transform group-hover:scale-110"
               style={{
                 left: `${progressPercent}%`,
                 backgroundColor: theme.buttons.primary.background[mode],
