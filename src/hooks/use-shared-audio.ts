@@ -114,9 +114,6 @@ export const useSharedAudioPlayer = (
           console.error("Error playing audio:", e);
           if (e.name === "NotAllowedError") {
             setPlaybackBlocked(true);
-            setPlaybackError("Playback was blocked by the browser. Click to play.");
-          } else {
-            setPlaybackError(`An error occurred: ${e.message}`);
           }
           setIsPlaying(false);
         });
@@ -136,9 +133,6 @@ export const useSharedAudioPlayer = (
           console.error("Error unblocking audio playback:", e);
           if (e.name === "NotAllowedError") {
             setPlaybackBlocked(true);
-            setPlaybackError("Playback was blocked by the browser. Click to play.");
-          } else {
-            setPlaybackError(`An error occurred: ${e.message}`);
           }
           setIsPlaying(false);
         });
@@ -191,7 +185,8 @@ export const useSharedAudioPlayer = (
 
               const serverProgress =
                 musicInfo.state === "playing" && musicInfo.playTime
-                  ? musicInfo.progress + (Date.now() - musicInfo.playTime) / 1000
+                  ? musicInfo.progress +
+                    (Date.now() - musicInfo.playTime) / 1000
                   : musicInfo.progress;
 
               audio.currentTime = serverProgress;
@@ -209,9 +204,6 @@ export const useSharedAudioPlayer = (
                     console.error("Error playing audio on sync:", e);
                     if (e.name === "NotAllowedError") {
                       setPlaybackBlocked(true);
-                      setPlaybackError("Playback was blocked by the browser. Click to play.");
-                    } else {
-                      setPlaybackError(`An error occurred: ${e.message}`);
                     }
                     setIsPlaying(false);
                   });
@@ -228,10 +220,13 @@ export const useSharedAudioPlayer = (
             }
             break;
           case "music_set":
-            const content = packet.content as { song: Song | undefined, queue?: Song[] };
+            const content = packet.content as {
+              song: Song | undefined;
+              queue?: Song[];
+            };
 
             if (content.queue) {
-                setQueue(content.queue);
+              setQueue(content.queue);
             }
             if (content.song) {
               console.log("Received music_set for song:", content.song.name);
@@ -239,7 +234,7 @@ export const useSharedAudioPlayer = (
               audio.src = content.song.url;
               audio.currentTime = content.song.progress ?? 0;
               setProgress(content.song.progress ?? 0);
-              setDuration(0); 
+              setDuration(0);
               setHasVotedToSkip(false);
               play();
             } else {
@@ -267,10 +262,7 @@ export const useSharedAudioPlayer = (
                 console.error("Error playing audio:", e);
                 if (e.name === "NotAllowedError") {
                   setPlaybackBlocked(true);
-                  setPlaybackError("Playback was blocked by the browser. Click to play.");
-                } else {
-                  setPlaybackError(`An error occurred: ${e.message}`);
-                }
+                } 
                 setIsPlaying(false);
               });
             break;
@@ -314,16 +306,16 @@ export const useSharedAudioPlayer = (
     // --- Registering Event Listeners ---
     socket.addEventListener("message", handleWebSocketMessage);
     socket.addEventListener("close", () => {
-        // disable music
-        console.log("WebSocket connection closed, disabling music player.");
-        setCurrentSong(null);
-        audio.pause();
-        audio.src = "";
-        setIsPlaying(false);
-        setProgress(0);
-        setDuration(0);
-        setPlaybackBlocked(false);
-        setPlaybackError(null);
+      // disable music
+      console.log("WebSocket connection closed, disabling music player.");
+      setCurrentSong(null);
+      audio.pause();
+      audio.src = "";
+      setIsPlaying(false);
+      setProgress(0);
+      setDuration(0);
+      setPlaybackBlocked(false);
+      setPlaybackError(null);
     });
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
