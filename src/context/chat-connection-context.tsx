@@ -838,6 +838,7 @@ export const ChatConnectionProvider = ({
           console.log("WebSocket closed:", ev);
 
           if (!isDisconnectingRef.current) {
+            wsRef.current = null;
             setMessages((prev) => [
               ...prev,
               {
