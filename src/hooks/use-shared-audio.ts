@@ -278,6 +278,10 @@ export const useSharedAudioPlayer = (
     const handlePlaybackEnded = () => {
       setIsPlaying(false);
       setProgress(0);
+      if (socket) {
+        console.log("Audio finished, sending music_finished packet");
+        socket.send(JSON.stringify({ type: "music_finished" }));
+      }
     };
 
     // --- Registering Event Listeners ---

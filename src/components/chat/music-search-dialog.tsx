@@ -71,24 +71,37 @@ export const MusicSearchDialog: React.FC<MusicSearchDialogProps> = ({
       const metaData = await metaResponse.json();
 
       if (metaData && metaData.files) {
-        const mp3File = metaData.files.find((f: any) =>
-          f.name.endsWith(".mp3")
+        const audioFiles = metaData.files.filter(
+          (f: any) =>
+            f.format?.includes("MP3") ||
+            f.format?.includes("Ogg Vorbis") ||
+            f.format?.includes("FLAC")
         );
 
-        if (mp3File) {
+        let songFile =
+          audioFiles.find(
+            (f: any) => f.title && f.title.toLowerCase() === track.title.toLowerCase()
+          ) ||
+          audioFiles.find((f: any) =>
+            f.name.toLowerCase().includes(track.title.toLowerCase())
+          ) ||
+          audioFiles[0];
+
+
+        if (songFile) {
           const creator = Array.isArray(track.creator)
             ? track.creator.join(", ")
             : track.creator;
           const newSong: Song = {
             name: `${track.title} - ${creator || "Unknown Artist"}`,
-            url: `https://archive.org/download/${track.identifier}/${mp3File.name}`,
+            url: `https://archive.org/download/${track.identifier}/${encodeURIComponent(songFile.name)}`,
           };
           onAddSong(newSong);
           toast.success("Song added to queue!");
           setOpen(false);
         } else {
           console.error("No MP3 file found for this track.");
-          toast.error("No playable MP3 file found for this song.");
+          toast.error("No playable audio file found for this song.");
         }
       }
     } catch (error) {

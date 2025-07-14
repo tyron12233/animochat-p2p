@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Music, SkipForward, Volume2, VolumeX } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Music,
+  SkipForward,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { Song } from "../lib/types";
 import { QueueDialog } from "./chat/queue-dialog";
@@ -59,6 +66,7 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleSeek = (
     e: React.MouseEvent<HTMLDivElement> | MouseEvent,
@@ -154,51 +162,87 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
 
           {/* Controls Container */}
           <div className="flex items-center flex-shrink-0 gap-2">
-             {/* Skip Button and Vote Counter */}
-             {skipThreshold > 0 && (
-                <div className="flex items-center gap-2">
+            {!isCollapsed && (
+              <>
+                {/* Skip Button and Vote Counter */}
+                {skipThreshold > 0 && (
+                  <div className="flex items-center gap-2">
                     {skipVotes > 0 && remainingVotes > 0 && (
-                        <span className="text-xs font-medium p-1 rounded-md" style={{
-                            color: theme.buttons.primary.text[mode],
-                            backgroundColor: theme.buttons.primary.background[mode],
-                        }}>
-                           {remainingVotes} left
-                        </span>
+                      <span
+                        className="text-xs font-medium p-1 rounded-md"
+                        style={{
+                          color: theme.buttons.primary.text[mode],
+                          backgroundColor:
+                            theme.buttons.primary.background[mode],
+                        }}
+                      >
+                        {remainingVotes} left
+                      </span>
                     )}
                     <button
-                        onClick={onSkip}
-                        disabled={hasVotedToSkip}
-                        title={hasVotedToSkip ? "You have voted to skip" : "Vote to skip song"}
-                        className="p-2 rounded-full hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                            backgroundColor: theme.buttons.secondary.background[mode],
-                            color: theme.buttons.secondary.text[mode],
-                        }}
+                      onClick={onSkip}
+                      disabled={hasVotedToSkip}
+                      title={
+                        hasVotedToSkip
+                          ? "You have voted to skip"
+                          : "Vote to skip song"
+                      }
+                      className="p-2 rounded-full hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor:
+                          theme.buttons.secondary.background[mode],
+                        color: theme.buttons.secondary.text[mode],
+                      }}
                     >
-                        <SkipForward size={20} />
+                      <SkipForward size={20} />
                     </button>
-                </div>
+                  </div>
+                )}
+
+                {/* Mute Button */}
+                <button
+                  onClick={onMuteToggle}
+                  title={isMuted ? "Unmute" : "Mute"}
+                  className="p-2 rounded-full hover:scale-110 transition-transform"
+                  style={{
+                    backgroundColor: theme.buttons.secondary.background[mode],
+                    color: theme.buttons.secondary.text[mode],
+                  }}
+                >
+                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+                <QueueDialog queue={queue} theme={theme} mode={mode} />
+                <MusicSearchDialog
+                  onAddSong={onAddSong}
+                  theme={theme}
+                  mode={mode}
+                />
+              </>
             )}
-            
-            {/* Mute Button */}
             <button
-              onClick={onMuteToggle}
-              title={isMuted ? "Unmute" : "Mute"}
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              title={isCollapsed ? "Expand" : "Collapse"}
               className="p-2 rounded-full hover:scale-110 transition-transform"
               style={{
                 backgroundColor: theme.buttons.secondary.background[mode],
                 color: theme.buttons.secondary.text[mode],
               }}
             >
-              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {isCollapsed ? (
+                <ChevronDown size={20} />
+              ) : (
+                <ChevronUp size={20} />
+              )}
             </button>
-            <QueueDialog queue={queue} theme={theme} mode={mode} />
-            <MusicSearchDialog onAddSong={onAddSong} theme={theme} mode={mode} />
           </div>
         </div>
 
         {/* Seek bar & Time stamps */}
-        <div className="w-full mt-2">
+        <div
+          className={`w-full mt-2 transition-all duration-300 ease-in-out overflow-hidden ${
+            isCollapsed ? "max-h-0" : "max-h-20"
+          }`}
+        >
           <div
             ref={progressBarRef}
             className={`relative w-full h-2 ${
