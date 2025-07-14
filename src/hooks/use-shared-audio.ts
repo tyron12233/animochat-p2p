@@ -314,10 +314,16 @@ export const useSharedAudioPlayer = (
     // --- Registering Event Listeners ---
     socket.addEventListener("message", handleWebSocketMessage);
     socket.addEventListener("close", () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
+        // disable music
+        console.log("WebSocket connection closed, disabling music player.");
+        setCurrentSong(null);
+        audio.pause();
+        audio.src = "";
+        setIsPlaying(false);
+        setProgress(0);
+        setDuration(0);
+        setPlaybackBlocked(false);
+        setPlaybackError(null);
     });
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
