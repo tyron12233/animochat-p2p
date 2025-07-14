@@ -200,29 +200,23 @@ export const useSharedAudioPlayer = (
             }
             break;
           case "music_set":
-            const song = packet.content as Song | undefined;
-            const anySong = song as any;
-
-            if (!anySong || !anySong.name || !anySong.url) {
+            const content = packet.content as { song: Song | undefined, queue?: Song[] };
+            if (content.song) {
+              console.log("Received music_set for song:", content.song.name);
+              setCurrentSong(content.song);
+              audio.src = content.song.url;
+              audio.currentTime = content.song.progress ?? 0;
+              setProgress(content.song.progress ?? 0);
+              setDuration(0); 
+              play();
+            } else {
+              console.log("Received music_set with no song, resetting player.");
               setCurrentSong(null);
               audio.src = "";
               setIsPlaying(false);
-              setDuration(0);
               setProgress(0);
-              return;
+              setDuration(0);
             }
-
-            if (!song || !song?.url) {
-              break;
-            }
-
-            console.log("Received music_set:", song);
-            setCurrentSong(song);
-            audio.src = song.url;
-            setIsPlaying(false);
-            setHasVotedToSkip(false);
-            setSkipVotes(0);
-            setSkipThreshold(1);
             break;
 
           case "music_play":
