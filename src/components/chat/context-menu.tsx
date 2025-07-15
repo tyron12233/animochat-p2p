@@ -32,7 +32,7 @@ export default function ContextMenu({
 
   const { chat, matchmaking, session } = useAnimoChat();
 
-  const { user } = useAuth();
+  const { user, session: userSession } = useAuth();
 
   const isAdmin = user?.role === "admin" || false;
 
@@ -64,6 +64,7 @@ export default function ContextMenu({
           // remove trailing slash if it exists
           let cleanedServerUrl = serverUrlp.replace(/\/$/, "");
 
+          
 
           if (senderId) {
             // api
@@ -76,6 +77,7 @@ export default function ContextMenu({
                 credentials: "include",
                 headers: {
                   "Content-Type": "application/json",
+                  "Authorization": `Bearer ${userSession?.access_token}`,
                 },
               }
             )
