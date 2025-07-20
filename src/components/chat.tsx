@@ -458,6 +458,10 @@ export default function Chat({
           mention.startIndex,
           mention.endIndex
         );
+        if (mention.id === "julie-ai") {  
+          // Special case for Julie AI, always valid
+          return true;
+        }
         // Find the participant by id
         const participant = participants.find((p) => p.userId === mention.id);
         // The mention is valid if the text matches the participant's nickname
