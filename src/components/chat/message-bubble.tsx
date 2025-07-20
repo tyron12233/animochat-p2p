@@ -185,7 +185,7 @@ export default function MessageBubble({
           }`}
           style={{ color: theme.secondaryText[mode] }}
         >
-          AnimoChat.com
+          chat.tyronscott.me
         </p>
       )}
 
@@ -338,7 +338,7 @@ export default function MessageBubble({
           }`}
           style={{ color: theme.secondaryText[mode] }}
         >
-          AnimoChat.com
+          chat.tyronscott.me
         </p>
       )}
     </div>

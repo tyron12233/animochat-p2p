@@ -138,13 +138,6 @@ export default function Chat({
     theme: { theme, mode },
   } = useAnimoChat();
 
-  useEffect(() => {
-    if (!theme || !mode) return;
-
-    // set body bg
-    document.body.style.background = theme.general.background[mode];
-  }, [theme, mode]);
-
   const {
     isPlaying,
     isMuted,

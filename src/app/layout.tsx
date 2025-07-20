@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AnimoChat – Anonymous Chat Platform",
     description: "Join AnimoChat for secure, anonymous one to one chats or group chats. Enjoy privacy-focused messaging with modern features.",
-    url: "https://animochat.com",
+    url: "https://chat.tyronscott.me",
     siteName: "AnimoChat",
     images: [
       {
