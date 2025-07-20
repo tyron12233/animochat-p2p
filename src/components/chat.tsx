@@ -47,6 +47,7 @@ import { ChatInputBar } from "./chat/chat-input-bar";
 import SharedMusicPlayer from "./shared-music-player";
 import { useSharedAudioPlayer } from "../hooks/use-shared-audio";
 import AdminControls from "./admin-controls";
+import { group } from "console";
 
 interface ChatProps {
   name: string;
@@ -316,12 +317,14 @@ export default function Chat({
         if (query.length > 0) {
           const modifiedParticipants: Participant[] = [
             ...participants,
-            {
+          ];
+          if (groupChat) {
+            modifiedParticipants.push({
               userId: "julie-ai",
               nickname: "Julie AI",
               status: "online",
-            } as Participant,
-          ];
+            } as Participant)
+          }
           const filteredParticipants = modifiedParticipants.filter((p) =>
             p.nickname.toLowerCase().startsWith(query)
           );
