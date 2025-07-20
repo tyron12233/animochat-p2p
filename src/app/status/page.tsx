@@ -258,7 +258,7 @@ export default function StatusPage() {
     const [error, setError] = useState<string | null>(null);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-    const DISCOVERY_SERVER_URL = 'https://animochat-service-discovery.onrender.com/services';
+    const DISCOVERY_SERVER_URL = 'https://animochat-service-discovery-6jj5.onrender.com/services';
 
     const fetchStatuses = useCallback(async () => {
         setIsLoading(true);
