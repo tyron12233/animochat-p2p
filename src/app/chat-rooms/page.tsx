@@ -63,7 +63,7 @@ export interface ChatRoom {
 
 // --- CONSTANTS ---
 const DISCOVERY_SERVICE_URL =
-  "https://animochat-service-discovery.onrender.com/discover/chat-service/1.0.0/all";
+  "https://animochat-service-discovery-6jj5.onrender.com/discover/chat-service/1.0.0/all";
 
 // Compact Modal
 const CreateRoomModal = ({

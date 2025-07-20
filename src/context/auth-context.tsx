@@ -50,7 +50,7 @@ const AuthContext = createContext<AuthContextType>({
 // END SECTION
 
 // SECTION: Constants and Utility Hooks
-const AUTH_API_BASE_URL = "https://animochat-auth-server.onrender.com/api/auth";
+const AUTH_API_BASE_URL = "https://animochat-auth-server-wjkj.onrender.com/api/auth";
 const SESSION_COOKIE_KEY = "supabase.auth.session";
 
 /**

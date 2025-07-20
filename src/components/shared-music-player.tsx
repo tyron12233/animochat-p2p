@@ -5,6 +5,7 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
+  MoreHorizontal,
 } from "lucide-react";
 import { ChatThemeV2 } from "../lib/chat-theme";
 import { Song } from "../lib/types";
@@ -72,6 +73,136 @@ const IconButton = ({
   </motion.button>
 );
 
+// --- CONTROLS MENU COMPONENT ---
+const ControlsMenu = ({
+  isOpen,
+  onClose,
+  theme,
+  mode,
+  onSkip,
+  skipVotes,
+  skipThreshold,
+  hasVotedToSkip,
+  onMuteToggle,
+  isMuted,
+  queue,
+  onAddSong,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  theme: ChatThemeV2;
+  mode: "light" | "dark";
+  onSkip: () => void;
+  skipVotes: number;
+  skipThreshold: number;
+  hasVotedToSkip: boolean;
+  onMuteToggle: () => void;
+  isMuted: boolean;
+  queue: Song[];
+  onAddSong: (song: Song) => void;
+}) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const remainingVotes = skipThreshold - skipVotes;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      ref={menuRef}
+      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="absolute right-0 top-full mt-2 z-20 rounded-lg shadow-lg border min-w-48"
+      style={{
+        borderColor: theme.header.border[mode],
+      }}
+    >
+      <div className="p-2 space-y-1">
+        {skipThreshold > 0 && (
+          <button
+            onClick={() => {
+              onSkip();
+              onClose();
+            }}
+            disabled={hasVotedToSkip}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors disabled:opacity-50"
+            style={{
+              color: theme.header.statusValue[mode],
+              backgroundColor: "transparent",
+            }}
+            onMouseEnter={(e) => {
+              if (!hasVotedToSkip) {
+                e.currentTarget.style.backgroundColor = theme.buttons.secondary.background[mode];
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <SkipForward size={16} />
+            <span className="text-sm">
+              {hasVotedToSkip
+                ? "Voted to skip"
+                : `Vote to skip (${remainingVotes} more)`}
+            </span>
+          </button>
+        )}
+        
+        <button
+          onClick={() => {
+            onMuteToggle();
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors"
+          style={{
+            color: theme.header.statusValue[mode],
+            backgroundColor: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.buttons.secondary.background[mode];
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          <span className="text-sm">{isMuted ? "Unmute" : "Mute"}</span>
+        </button>
+
+        <div className="border-t pt-1 mt-1" style={{ borderColor: theme.header.border[mode] }}>
+          <div className="px-3 py-2">
+            <QueueDialog queue={queue} theme={theme} mode={mode} />
+          </div>
+          <div className="px-3 py-2">
+            <MusicSearchDialog
+              onAddSong={onAddSong}
+              theme={theme}
+              mode={mode}
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // --- MAIN COMPONENT ---
 const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   songName,
@@ -97,6 +228,24 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   const [seekTime, setSeekTime] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showControlsMenu, setShowControlsMenu] = useState(false);
+  const [useCompactControls, setUseCompactControls] = useState(false);
+  const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Check if controls should be compact based on container width
+  useEffect(() => {
+    const checkWidth = () => {
+      if (controlsRef.current) {
+        const containerWidth = controlsRef.current.parentElement?.clientWidth || 0;
+        // If container is less than 400px, use compact controls
+        setUseCompactControls(containerWidth < 400);
+      }
+    };
+
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
 
   const handleSeek = (
     e: React.MouseEvent<HTMLDivElement> | MouseEvent,
@@ -205,66 +354,119 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
                 scale: { duration: 0.4 },
                 y: { duration: 0.4 }
               }}
-              className="overflow-hidden"
+              className="overflow-hidden relative"
             >
               {/* --- Controls --- */}
               <motion.div 
+                ref={controlsRef}
                 className="mt-2 flex items-center justify-center gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
               >
-                {skipThreshold > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.15, duration: 0.3 }}
-                  >
-                    <IconButton
-                      onClick={onSkip}
-                      disabled={hasVotedToSkip}
-                      title={
-                        hasVotedToSkip
-                          ? "You have voted to skip"
-                          : `Vote to skip (${remainingVotes} more needed)`
-                      }
-                      style={buttonStyle}
+                {useCompactControls ? (
+                  // Compact controls with menu
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15, duration: 0.3 }}
                     >
-                      <SkipForward size={20} />
-                    </IconButton>
-                  </motion.div>
+                      <IconButton
+                        onClick={onMuteToggle}
+                        title={isMuted ? "Unmute" : "Mute"}
+                        style={buttonStyle}
+                      >
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                      </IconButton>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                      className="relative"
+                    >
+                      <IconButton
+                        onClick={() => setShowControlsMenu(!showControlsMenu)}
+                        title="More controls"
+                        style={buttonStyle}
+                      >
+                        <MoreHorizontal size={20} />
+                      </IconButton>
+                      <AnimatePresence>
+                        <ControlsMenu
+                          isOpen={showControlsMenu}
+                          onClose={() => setShowControlsMenu(false)}
+                          theme={theme}
+                          mode={mode}
+                          onSkip={onSkip}
+                          skipVotes={skipVotes}
+                          skipThreshold={skipThreshold}
+                          hasVotedToSkip={hasVotedToSkip}
+                          onMuteToggle={onMuteToggle}
+                          isMuted={isMuted}
+                          queue={queue}
+                          onAddSong={onAddSong}
+                        />
+                      </AnimatePresence>
+                    </motion.div>
+                  </>
+                ) : (
+                  // Full controls
+                  <>
+                    {skipThreshold > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15, duration: 0.3 }}
+                      >
+                        <IconButton
+                          onClick={onSkip}
+                          disabled={hasVotedToSkip}
+                          title={
+                            hasVotedToSkip
+                              ? "You have voted to skip"
+                              : `Vote to skip (${remainingVotes} more needed)`
+                          }
+                          style={buttonStyle}
+                        >
+                          <SkipForward size={20} />
+                        </IconButton>
+                      </motion.div>
+                    )}
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                    >
+                      <IconButton
+                        onClick={onMuteToggle}
+                        title={isMuted ? "Unmute" : "Mute"}
+                        style={buttonStyle}
+                      >
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                      </IconButton>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.25, duration: 0.3 }}
+                    >
+                      <QueueDialog queue={queue} theme={theme} mode={mode} />
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3, duration: 0.3 }}
+                    >
+                      <MusicSearchDialog
+                        onAddSong={onAddSong}
+                        theme={theme}
+                        mode={mode}
+                      />
+                    </motion.div>
+                  </>
                 )}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.3 }}
-                >
-                  <IconButton
-                    onClick={onMuteToggle}
-                    title={isMuted ? "Unmute" : "Mute"}
-                    style={buttonStyle}
-                  >
-                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                  </IconButton>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25, duration: 0.3 }}
-                >
-                  <QueueDialog queue={queue} theme={theme} mode={mode} />
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.3 }}
-                >
-                  <MusicSearchDialog
-                    onAddSong={onAddSong}
-                    theme={theme}
-                    mode={mode}
-                  />
-                </motion.div>
               </motion.div>
             </motion.div>
           )}
