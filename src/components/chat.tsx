@@ -114,9 +114,6 @@ export default function Chat({
   onBack,
   newChat,
 }: ChatProps) {
-  
-
-
   const { user } = useAuth();
   const {
     session: { status, setScreen },
@@ -139,7 +136,6 @@ export default function Chat({
     matchmaking: { onCancelMatchmaking: cancelMatchmaking },
     theme: { theme, mode },
   } = useAnimoChat();
-
 
   useEffect(() => {
     if (!theme || !mode) return;
@@ -318,7 +314,15 @@ export default function Chat({
       if (atIndex !== -1) {
         const query = textBeforeCursor.slice(atIndex + 1).toLowerCase();
         if (query.length > 0) {
-          const filteredParticipants = participants.filter((p) =>
+          const modifiedParticipants: Participant[] = [
+            ...participants,
+            {
+              userId: "julie-ai",
+              nickname: "Julie AI",
+              status: "online",
+            } as Participant,
+          ];
+          const filteredParticipants = modifiedParticipants.filter((p) =>
             p.nickname.toLowerCase().startsWith(query)
           );
           setMentionParticipants(filteredParticipants);
