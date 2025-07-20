@@ -75,6 +75,13 @@ const DynamicGlobalStyles = ({
       }
     }
 
+    /* on larger screens, remove border radius */
+    @media (min-width: 641px) {
+      #chat-container {
+        --chat-border-radius: 0rem; /* Border radius for larger screens */
+      }
+    }
+
     div::-webkit-scrollbar {
       width: 8px;
     }
@@ -107,6 +114,9 @@ export default function Chat({
   onBack,
   newChat,
 }: ChatProps) {
+  
+
+
   const { user } = useAuth();
   const {
     session: { status, setScreen },
@@ -129,6 +139,14 @@ export default function Chat({
     matchmaking: { onCancelMatchmaking: cancelMatchmaking },
     theme: { theme, mode },
   } = useAnimoChat();
+
+
+  useEffect(() => {
+    if (!theme || !mode) return;
+
+    // set body bg
+    document.body.style.background = theme.general.background[mode];
+  }, [theme, mode]);
 
   const {
     isPlaying,
@@ -597,7 +615,7 @@ export default function Chat({
           boxShadow: theme.general.shadow,
           borderRadius: "var(--chat-border-radius, 2rem)",
         }}
-        className="w-full max-w-md mx-auto h-[100dvh] flex flex-col"
+        className="w-full max-w-4xl mx-auto h-[100dvh] flex flex-col"
       >
         <div
           style={{

@@ -149,7 +149,8 @@ const ControlsMenu = ({
             }}
             onMouseEnter={(e) => {
               if (!hasVotedToSkip) {
-                e.currentTarget.style.backgroundColor = theme.buttons.secondary.background[mode];
+                e.currentTarget.style.backgroundColor =
+                  theme.buttons.secondary.background[mode];
               }
             }}
             onMouseLeave={(e) => {
@@ -164,7 +165,7 @@ const ControlsMenu = ({
             </span>
           </button>
         )}
-        
+
         <button
           onClick={() => {
             onMuteToggle();
@@ -176,7 +177,8 @@ const ControlsMenu = ({
             backgroundColor: "transparent",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.buttons.secondary.background[mode];
+            e.currentTarget.style.backgroundColor =
+              theme.buttons.secondary.background[mode];
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = "transparent";
@@ -186,7 +188,10 @@ const ControlsMenu = ({
           <span className="text-sm">{isMuted ? "Unmute" : "Mute"}</span>
         </button>
 
-        <div className="border-t pt-1 mt-1" style={{ borderColor: theme.header.border[mode] }}>
+        <div
+          className="border-t pt-1 mt-1"
+          style={{ borderColor: theme.header.border[mode] }}
+        >
           <div className="px-3 py-2">
             <QueueDialog queue={queue} theme={theme} mode={mode} />
           </div>
@@ -236,7 +241,8 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
   useEffect(() => {
     const checkWidth = () => {
       if (controlsRef.current) {
-        const containerWidth = controlsRef.current.parentElement?.clientWidth || 0;
+        const containerWidth =
+          controlsRef.current.parentElement?.clientWidth || 0;
         // If container is less than 400px, use compact controls
         setUseCompactControls(containerWidth < 400);
       }
@@ -328,11 +334,11 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
 
       {/* --- Top Section: Info & Collapse Button --- */}
       <div className="flex w-full items-center justify-between gap-4">
-        <div className="min-w-0 flex-grow">
-          <p className="truncate font-bold">{songName}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-bold max">{songName}</p>
           {!isCollapsed && (
             <p
-              className="truncate text-sm opacity-80"
+              className="truncate text-sm opacity-80 max-w-[20rem]"
               style={{ color: theme.header.statusLabel[mode] }}
             >
               {artistName}
@@ -347,126 +353,74 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ 
-                duration: 0.4, 
+              transition={{
+                duration: 0.4,
                 ease: [0.25, 0.46, 0.45, 0.94],
                 opacity: { duration: 0.3 },
                 scale: { duration: 0.4 },
-                y: { duration: 0.4 }
+                y: { duration: 0.4 },
               }}
               className="overflow-hidden relative"
             >
               {/* --- Controls --- */}
-              <motion.div 
+              <motion.div
                 ref={controlsRef}
                 className="mt-2 flex items-center justify-center gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
               >
-                {useCompactControls ? (
-                  // Compact controls with menu
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.15, duration: 0.3 }}
+                {skipThreshold > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15, duration: 0.3 }}
+                  >
+                    <IconButton
+                      onClick={onSkip}
+                      disabled={hasVotedToSkip}
+                      title={
+                        hasVotedToSkip
+                          ? "You have voted to skip"
+                          : `Vote to skip (${remainingVotes} more needed)`
+                      }
+                      style={buttonStyle}
                     >
-                      <IconButton
-                        onClick={onMuteToggle}
-                        title={isMuted ? "Unmute" : "Mute"}
-                        style={buttonStyle}
-                      >
-                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                      </IconButton>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, duration: 0.3 }}
-                      className="relative"
-                    >
-                      <IconButton
-                        onClick={() => setShowControlsMenu(!showControlsMenu)}
-                        title="More controls"
-                        style={buttonStyle}
-                      >
-                        <MoreHorizontal size={20} />
-                      </IconButton>
-                      <AnimatePresence>
-                        <ControlsMenu
-                          isOpen={showControlsMenu}
-                          onClose={() => setShowControlsMenu(false)}
-                          theme={theme}
-                          mode={mode}
-                          onSkip={onSkip}
-                          skipVotes={skipVotes}
-                          skipThreshold={skipThreshold}
-                          hasVotedToSkip={hasVotedToSkip}
-                          onMuteToggle={onMuteToggle}
-                          isMuted={isMuted}
-                          queue={queue}
-                          onAddSong={onAddSong}
-                        />
-                      </AnimatePresence>
-                    </motion.div>
-                  </>
-                ) : (
-                  // Full controls
-                  <>
-                    {skipThreshold > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.15, duration: 0.3 }}
-                      >
-                        <IconButton
-                          onClick={onSkip}
-                          disabled={hasVotedToSkip}
-                          title={
-                            hasVotedToSkip
-                              ? "You have voted to skip"
-                              : `Vote to skip (${remainingVotes} more needed)`
-                          }
-                          style={buttonStyle}
-                        >
-                          <SkipForward size={20} />
-                        </IconButton>
-                      </motion.div>
-                    )}
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, duration: 0.3 }}
-                    >
-                      <IconButton
-                        onClick={onMuteToggle}
-                        title={isMuted ? "Unmute" : "Mute"}
-                        style={buttonStyle}
-                      >
-                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                      </IconButton>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.25, duration: 0.3 }}
-                    >
-                      <QueueDialog queue={queue} theme={theme} mode={mode} />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3, duration: 0.3 }}
-                    >
-                      <MusicSearchDialog
-                        onAddSong={onAddSong}
-                        theme={theme}
-                        mode={mode}
-                      />
-                    </motion.div>
-                  </>
+                      <SkipForward size={20} />
+                    </IconButton>
+                  </motion.div>
                 )}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                  <IconButton
+                    onClick={onMuteToggle}
+                    title={isMuted ? "Unmute" : "Mute"}
+                    style={buttonStyle}
+                  >
+                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                  </IconButton>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25, duration: 0.3 }}
+                >
+                  <QueueDialog queue={queue} theme={theme} mode={mode} />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.3 }}
+                >
+                  <MusicSearchDialog
+                    onAddSong={onAddSong}
+                    theme={theme}
+                    mode={mode}
+                  />
+                </motion.div>
               </motion.div>
             </motion.div>
           )}
@@ -487,7 +441,11 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
                 animate={{ rotate: isCollapsed ? 180 : 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                {isCollapsed ? (
+                  <ChevronDown size={20} />
+                ) : (
+                  <ChevronUp size={20} />
+                )}
               </motion.div>
             </IconButton>
           </motion.div>
@@ -496,18 +454,18 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
 
       <AnimatePresence mode="wait">
         {!isCollapsed && (
-          <motion.div 
+          <motion.div
             key="progress-section"
             className="w-full pt-6 px-2"
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.98 }}
-            transition={{ 
-              duration: 0.5, 
+            transition={{
+              duration: 0.5,
               ease: [0.25, 0.46, 0.45, 0.94],
               opacity: { duration: 0.4 },
               y: { duration: 0.5 },
-              scale: { duration: 0.5 }
+              scale: { duration: 0.5 },
             }}
           >
             <motion.div
@@ -550,7 +508,7 @@ const SharedMusicPlayer: React.FC<SharedMusicPlayerProps> = ({
                 whileTap={{ scale: 0.9 }}
               />
             </motion.div>
-            <motion.div 
+            <motion.div
               className="mt-1 flex justify-between text-xs opacity-80"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 0.8, y: 0 }}
